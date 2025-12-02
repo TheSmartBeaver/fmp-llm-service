@@ -1,0 +1,32 @@
+name: Deploy Bot
+
+on:
+  push:
+    branches:
+      - master  # Déclenche le workflow sur les commits dans la branche principale
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+    - name: Copy files to VPS
+      run: |
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no" . root@46.202.134.247:~/Deployed/fmp_llm_service
+
+    - name: Install dependencies and restart bot
+      run: |
+        ssh -o StrictHostKeyChecking=no root@46.202.134.247 << 'EOF'
+          cd /Deployed/fmp_llm_service
+          source env/bin/activate
+          pip3 install -r requirements.txt
+          sudo systemctl stop fmp_llm.service
+        EOF

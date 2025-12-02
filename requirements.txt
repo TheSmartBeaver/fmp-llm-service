@@ -3,3 +3,7 @@ uvicorn
 langchain
 langchain-openai
 pydantic
+celery
+python-socketio[asyncio_client]
+python-socketio[asgi]
+langchain-community

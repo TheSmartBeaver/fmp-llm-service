@@ -1,0 +1,12 @@
+[Unit]
+Description=FMP LLM Service
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/Deployed/fmp_llm_service
+ExecStart=uvicorn main:app --host 127.0.0.1 --port 8003 --reload
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

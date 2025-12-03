@@ -2,6 +2,7 @@
 # uvicorn app.main:app --reload 
 # pip3 install -r requirements.txt
 # source env/bin/activate 
+# uvicorn main:app --host 127.0.0.1 --port 8003 --reload
 
 import os
 from dotenv import find_dotenv, load_dotenv

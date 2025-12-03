@@ -29,4 +29,5 @@ jobs:
           source env/bin/activate
           pip3 install -r requirements.txt
           sudo systemctl stop fmp_llm.service
+          sudo systemctl start fmp_llm.service
         EOF

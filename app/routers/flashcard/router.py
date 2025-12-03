@@ -16,8 +16,12 @@ async def ask_bot(request: UserEntryDto):
 @flashcard_router.post("/generate_CELERY")
 async def generate_flashcard(instructions: dict):
     task_id = str(uuid.uuid4())
-    generate_flashcard_task.delay(task_id, instructions)
-    generate_flashcard_task(task_id+"aaaa", instructions)
+    result = generate_flashcard_task.delay(task_id, instructions)
+    # generate_flashcard_task(task_id+"aaaa", instructions)
+    print("Job lancé ! ID:", result.id)
+
+    # Récupérer le résultat (bloquant)
+    print("Résultat :", result.get())
     print("📥 Task queued with ID :", task_id)
     # fake
     # await socket_notify(

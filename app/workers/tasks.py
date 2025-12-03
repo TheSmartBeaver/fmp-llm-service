@@ -1,10 +1,13 @@
 import asyncio
 import json
 
-import redis
+from redis import Redis
+
 from .celery_app import celery
 from app.chains.generator import generate_flashcard
 from app.services.socket import socket_notify
+
+redis = Redis(host="localhost", port=6379, decode_responses=True)
 
 @celery.task(name="generate.flashcard")
 def generate_flashcard_task(task_id: str, instructions: dict):

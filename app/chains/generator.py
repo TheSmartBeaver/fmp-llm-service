@@ -15,6 +15,7 @@ def generate_flashcard(instructions):
         """
     )
 
-    llm = OpenAI(temperature=0.3)
-    response = llm(prompt.format(**instructions))
+    # llm = OpenAI(temperature=0.3)
+    # response = llm(prompt.format(**instructions))
+    response = "Test réussi"
     return response  # déjà en JSON selon le prompt

@@ -3,11 +3,16 @@
 # pip3 install -r requirements.txt
 # source env/bin/activate 
 
+import os
+from dotenv import find_dotenv, load_dotenv
 from fastapi import FastAPI
 import socketio
 from app.routers.chat import router
 from app.routers.flashcard.router import flashcard_router
 from app.services.socket import sio
+
+load_dotenv(find_dotenv())
+print(find_dotenv())
 
 app = FastAPI(
     title="Freelance Bot Worker API",

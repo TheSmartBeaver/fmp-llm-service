@@ -1,6 +1,6 @@
 import socketio
 
-sio = socketio.AsyncServer(cors_allowed_origins="*")
+sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 # Si Socket.IO tourne dans FastAPI:
 # from fastapi import FastAPI
 # app = FastAPI()

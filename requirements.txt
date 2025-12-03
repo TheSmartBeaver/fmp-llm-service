@@ -12,8 +12,6 @@ autopep8==1.5.7
 beautifulsoup4==4.9.3
 bidict==0.23.1
 billiard==4.2.4
-binance==0.3
-binance-client==1.0.0
 bs4==0.0.1
 bta-lib==1.0.0
 celery==5.6.0
@@ -100,7 +98,6 @@ pyobjc-framework-Cocoa==7.3
 pyobjc-framework-Quartz==7.3
 pyOpenSSL==20.0.1
 pyparsing==3.0.9
-python-binance==1.0.12
 python-coinmarketcap==0.2
 python-dateutil==2.8.2
 python-dotenv==1.2.1

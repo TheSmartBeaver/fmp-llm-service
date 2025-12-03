@@ -7,3 +7,4 @@ celery
 python-socketio[asyncio_client]
 python-socketio[asgi]
 langchain-community
+redis

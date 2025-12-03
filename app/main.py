@@ -16,11 +16,13 @@ load_dotenv(find_dotenv())
 print(find_dotenv())
 
 app = FastAPI(
-    title="Freelance Bot Worker API",
+    title="FMP LLM Service",
     version="1.0.0",
 )
 
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
+
+app.mount("/socket.io", socket_app)
 
 app.include_router(router)
 app.include_router(flashcard_router)

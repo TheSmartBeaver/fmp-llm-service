@@ -14,6 +14,8 @@ async def redis_listener():
     pubsub = redis.pubsub()
     await pubsub.subscribe("flashcard_events")
 
+    print("✔️ Redis listener subscribed to 'flashcard_events' channel")
+
     async for message in pubsub.listen():
         print("📥 Redis message received :", message)
         if message["type"] == "message":
@@ -26,6 +28,8 @@ async def redis_listener():
                     "flashcard": data["flashcard"]
                 }
             )
+    
+    print("🔻 Redis listener stopped")
 
 async def socket_notify(event: str, data: dict):
     print("📥 Try to send notif A")

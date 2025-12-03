@@ -19,7 +19,7 @@ async def generate_flashcard(instructions: dict):
     generate_flashcard_task.delay(task_id, instructions)
     print("📥 Task queued with ID :", task_id)
     # fake
-    socket_notify(
+    await socket_notify(
         event="flashcard_generated",
         data={"task_id": "fake_task_id", "flashcard": {"question": "Fake question", "answer": "Fake answer"}}
     )

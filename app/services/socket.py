@@ -6,15 +6,16 @@ sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 # app = FastAPI()
 # sio_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
-def socket_notify(event: str, data: dict):
+async def socket_notify(event: str, data: dict):
     print("📥 Try to send notif A")
-    sio.emit(event, data)
+    await sio.emit(event, data)
     print("📥 Notification emited :", event)
     print("📥 Data emited :", data)
 
 @sio.event
-def connect(sid, environ):
+async def connect(sid, environ):
     print("✔️ Client connecté :", sid)
+    await sio.emit("flashcard_generated", {"msg": "Bienvenue"}, to=sid)
 
 @sio.event
 def disconnect(sid):

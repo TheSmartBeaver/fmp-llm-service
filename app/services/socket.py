@@ -8,6 +8,8 @@ sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 
 def socket_notify(event: str, data: dict):
     sio.emit(event, data)
+    print("📥 Notification emited :", event)
+    print("📥 Data emited :", data)
 
 @sio.event
 def connect(sid, environ):
@@ -22,5 +24,5 @@ def generate_flashcard(sid, data):
     print("📥 Reçu :", data)
 
     # Exemple : renvoyer une flashcard
-    sio.emit("flashcard_generated", {"question": "Test", "answer": "OK"})
-    print("📤 Flashcard envoyée")
+    # sio.emit("flashcard_generated", {"question": "Test", "answer": "OK"})
+    # print("📤 Flashcard envoyée")

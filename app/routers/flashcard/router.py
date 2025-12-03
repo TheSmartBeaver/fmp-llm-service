@@ -21,7 +21,7 @@ async def generate_flashcard(instructions: dict):
     print("Job lancé ! ID:", result.id)
 
     # Récupérer le résultat (bloquant)
-    print("Résultat :", result.get())
+    # print("Résultat :", result.get())
     print("📥 Task queued with ID :", task_id)
     # fake
     # await socket_notify(

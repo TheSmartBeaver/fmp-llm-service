@@ -15,6 +15,7 @@ async def redis_listener():
     await pubsub.subscribe("flashcard_events")
 
     async for message in pubsub.listen():
+        print("📥 Redis message received :", message)
         if message["type"] == "message":
             data = json.loads(message["data"])
 

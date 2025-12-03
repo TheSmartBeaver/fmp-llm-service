@@ -8,7 +8,7 @@ from app.services.socket import redis_listener
 async def customlifespan(app: FastAPI):
     # 🚀 Start Redis listener
     task = asyncio.create_task(redis_listener())
-
+    print("✔️ Redis listener started")
     yield  # Application is running here
 
     # 🔻 Shutdown

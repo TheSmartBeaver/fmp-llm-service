@@ -1,5 +1,7 @@
+import json
 import uuid
 from fastapi import APIRouter
+from redis import Redis
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.message import MessageRequest
 from app.chains.simple_chain import run_simple_chain
@@ -28,5 +30,11 @@ async def generate_flashcard(instructions: dict):
     #     event="flashcard_generated",
     #     data={"task_id": "fake_task_id", "flashcard": {"question": "Fake question", "answer": "Fake answer"}}
     # )
+    redis = Redis(host="localhost", port=6379, decode_responses=True)
+    redis.publish("flashcard_events", json.dumps({
+        "event": "flashcard_generated",
+        "task_id": task_id,
+        "flashcard": "DOGSHIT"
+    }))
 
     return {"task_id": task_id, "status": "queued"}

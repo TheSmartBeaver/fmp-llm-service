@@ -20,7 +20,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
+socket_app = socketio.ASGIApp(sio, other_asgi_app=None)
 
 app.mount("/socket.io", socket_app)
 

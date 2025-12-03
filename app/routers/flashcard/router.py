@@ -17,11 +17,12 @@ async def ask_bot(request: UserEntryDto):
 async def generate_flashcard(instructions: dict):
     task_id = str(uuid.uuid4())
     generate_flashcard_task.delay(task_id, instructions)
+    generate_flashcard_task(task_id+"aaaa", instructions)
     print("📥 Task queued with ID :", task_id)
     # fake
-    await socket_notify(
-        event="flashcard_generated",
-        data={"task_id": "fake_task_id", "flashcard": {"question": "Fake question", "answer": "Fake answer"}}
-    )
+    # await socket_notify(
+    #     event="flashcard_generated",
+    #     data={"task_id": "fake_task_id", "flashcard": {"question": "Fake question", "answer": "Fake answer"}}
+    # )
 
     return {"task_id": task_id, "status": "queued"}

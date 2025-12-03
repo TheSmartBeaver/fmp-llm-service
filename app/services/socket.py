@@ -7,6 +7,7 @@ sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 # sio_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 def socket_notify(event: str, data: dict):
+    print("📥 Try to send notif A")
     sio.emit(event, data)
     print("📥 Notification emited :", event)
     print("📥 Data emited :", data)

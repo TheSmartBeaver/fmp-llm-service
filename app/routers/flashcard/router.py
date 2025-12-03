@@ -16,5 +16,6 @@ async def ask_bot(request: UserEntryDto):
 async def generate_flashcard(instructions: dict):
     task_id = str(uuid.uuid4())
     generate_flashcard_task.delay(task_id, instructions)
+    print("📥 Task queued with ID :", task_id)
 
     return {"task_id": task_id, "status": "queued"}

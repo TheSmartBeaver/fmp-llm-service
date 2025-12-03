@@ -3,7 +3,7 @@ name: Deploy Bot
 on:
   push:
     branches:
-      - master  # Déclenche le workflow sur les commits dans la branche principale
+      - main  # Déclenche le workflow sur les commits dans la branche principale
 
 jobs:
   deploy:

@@ -29,6 +29,7 @@ async def redis_listener():
                     "flashcard": data["flashcard"]
                 }
             )
+            print("📥 Notification sent via Socket.IO :", data)
 
     print("🔻 Redis listener stopped")
 

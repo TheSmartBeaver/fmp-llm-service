@@ -1,6 +1,6 @@
 import json
-from redis import Redis
 import socketio
+from redis.asyncio import Redis  # ⬅️ important : version async
 
 sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 # Si Socket.IO tourne dans FastAPI:
@@ -12,12 +12,13 @@ redis = Redis(host="localhost", port=6379, decode_responses=True)
 
 async def redis_listener():
     pubsub = redis.pubsub()
-    pubsub.subscribe("flashcard_events")
+    await pubsub.subscribe("flashcard_events")
 
     print("✔️ Redis listener subscribed to 'flashcard_events' channel")
 
-    async for message in pubsub.listen():
+    async for message in pubsub.listen():  # ⬅️ maintenant fonctionne
         print("📥 Redis message received :", message)
+
         if message["type"] == "message":
             data = json.loads(message["data"])
 
@@ -28,7 +29,7 @@ async def redis_listener():
                     "flashcard": data["flashcard"]
                 }
             )
-    
+
     print("🔻 Redis listener stopped")
 
 async def socket_notify(event: str, data: dict):

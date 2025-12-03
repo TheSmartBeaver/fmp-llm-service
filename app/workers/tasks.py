@@ -1,4 +1,7 @@
 import asyncio
+import json
+
+import redis
 from .celery_app import celery
 from app.chains.generator import generate_flashcard
 from app.services.socket import socket_notify
@@ -13,6 +16,13 @@ def generate_flashcard_task(task_id: str, instructions: dict):
     print("📥 Generation ended")
 
     # Run async socket notification
+
+    redis.publish("flashcard_events", json.dumps({
+        "event": "flashcard_generated",
+        "task_id": task_id,
+        "flashcard": flashcard
+    }))
+    
     asyncio.run(socket_notify(
         event="flashcard_generated",
         data={"task_id": task_id, "flashcard": flashcard}

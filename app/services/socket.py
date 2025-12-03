@@ -1,3 +1,5 @@
+import json
+from redis import Redis
 import socketio
 
 sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
@@ -5,6 +7,24 @@ sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 # from fastapi import FastAPI
 # app = FastAPI()
 # sio_app = socketio.ASGIApp(sio, other_asgi_app=app)
+
+redis = Redis(host="localhost", port=6379, decode_responses=True)
+
+async def redis_listener():
+    pubsub = redis.pubsub()
+    await pubsub.subscribe("flashcard_events")
+
+    async for message in pubsub.listen():
+        if message["type"] == "message":
+            data = json.loads(message["data"])
+
+            await sio.emit(
+                data["event"],
+                {
+                    "task_id": data["task_id"],
+                    "flashcard": data["flashcard"]
+                }
+            )
 
 async def socket_notify(event: str, data: dict):
     print("📥 Try to send notif A")

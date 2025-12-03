@@ -12,7 +12,7 @@ redis = Redis(host="localhost", port=6379, decode_responses=True)
 
 async def redis_listener():
     pubsub = redis.pubsub()
-    await pubsub.subscribe("flashcard_events")
+    pubsub.subscribe("flashcard_events")
 
     print("✔️ Redis listener subscribed to 'flashcard_events' channel")
 

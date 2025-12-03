@@ -8,7 +8,7 @@ def generate_flashcard_task(task_id: str, instructions: dict):
     print("📥 Starting generation")
 
     # Run async flashcard generator
-    flashcard = asyncio.run(generate_flashcard(instructions))
+    flashcard = generate_flashcard(instructions)
 
     print("📥 Generation ended")
 

@@ -1,6 +1,8 @@
 from langchain_core.prompts import PromptTemplate
 
-def generate_flashcard(instructions):
+from app.models.dto.user_entry.user_entry_dto import UserEntryDto
+
+def generate_flashcard(instructions : UserEntryDto):
     prompt = PromptTemplate(
         input_variables=["topic", "level"],
         template="""
@@ -13,6 +15,8 @@ def generate_flashcard(instructions):
         }}
         """
     )
+
+    
 
     response = "Test réussi"
     return response  # déjà en JSON selon le prompt

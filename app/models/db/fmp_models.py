@@ -118,6 +118,9 @@ class CardTemplates(Base):
     Path: Mapped[str] = mapped_column(Text, nullable=False)
     Template: Mapped[str] = mapped_column(Text, nullable=False)
     LastUpdated: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False)
+    TemplateFieldsUsage: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
+    FullSemanticRepresentation: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
+    ShortSemanticRepresentation: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
     Embedding: Mapped[Optional[Any]] = mapped_column(NullType)
 
     AppUsers_: Mapped['AppUsers'] = relationship('AppUsers', back_populates='CardTemplates')

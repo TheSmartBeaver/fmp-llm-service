@@ -125,6 +125,8 @@ class MindMapGenerator:
                 "similarity_distance": float(row.distance)
             })
 
+        # raise NotImplementedError
+
         return templates
 
     def _generate_json_with_llm(self, raw_data: str, templates: List[Dict[str, Any]]) -> Dict[str, Any]:

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  fmp-llm-service:
+    build: .
+    container_name: fmp-llm-service
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    volumes:
+      # Persister les modèles téléchargés
+      - ./dl_models:/app/dl_models
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/docs')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

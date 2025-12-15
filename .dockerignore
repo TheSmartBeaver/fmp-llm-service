@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+venv/
+ENV/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Documentation
+README.md
+*.md
+
+# GitHub
+.github/
+
+# Deployment
+deployment/
+*.service
+
+# Env files (seront copiés séparément sur le VPS)
+.env
+
+# Logs
+*.log
+
+# Tests
+tests/
+pytest.ini
+.pytest_cache/
+
+# Models (trop volumineux, à monter en volume)
+dl_models/

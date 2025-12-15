@@ -11,6 +11,7 @@ import socketio
 from app.routers.chat import router
 from app.routers.flashcard.router import flashcard_router
 from app.routers.embedding.router import embedding_router
+from app.routers.mindmap.router import mindmap_router
 from app.services.lifespan import customlifespan
 from app.services.socket import sio
 
@@ -30,6 +31,7 @@ app.mount("/socket.io", socket_app)
 app.include_router(router)
 app.include_router(flashcard_router)
 app.include_router(embedding_router)
+app.include_router(mindmap_router)
 
 @app.get("/")
 def root():

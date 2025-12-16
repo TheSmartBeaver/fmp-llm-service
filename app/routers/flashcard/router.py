@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 from fastapi import APIRouter
 from redis import Redis
@@ -7,6 +8,9 @@ from app.models.message import MessageRequest
 from app.chains.simple_chain import run_simple_chain
 from app.services.socket import socket_notify
 from app.workers.tasks import generate_flashcard_task
+
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 flashcard_router = APIRouter(prefix="/flashcard_generation")
 
@@ -30,7 +34,7 @@ async def generate_flashcard(instructions: UserEntryDto):
     #     event="flashcard_generated",
     #     data={"task_id": "fake_task_id", "flashcard": {"question": "Fake question", "answer": "Fake answer"}}
     # )
-    redis = Redis(host="localhost", port=6379, decode_responses=True)
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
     redis.publish("flashcard_events", json.dumps({
         "event": "flashcard_generated",
         "task_id": task_id,

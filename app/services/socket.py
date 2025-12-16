@@ -12,9 +12,9 @@ redis = Redis(host="localhost", port=6379, decode_responses=True)
 
 async def redis_listener():
     pubsub = redis.pubsub()
-    await pubsub.subscribe("flashcard_events")
+    await pubsub.subscribe("mindmap_events")
 
-    print("✔️ Redis listener subscribed to 'flashcard_events' channel")
+    print("✔️ Redis listener subscribed to 'mindmap_events' channel")
 
     async for message in pubsub.listen():  # ⬅️ maintenant fonctionne
         print("📥 Redis message received :", message)
@@ -42,7 +42,7 @@ async def socket_notify(event: str, data: dict):
 @sio.event
 async def connect(sid, environ):
     print("✔️ Client connecté :", sid)
-    await sio.emit("flashcard_generated", {"msg": "Bienvenue"}, to=sid)
+    await sio.emit("mindmap_events", {"msg": "Bienvenue"}, to=sid)
 
 @sio.event
 def disconnect(sid):

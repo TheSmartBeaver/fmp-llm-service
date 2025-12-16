@@ -11,3 +11,6 @@ celery = Celery(
 )
 
 celery.conf.update(task_track_started=True)
+
+# Import tasks to register them with Celery
+from app.workers import tasks

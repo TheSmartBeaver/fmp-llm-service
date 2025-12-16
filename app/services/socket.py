@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import socketio
@@ -15,34 +16,51 @@ sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 redis = Redis(host=REDIS_HOST, port=6379, decode_responses=True)
 
 async def redis_listener():
-    pubsub = redis.pubsub()
-    await pubsub.subscribe("mindmap_events")
+    while True:
+        try:
+            pubsub = redis.pubsub()
+            await pubsub.subscribe("mindmap_events")
 
-    print("✔️ Redis listener subscribed to 'mindmap_events' channel")
+            print("✔️ Redis listener subscribed to 'mindmap_events' channel")
 
-    async for message in pubsub.listen():  # ⬅️ maintenant fonctionne
-        print("📥 Redis message receiveddd :", message)
+            async for message in pubsub.listen():
+                try:
+                    print("📥 Redis message received :", message)
 
-        print("📥 Will try send Notification via Socket.IO")
-        # data = json.loads(message["data"])
+                    if message["type"] == "message":
+                        try:
+                            data = json.loads(message["data"])
+                            print("📥 Will try send Notification via Socket.IO :", data)
 
-        # await sio.emit(
-        #     message["event"],
-        #     {
-        #         "task_id": message["task_id"],
-        #         "flashcard": message["data"]
-        #     }
-        # )
+                            await sio.emit(
+                                data["event"],
+                                {
+                                    "task_id": data.get("task_id"),
+                                    "flashcard": data
+                                }
+                            )
+                            print("📥 Notification sent via Socket.IO :", data)
+                        except json.JSONDecodeError as e:
+                            print(f"❌ JSON decode error: {e}")
+                        except KeyError as e:
+                            print(f"❌ Missing key in data: {e}")
+                        except Exception as e:
+                            print(f"❌ Error processing message: {e}")
 
-        await sio.emit(
-            "mindmap_generated",
-            {
-                "task_id": "hhihiuuyvbyuv",
-                "flashcard": "hgvyuvtyvtctrc"
-            }
-        )
-        
-        print("📥 Notification sent via Socket.IO")
+                except Exception as e:
+                    print(f"❌ Error in message loop: {e}")
+                    continue
+
+        except Exception as e:
+            print(f"❌ Redis listener error: {e}")
+            print("🔄 Reconnecting in 5 seconds...")
+            await asyncio.sleep(5)
+        finally:
+            try:
+                await pubsub.unsubscribe("mindmap_events")
+                await pubsub.close()
+            except:
+                pass
 
     print("🔻 Redis listener stopped")
 

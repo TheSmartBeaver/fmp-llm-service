@@ -3,10 +3,12 @@ from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 from pydantic import BaseModel
 from typing import Any, Dict
+import uuid
 
 from app.database import get_db
 from app.chains.llm.open_ai_gpt4o_mini_llm import OpenAiGPT4oMiniLlm
 from app.chains.mind_map_generator import MindMapGenerator
+from app.workers.tasks import generate_mindmap_task
 
 
 mindmap_router = APIRouter(prefix="/mindmap")
@@ -59,13 +61,58 @@ class MindMapResponse(BaseModel):
         }
 
 
+class MindMapTaskResponse(BaseModel):
+    """Réponse contenant l'ID de la tâche Celery"""
+    task_id: str
+    status: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "task_id": "550e8400-e29b-41d4-a716-446655440000",
+                "status": "pending"
+            }
+        }
+
+
+@mindmap_router.post("/generate/async", response_model=MindMapTaskResponse)
+async def generate_mindmap_async(
+    request: MindMapRequest
+):
+    """
+    Lance une génération asynchrone de carte mentale via Celery.
+
+    Args:
+        request: Contient raw_data (données brutes) et top_k (nombre de templates à utiliser)
+
+    Returns:
+        MindMapTaskResponse avec l'ID de la tâche Celery
+
+    Note:
+        Le résultat sera publié sur Redis (canal 'mindmap_events') une fois la génération terminée.
+    """
+    # Générer un ID unique pour cette tâche
+    task_id = str(uuid.uuid4())
+
+    # Lancer la tâche Celery de manière asynchrone
+    generate_mindmap_task.apply_async(
+        args=[task_id, request.raw_data, request.top_k],
+        task_id=task_id
+    )
+
+    return MindMapTaskResponse(
+        task_id=task_id,
+        status="pending"
+    )
+
+
 @mindmap_router.post("/generate", response_model=MindMapResponse)
 async def generate_mindmap(
     request: MindMapRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Génère une carte mentale à partir de données pédagogiques brutes.
+    Génère une carte mentale à partir de données pédagogiques brutes (mode synchrone).
 
     Args:
         request: Contient raw_data (données brutes) et top_k (nombre de templates à utiliser)
@@ -76,6 +123,9 @@ async def generate_mindmap(
 
     Raises:
         HTTPException: En cas d'erreur de génération ou de validation
+
+    Note:
+        Pour une exécution asynchrone, utilisez /generate/async
     """
     try:
         # Créer le générateur

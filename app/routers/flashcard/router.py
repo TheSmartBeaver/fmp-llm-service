@@ -22,7 +22,7 @@ async def ask_bot(request: UserEntryDto):
 @flashcard_router.post("/generate_CELERY")
 async def generate_flashcard(instructions: UserEntryDto):
     task_id = str(uuid.uuid4())
-    result = generate_flashcard_task.delay(task_id, instructions)
+    result = generate_flashcard_task.delay(task_id, instructions.model_dump())
     # generate_flashcard_task(task_id+"aaaa", instructions)
     print("Job lancé ! ID:", result.id)
 

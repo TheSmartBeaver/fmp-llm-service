@@ -14,13 +14,17 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 @celery.task(name="generate.flashcard")
-def generate_flashcard_task(task_id: str, instructions: UserEntryDto):
+def generate_flashcard_task(task_id: str, instructions: dict):
     redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
     print("📥 Starting generation")
 
+    # Reconstruct UserEntryDto from dict
+    instructions_dto = UserEntryDto(**instructions)
+    print(f"📥 UserEntryDto reconstructed: {instructions_dto}")
+
     # Run async flashcard generator
-    flashcard = generate_flashcard(instructions)
+    flashcard = generate_flashcard(instructions_dto)
 
     print("📥 Generation ended")
 

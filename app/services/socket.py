@@ -1,6 +1,10 @@
 import json
+import os
 import socketio
 from redis.asyncio import Redis  # ⬅️ important : version async
+
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 # Si Socket.IO tourne dans FastAPI:
@@ -8,7 +12,7 @@ sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
 # app = FastAPI()
 # sio_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
-redis = Redis(host="localhost", port=6379, decode_responses=True)
+redis = Redis(host=REDIS_HOST, port=6379, decode_responses=True)
 
 async def redis_listener():
     pubsub = redis.pubsub()

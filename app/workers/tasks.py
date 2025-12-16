@@ -101,8 +101,9 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
             "event": "mindmap_generated",
             "type": "message",
             "task_id": task_id,
-            "mind_map": mind_map,
-            "templates_used": top_k
+            # "mind_map": mind_map,
+            "templates_used": top_k,
+            "data": mind_map
         }))
 
         print(f"📥 Celery task ended for {task_id}")

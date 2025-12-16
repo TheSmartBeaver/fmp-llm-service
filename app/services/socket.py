@@ -24,13 +24,14 @@ async def redis_listener():
         print("📥 Redis message received :", message)
 
         if message["type"] == "message":
+            print("📥 Will try send Notification via Socket.IO :", data)
             data = json.loads(message["data"])
 
             await sio.emit(
                 data["event"],
                 {
-                    "task_id": data["task_id"],
-                    "flashcard": data["flashcard"]
+                    "task_id": message["task_id"],
+                    "flashcard": data
                 }
             )
             print("📥 Notification sent via Socket.IO :", data)

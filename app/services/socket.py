@@ -24,16 +24,25 @@ async def redis_listener():
         print("📥 Redis message receiveddd :", message)
 
         print("📥 Will try send Notification via Socket.IO")
-        data = json.loads(message["data"])
+        # data = json.loads(message["data"])
+
+        # await sio.emit(
+        #     message["event"],
+        #     {
+        #         "task_id": message["task_id"],
+        #         "flashcard": message["data"]
+        #     }
+        # )
 
         await sio.emit(
-            data["event"],
+            "mindmap_generated",
             {
-                "task_id": message["task_id"],
-                "flashcard": data
+                "task_id": "hhihiuuyvbyuv",
+                "flashcard": "hgvyuvtyvtctrc"
             }
         )
-        print("📥 Notification sent via Socket.IO :", data)
+        
+        print("📥 Notification sent via Socket.IO")
 
     print("🔻 Redis listener stopped")
 

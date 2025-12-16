@@ -99,6 +99,7 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
         # Publish result to Redis
         redis.publish("mindmap_events", json.dumps({
             "event": "mindmap_generated",
+            "type": "message",
             "task_id": task_id,
             "mind_map": mind_map,
             "templates_used": top_k

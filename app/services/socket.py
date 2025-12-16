@@ -21,20 +21,19 @@ async def redis_listener():
     print("✔️ Redis listener subscribed to 'mindmap_events' channel")
 
     async for message in pubsub.listen():  # ⬅️ maintenant fonctionne
-        print("📥 Redis message received :", message)
+        print("📥 Redis message receivedd :", message)
 
-        if message["type"] == "message":
-            print("📥 Will try send Notification via Socket.IO :", data)
-            data = json.loads(message["data"])
+        print("📥 Will try send Notification via Socket.IO :", data)
+        data = json.loads(message["data"])
 
-            await sio.emit(
-                data["event"],
-                {
-                    "task_id": message["task_id"],
-                    "flashcard": data
-                }
-            )
-            print("📥 Notification sent via Socket.IO :", data)
+        await sio.emit(
+            data["event"],
+            {
+                "task_id": message["task_id"],
+                "flashcard": data
+            }
+        )
+        print("📥 Notification sent via Socket.IO :", data)
 
     print("🔻 Redis listener stopped")
 

@@ -20,7 +20,12 @@ class MindMapGenerator:
     4. Valide et retourne le JSON final
     """
 
-    def __init__(self, db_session: Session, llm: BaseChatModel, embedding_model: SentenceTransformer):
+    def __init__(
+        self,
+        db_session: Session,
+        llm: BaseChatModel,
+        embedding_model: SentenceTransformer,
+    ):
         """
         Args:
             db_session: Session SQLAlchemy pour accéder à la DB
@@ -54,20 +59,113 @@ class MindMapGenerator:
         templates = self._fetch_similar_templates(embedding, top_k)
 
         # Étape 3: Générer le JSON avec le LLM
-        mind_map_json = self._generate_json_with_llm(raw_data, templates)
-       
+        # mind_map_json = self._generate_json_with_llm(raw_data, templates)
+
         # generate fake json for testing
-        # mind_map_json = {
-        #     "recto": {
-        #         "template_name": "question_template",
-        #         "field1": "Qu'est-ce que la photosynthèse?"
-        #     },
-        #     "verso": {
-        #         "template_name": "answer_template",
-        #         "field1": "Un processus de conversion d'énergie lumineuse"
-        #     },
-        #     "version": "1.0.0"
-        # }
+        mind_map_json = {
+            "success": True,
+            "mind_map": {
+                "recto": {
+                    "template_name": "layouts/tree_left_right/container",
+                    "min_height": "400px",
+                    "padding": "30px",
+                    "background_color": "#ffffff",
+                    "horizontal_spacing": "60px",
+                    "items": [
+                        {
+                            "template_name": "layouts/tree_left_right/item",
+                            "title": "Photosynthèse",
+                            "content": "Processus par lequel les plantes vertes utilisent la lumière du soleil.",
+                            "item_padding": "12px",
+                            "item_background": "#e9f5f9",
+                            "item_border": "none",
+                            "item_shadow": "0 2px 4px rgba(0,0,0,0.1)",
+                            "item_min_width": "120px",
+                            "item_max_width": "220px",
+                            "item_margin_top": "0px",
+                            "connector_length": "40px",
+                            "connector_width": "2px",
+                            "connector_color": "#999999",
+                            "connector_display": "block",
+                            "arrow_size": "8px",
+                            "children_spacing": "16px",
+                            "children_indent": "60px",
+                            "title_color": "#333333",
+                            "content_color": "#666666",
+                        },
+                        {
+                            "template_name": "layouts/tree_left_right/item",
+                            "title": "Utilisation de la lumière",
+                            "content": "Les plantes vertes utilisent la lumière du soleil.",
+                            "item_padding": "12px",
+                            "item_background": "#ffffff",
+                            "item_border": "1px solid #e0e0e0",
+                            "item_shadow": "0 2px 6px rgba(0,0,0,0.1)",
+                            "item_min_width": "120px",
+                            "item_max_width": "220px",
+                            "item_margin_top": "20px",
+                            "connector_length": "40px",
+                            "connector_width": "2px",
+                            "connector_color": "#999999",
+                            "connector_display": "block",
+                            "arrow_size": "8px",
+                            "children_spacing": "16px",
+                            "children_indent": "60px",
+                            "title_color": "#333333",
+                            "content_color": "#666666",
+                        },
+                        {
+                            "template_name": "layouts/tree_left_right/item",
+                            "title": "Synthèse de nutriments",
+                            "content": "Nutriments synthétisés à partir de dioxyde de carbone et d'eau.",
+                            "item_padding": "12px",
+                            "item_background": "#ffffff",
+                            "item_border": "1px solid #e0e0e0",
+                            "item_shadow": "0 2px 6px rgba(0,0,0,0.1)",
+                            "item_min_width": "120px",
+                            "item_max_width": "220px",
+                            "item_margin_top": "20px",
+                            "connector_length": "40px",
+                            "connector_width": "2px",
+                            "connector_color": "#999999",
+                            "connector_display": "block",
+                            "arrow_size": "8px",
+                            "children_spacing": "16px",
+                            "children_indent": "60px",
+                            "title_color": "#333333",
+                            "content_color": "#666666",
+                        },
+                        {
+                            "template_name": "layouts/tree_left_right/item",
+                            "title": "Sous-produit",
+                            "content": "Génération d'oxygène comme sous-produit.",
+                            "item_padding": "12px",
+                            "item_background": "#ffffff",
+                            "item_border": "1px solid #e0e0e0",
+                            "item_shadow": "0 2px 6px rgba(0,0,0,0.1)",
+                            "item_min_width": "120px",
+                            "item_max_width": "220px",
+                            "item_margin_top": "20px",
+                            "connector_length": "40px",
+                            "connector_width": "2px",
+                            "connector_color": "#999999",
+                            "connector_display": "block",
+                            "arrow_size": "8px",
+                            "children_spacing": "16px",
+                            "children_indent": "60px",
+                            "title_color": "#333333",
+                            "content_color": "#666666",
+                        },
+                    ],
+                },
+                "verso": {
+                    "template_name": "recipe/footer",
+                    "text": "La photosynthèse est cruciale pour la vie sur Terre.",
+                },
+                "version": "1.0.0",
+            },
+            "templates_used": 15,
+        }
 
         # Étape 4: Valider le JSON
         validated_json = self._validate_json(mind_map_json)
@@ -85,12 +183,13 @@ class MindMapGenerator:
             Liste de 384 floats représentant l'embedding
         """
         embedding = self.embedding_model.encode(
-            text,
-            normalize_embeddings=True  # Important pour cosine similarity
+            text, normalize_embeddings=True  # Important pour cosine similarity
         )
         return embedding.tolist()
 
-    def _fetch_similar_templates(self, embedding: List[float], top_k: int) -> List[Dict[str, Any]]:
+    def _fetch_similar_templates(
+        self, embedding: List[float], top_k: int
+    ) -> List[Dict[str, Any]]:
         """
         Recherche les templates les plus similaires via similarité vectorielle (pgvector).
 
@@ -110,7 +209,7 @@ class MindMapGenerator:
 
         # Utiliser SQLAlchemy ORM avec l'opérateur pgvector <=> (cosine distance)
         # literal_column permet de créer une expression SQL brute qui sera injectée telle quelle
-        distance_expr = literal_column(f'"Embedding" <=> \'{embedding_str}\'::vector')
+        distance_expr = literal_column(f"\"Embedding\" <=> '{embedding_str}'::vector")
 
         # Construire la requête avec SQLAlchemy ORM
         query = (
@@ -119,7 +218,7 @@ class MindMapGenerator:
                 CardTemplates.TemplateFieldsUsage,
                 CardTemplates.ShortSemanticRepresentation,
                 CardTemplates.FullSemanticRepresentation,
-                distance_expr.label('distance')
+                distance_expr.label("distance"),
             )
             .filter(CardTemplates.Embedding.isnot(None))
             .order_by(distance_expr)
@@ -130,19 +229,23 @@ class MindMapGenerator:
 
         templates = []
         for row in result:
-            templates.append({
-                "template_name": row.Path,
-                "fields_usage": row.TemplateFieldsUsage,
-                "short_description": row.ShortSemanticRepresentation,
-                "full_description": row.FullSemanticRepresentation,
-                "similarity_distance": float(row.distance)
-            })
+            templates.append(
+                {
+                    "template_name": row.Path,
+                    "fields_usage": row.TemplateFieldsUsage,
+                    "short_description": row.ShortSemanticRepresentation,
+                    "full_description": row.FullSemanticRepresentation,
+                    "similarity_distance": float(row.distance),
+                }
+            )
 
         # raise NotImplementedError
 
         return templates
 
-    def _generate_json_with_llm(self, raw_data: str, templates: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _generate_json_with_llm(
+        self, raw_data: str, templates: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """
         Utilise le LLM pour générer le JSON structuré de la carte mentale.
 
@@ -225,10 +328,9 @@ Réponds UNIQUEMENT avec le JSON valide, sans texte additionnel."""
 Génère le JSON de la carte mentale en utilisant les templates disponibles."""
 
         # Créer le prompt template
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", user_prompt)
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", system_prompt), ("human", user_prompt)]
+        )
 
         # Créer la chaîne avec parser JSON
         chain = prompt | self.llm | JsonOutputParser()
@@ -250,14 +352,16 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
         """
         formatted = []
         for i, tmpl in enumerate(templates, 1):
-            formatted.append(f"""
+            formatted.append(
+                f"""
 Template {i}:
 - Path (à utiliser comme template_name): "{tmpl['template_name']}"
 - Usage des champs: {tmpl['fields_usage']}
 - Description courte: {tmpl['short_description']}
 - Description complète: {tmpl['full_description']}
 - Score de similarité: {1 - tmpl['similarity_distance']:.3f}
-""")
+"""
+            )
         return "\n".join(formatted)
 
     def _validate_json(self, mind_map_json: Dict[str, Any]) -> Dict[str, Any]:
@@ -303,7 +407,10 @@ Template {i}:
         if isinstance(obj, dict):
             # Si c'est un dict avec template_name, vérifier sa présence
             if "template_name" in obj:
-                if not isinstance(obj["template_name"], str) or not obj["template_name"]:
+                if (
+                    not isinstance(obj["template_name"], str)
+                    or not obj["template_name"]
+                ):
                     raise ValueError(f"template_name invalide à {path}")
 
             # Valider récursivement les valeurs

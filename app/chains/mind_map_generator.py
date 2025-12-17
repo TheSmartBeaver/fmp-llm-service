@@ -31,21 +31,24 @@ class MindMapGenerator:
         self.llm = llm
         self.embedding_model = embedding_model
 
-    def generate_mind_map(self, raw_data: str, top_k: int = 15) -> Dict[str, Any]:
+    def generate_mind_map(self, raw_data: str, top_k: int = 15) -> List[Dict[str, Any]]:
         """
-        Génère une carte mentale complète à partir de données brutes.
+        Génère un tableau de cartes mentales à partir de données brutes.
 
         Args:
-            raw_data: Informations pédagogiques brutes à transformer en carte
+            raw_data: Informations pédagogiques brutes à transformer en cartes
             top_k: Nombre de templates similaires à récupérer (défaut: 15)
 
         Returns:
-            Dict contenant le JSON de la carte mentale avec structure:
-            {
-                "recto": {...},
-                "verso": {...},
-                "version": "1.0.0"
-            }
+            Liste de Dict contenant les cartes mentales avec structure:
+            [
+                {
+                    "recto": {...},
+                    "verso": {...},
+                    "version": "1.0.0"
+                },
+                ...
+            ]
         """
         # Étape 1: Générer l'embedding des raw_data
         embedding = self._generate_embedding(raw_data)
@@ -231,16 +234,16 @@ class MindMapGenerator:
 
         return templates
 
-    def _generate_json_with_llm(self, raw_data: str, templates: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _generate_json_with_llm(self, raw_data: str, templates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Utilise le LLM pour générer le JSON structuré de la carte mentale.
+        Utilise le LLM pour générer le JSON structuré d'un tableau de cartes mentales.
 
         Args:
             raw_data: Données pédagogiques brutes
             templates: Liste des templates disponibles avec leurs métadonnées
 
         Returns:
-            JSON structuré de la carte mentale
+            Tableau JSON contenant les cartes mentales structurées
         """
         # Préparer la liste des templates pour le prompt
         templates_description = self._format_templates_for_prompt(templates)
@@ -365,34 +368,50 @@ Template {i}:
 """)
         return "\n".join(formatted)
 
-    def _validate_json(self, mind_map_json: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_json(self, mind_map_json: Any) -> List[Dict[str, Any]]:
         """
-        Valide la structure du JSON généré.
+        Valide la structure du JSON généré (tableau de cartes mentales).
 
         Args:
-            mind_map_json: JSON à valider
+            mind_map_json: JSON à valider (doit être un tableau)
 
         Returns:
-            JSON validé
+            Tableau JSON validé
 
         Raises:
             ValueError: Si le JSON est invalide
         """
-        # Vérifier la présence des clés obligatoires
-        required_keys = ["recto", "verso"]
-        for key in required_keys:
-            if key not in mind_map_json:
-                raise ValueError(f"Clé obligatoire manquante: {key}")
+        # Vérifier que c'est bien un tableau
+        if not isinstance(mind_map_json, list):
+            raise ValueError("Le JSON doit être un tableau de cartes mentales")
 
-        # Ajouter la version si absente
-        if "version" not in mind_map_json:
-            mind_map_json["version"] = "1.0.0"
+        # Vérifier que le tableau n'est pas vide
+        if len(mind_map_json) == 0:
+            raise ValueError("Le tableau de cartes mentales ne peut pas être vide")
 
-        # Vérifier que recto et verso ont des template_name
-        self._validate_structure(mind_map_json["recto"], "recto")
-        self._validate_structure(mind_map_json["verso"], "verso")
+        # Valider chaque carte du tableau
+        validated_cards = []
+        for i, card in enumerate(mind_map_json):
+            if not isinstance(card, dict):
+                raise ValueError(f"L'élément {i} du tableau doit être un objet")
 
-        return mind_map_json
+            # Vérifier la présence des clés obligatoires
+            required_keys = ["recto", "verso"]
+            for key in required_keys:
+                if key not in card:
+                    raise ValueError(f"Clé obligatoire manquante dans la carte {i}: {key}")
+
+            # Ajouter la version si absente
+            if "version" not in card:
+                card["version"] = "1.0.0"
+
+            # Vérifier que recto et verso ont des template_name
+            self._validate_structure(card["recto"], f"card[{i}].recto")
+            self._validate_structure(card["verso"], f"card[{i}].verso")
+
+            validated_cards.append(card)
+
+        return validated_cards
 
     def _validate_structure(self, obj: Any, path: str):
         """

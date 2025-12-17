@@ -35,9 +35,14 @@ class MindMapGenerator:
         """
         Génère un tableau de cartes mentales à partir de données brutes.
 
+        Nouveau workflow:
+        1. Génère des paires question-réponse intermédiaires à partir des raw_data
+        2. Pour chaque paire, calcule l'embedding et récupère les templates pertinents
+        3. Génère une carte mentale pour chaque paire avec ses templates spécifiques
+
         Args:
             raw_data: Informations pédagogiques brutes à transformer en cartes
-            top_k: Nombre de templates similaires à récupérer (défaut: 15)
+            top_k: Nombre de templates similaires à récupérer par paire (défaut: 15)
 
         Returns:
             Dict contenant:
@@ -50,126 +55,97 @@ class MindMapGenerator:
                     },
                     ...
                 ]
-            - prompt: Le prompt complet envoyé au LLM
+            - prompt: Le prompt complet envoyé au LLM (premier et derniers prompts)
         """
-        # Étape 1: Générer l'embedding des raw_data
-        embedding = self._generate_embedding(raw_data)
+        # Étape 1: Générer les paires question-réponse intermédiaires
+        qa_pairs, qa_prompt = self._generate_qa_pairs(raw_data)
 
-        # Étape 2: Récupérer les templates les plus similaires
-        templates = self._fetch_similar_templates(embedding, top_k)
+        # Étape 2 & 3: Pour chaque paire, récupérer les templates et générer la carte
+        all_mind_maps = []
+        generation_prompts = []
 
-        # Étape 3: Générer le JSON avec le LLM
-        mind_map_json, prompt = self._generate_json_with_llm(raw_data, templates)
-       
-        # generate fake json for testing
-        # mind_map_json = {
-        #         "recto": {
-        #             "template_name": "layouts/tree_left_right/container",
-        #             "min_height": "400px",
-        #             "padding": "30px",
-        #             "background_color": "#ffffff",
-        #             "horizontal_spacing": "60px",
-        #             "items": [
-        #                 {
-        #                     "template_name": "layouts/tree_left_right/item",
-        #                     "title": "Photosynthèse",
-        #                     "content": "Processus par lequel les plantes vertes utilisent la lumière du soleil.",
-        #                     "item_padding": "12px",
-        #                     "item_background": "#e9f5f9",
-        #                     "item_border": "none",
-        #                     "item_shadow": "0 2px 4px rgba(0,0,0,0.1)",
-        #                     "item_min_width": "120px",
-        #                     "item_max_width": "220px",
-        #                     "item_margin_top": "0px",
-        #                     "connector_length": "40px",
-        #                     "connector_width": "2px",
-        #                     "connector_color": "#999999",
-        #                     "connector_display": "block",
-        #                     "arrow_size": "8px",
-        #                     "children_spacing": "16px",
-        #                     "children_indent": "60px",
-        #                     "title_color": "#333333",
-        #                     "content_color": "#666666",
-        #                 },
-        #                 {
-        #                     "template_name": "layouts/tree_left_right/item",
-        #                     "title": "Utilisation de la lumière",
-        #                     "content": "Les plantes vertes utilisent la lumière du soleil.",
-        #                     "item_padding": "12px",
-        #                     "item_background": "#ffffff",
-        #                     "item_border": "1px solid #e0e0e0",
-        #                     "item_shadow": "0 2px 6px rgba(0,0,0,0.1)",
-        #                     "item_min_width": "120px",
-        #                     "item_max_width": "220px",
-        #                     "item_margin_top": "20px",
-        #                     "connector_length": "40px",
-        #                     "connector_width": "2px",
-        #                     "connector_color": "#999999",
-        #                     "connector_display": "block",
-        #                     "arrow_size": "8px",
-        #                     "children_spacing": "16px",
-        #                     "children_indent": "60px",
-        #                     "title_color": "#333333",
-        #                     "content_color": "#666666",
-        #                 },
-        #                 {
-        #                     "template_name": "layouts/tree_left_right/item",
-        #                     "title": "Synthèse de nutriments",
-        #                     "content": "Nutriments synthétisés à partir de dioxyde de carbone et d'eau.",
-        #                     "item_padding": "12px",
-        #                     "item_background": "#ffffff",
-        #                     "item_border": "1px solid #e0e0e0",
-        #                     "item_shadow": "0 2px 6px rgba(0,0,0,0.1)",
-        #                     "item_min_width": "120px",
-        #                     "item_max_width": "220px",
-        #                     "item_margin_top": "20px",
-        #                     "connector_length": "40px",
-        #                     "connector_width": "2px",
-        #                     "connector_color": "#999999",
-        #                     "connector_display": "block",
-        #                     "arrow_size": "8px",
-        #                     "children_spacing": "16px",
-        #                     "children_indent": "60px",
-        #                     "title_color": "#333333",
-        #                     "content_color": "#666666",
-        #                 },
-        #                 {
-        #                     "template_name": "layouts/tree_left_right/item",
-        #                     "title": "Sous-produit",
-        #                     "content": "Génération d'oxygène comme sous-produit.",
-        #                     "item_padding": "12px",
-        #                     "item_background": "#ffffff",
-        #                     "item_border": "1px solid #e0e0e0",
-        #                     "item_shadow": "0 2px 6px rgba(0,0,0,0.1)",
-        #                     "item_min_width": "120px",
-        #                     "item_max_width": "220px",
-        #                     "item_margin_top": "20px",
-        #                     "connector_length": "40px",
-        #                     "connector_width": "2px",
-        #                     "connector_color": "#999999",
-        #                     "connector_display": "block",
-        #                     "arrow_size": "8px",
-        #                     "children_spacing": "16px",
-        #                     "children_indent": "60px",
-        #                     "title_color": "#333333",
-        #                     "content_color": "#666666",
-        #                 },
-        #             ],
-        #         },
-        #         "verso": {
-        #             "template_name": "recipe/footer",
-        #             "text": "La photosynthèse est cruciale pour la vie sur Terre.",
-        #         },
-        #         "version": "1.0.0",
-        #     }
+        for qa_pair in qa_pairs:
+            # Calculer l'embedding pour cette paire (question + réponse)
+            qa_text = f"{qa_pair['question']} {qa_pair['answer']}"
+            embedding = self._generate_embedding(qa_text)
 
-        # Étape 4: Valider le JSON
-        validated_json = self._validate_json(mind_map_json)
+            # Récupérer les templates pertinents pour cette paire
+            templates = self._fetch_similar_templates(embedding, top_k)
+
+            # Générer la carte mentale pour cette paire
+            mind_map, gen_prompt = self._generate_single_card_from_qa(qa_pair, templates)
+            all_mind_maps.append(mind_map)
+            generation_prompts.append(gen_prompt)
+
+        # Préparer le prompt complet pour le retour
+        full_prompt = f"=== PROMPT DE GÉNÉRATION DES PAIRES Q/R ===\n{qa_prompt}\n\n=== PROMPTS DE GÉNÉRATION DES CARTES ===\n" + "\n\n---\n\n".join(generation_prompts)
+
+        # Étape 4: Valider le JSON de toutes les cartes
+        validated_json = self._validate_json(all_mind_maps)
 
         return {
             "mind_map": validated_json,
-            "prompt": prompt
+            "prompt": full_prompt
         }
+
+    def _generate_qa_pairs(self, raw_data: str) -> tuple[List[Dict[str, str]], str]:
+        """
+        Génère des paires question-réponse intermédiaires à partir des données brutes.
+
+        Args:
+            raw_data: Informations pédagogiques brutes
+
+        Returns:
+            Tuple contenant:
+            - Liste de dictionnaires avec les clés 'question' et 'answer'
+            - Le prompt complet envoyé au LLM
+        """
+        # Créer le prompt système
+        system_prompt = """Tu es un expert en pédagogie. Ton rôle est d'analyser du contenu éducatif brut et de le transformer en paires question-réponse pertinentes.
+
+RÈGLES IMPORTANTES:
+1. Crée des questions claires et précises qui testent la compréhension du sujet
+2. Les réponses doivent être complètes et pédagogiques
+3. Chaque paire doit être indépendante et autonome
+4. Adapte le nombre de paires à la richesse du contenu (minimum 1, pas de maximum strict)
+5. Les questions peuvent être de différents types: définition, explication, application, comparaison, etc.
+
+STRUCTURE ATTENDUE (TABLEAU JSON):
+[
+    {
+        "question": "Question pédagogique claire et précise",
+        "answer": "Réponse complète et détaillée"
+    },
+    {
+        "question": "Autre question pertinente",
+        "answer": "Autre réponse détaillée"
+    }
+]
+
+Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
+
+        user_prompt = f"""Voici le contenu pédagogique à analyser:
+
+{raw_data}
+
+Génère les paires question-réponse au format JSON."""
+
+        # Créer le prompt template
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", user_prompt)
+        ])
+
+        # Créer la chaîne avec parser JSON
+        chain = prompt | self.llm | JsonOutputParser()
+
+        # Préparer le prompt complet pour le retour
+        full_prompt = prompt.format()
+
+        # Exécuter la chaîne
+        result = chain.invoke({})
+
+        return result, full_prompt
 
     def _generate_embedding(self, text: str) -> List[float]:
         """
@@ -238,6 +214,111 @@ class MindMapGenerator:
         # raise NotImplementedError
 
         return templates
+
+    def _generate_single_card_from_qa(self, qa_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
+        """
+        Génère une carte mentale unique à partir d'une paire question-réponse.
+
+        Args:
+            qa_pair: Dictionnaire contenant 'question' et 'answer'
+            templates: Liste des templates disponibles avec leurs métadonnées
+
+        Returns:
+            Tuple contenant:
+            - Dict JSON contenant une carte mentale structurée
+            - Le prompt complet envoyé au LLM
+        """
+        # Préparer la liste des templates pour le prompt
+        templates_description = self._format_templates_for_prompt(templates)
+
+        # Créer le prompt système
+        system_prompt = """Tu es un expert en pédagogie et en création de cartes mentales éducatives.
+
+Ton rôle est de transformer UNE paire question-réponse en UNE carte mentale structurée au format JSON.
+
+TEMPLATES DISPONIBLES:
+{templates}
+
+RÈGLES IMPORTANTES:
+1. Tu dois créer UN JSON avec DEUX parties: "recto" (la question) et "verso" (la réponse)
+2. "recto" doit contenir la question de manière visuelle et engageante
+3. "verso" doit contenir la réponse complète et pédagogique
+4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"
+5. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
+6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche
+7. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
+8. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
+9. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
+
+STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
+{{
+    "recto": {{
+        "template_name": "nom_du_template",
+        "field1": "contenu de la question ou objet imbriqué",
+        "field2": "contenu ou tableau",
+        ...
+    }},
+    "verso": {{
+        "template_name": "nom_du_template",
+        "field1": "contenu de la réponse",
+        ...
+    }},
+    "version": "1.0.0"
+}}
+
+EXEMPLE D'IMBRICATION:
+{{
+    "recto": {{
+        "template_name": "question_template",
+        "field1": "Qu'est-ce que la photosynthèse?",
+        "field2": {{
+            "template_name": "hint_template",
+            "field1": "Pense aux plantes et à la lumière"
+        }}
+    }},
+    "verso": {{
+        "template_name": "answer_list_template",
+        "field1": "La photosynthèse est:",
+        "field2": [
+            {{
+                "template_name": "bullet_point",
+                "field1": "Un processus de conversion d'énergie lumineuse"
+            }},
+            {{
+                "template_name": "bullet_point",
+                "field1": "Réalisée par les plantes vertes"
+            }}
+        ]
+    }},
+    "version": "1.0.0"
+}}
+
+Réponds UNIQUEMENT avec l'OBJET JSON valide, sans texte additionnel."""
+
+        user_prompt = f"""Voici la paire question-réponse à transformer en carte mentale:
+
+QUESTION: {qa_pair['question']}
+
+RÉPONSE: {qa_pair['answer']}
+
+Génère le JSON de la carte mentale en utilisant les templates disponibles."""
+
+        # Créer le prompt template
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", user_prompt)
+        ])
+
+        # Créer la chaîne avec parser JSON
+        chain = prompt | self.llm | JsonOutputParser()
+
+        # Préparer le prompt complet pour le retour
+        full_prompt = prompt.format(templates=templates_description)
+
+        # Exécuter la chaîne
+        result = chain.invoke({"templates": templates_description})
+
+        return result, full_prompt
 
     def _generate_json_with_llm(self, raw_data: str, templates: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], str]:
         """

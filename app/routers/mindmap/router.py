@@ -6,7 +6,7 @@ from typing import Any, Dict
 import uuid
 
 from app.database import get_db
-from app.chains.llm.open_ai_gpt4o_mini_llm import OpenAiGPT4oMiniLlm
+from app.chains.llm.open_ai_gpt52_llm import OpenAiGPT52Llm
 from app.chains.mind_map_generator import MindMapGenerator
 from app.workers.tasks import generate_mindmap_task
 
@@ -18,7 +18,7 @@ MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 embedding_model = SentenceTransformer(MODEL_NAME)
 
 # Charger le LLM OpenAI
-openai_llm = OpenAiGPT4oMiniLlm().get_llm()
+openai_llm = OpenAiGPT52Llm().get_llm()
 
 
 class MindMapRequest(BaseModel):
@@ -171,5 +171,5 @@ async def health_check():
         "status": "ok",
         "service": "mindmap_generator",
         "embedding_model": MODEL_NAME,
-        "llm_model": "gpt-4o-mini"
+        "llm_model": "gpt-5.2"
     }

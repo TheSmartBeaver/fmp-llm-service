@@ -373,9 +373,6 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
 Template {i}:
 - Path (à utiliser comme template_name): "{tmpl['template_name']}"
 - Usage des champs: {tmpl['fields_usage']}
-- Description courte: {tmpl['short_description']}
-- Description complète: {tmpl['full_description']}
-- Score de similarité: {1 - tmpl['similarity_distance']:.3f}
 """)
         return "\n".join(formatted)
 

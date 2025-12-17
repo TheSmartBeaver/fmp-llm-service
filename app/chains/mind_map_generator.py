@@ -254,7 +254,7 @@ TEMPLATES DISPONIBLES:
 {templates}
 
 RÈGLES IMPORTANTES:
-1. Tu dois créer un JSON avec DEUX parties: "recto" (face avant) et "verso" (face arrière)
+1. Tu dois créer un JSON avec DEUX parties: "recto" (la question) et "verso" (la réponse)
 2. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"
 3. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
 4. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer des cartes riches

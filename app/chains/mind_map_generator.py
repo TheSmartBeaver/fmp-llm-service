@@ -20,12 +20,7 @@ class MindMapGenerator:
     4. Valide et retourne le JSON final
     """
 
-    def __init__(
-        self,
-        db_session: Session,
-        llm: BaseChatModel,
-        embedding_model: SentenceTransformer,
-    ):
+    def __init__(self, db_session: Session, llm: BaseChatModel, embedding_model: SentenceTransformer):
         """
         Args:
             db_session: Session SQLAlchemy pour accéder à la DB
@@ -59,12 +54,10 @@ class MindMapGenerator:
         templates = self._fetch_similar_templates(embedding, top_k)
 
         # Étape 3: Générer le JSON avec le LLM
-        # mind_map_json = self._generate_json_with_llm(raw_data, templates)
-
+        #mind_map_json = self._generate_json_with_llm(raw_data, templates)
+       
         # generate fake json for testing
         mind_map_json = {
-            "success": True,
-            "mind_map": {
                 "recto": {
                     "template_name": "layouts/tree_left_right/container",
                     "min_height": "400px",
@@ -163,9 +156,7 @@ class MindMapGenerator:
                     "text": "La photosynthèse est cruciale pour la vie sur Terre.",
                 },
                 "version": "1.0.0",
-            },
-            "templates_used": 15,
-        }
+            }
 
         # Étape 4: Valider le JSON
         validated_json = self._validate_json(mind_map_json)
@@ -183,13 +174,12 @@ class MindMapGenerator:
             Liste de 384 floats représentant l'embedding
         """
         embedding = self.embedding_model.encode(
-            text, normalize_embeddings=True  # Important pour cosine similarity
+            text,
+            normalize_embeddings=True  # Important pour cosine similarity
         )
         return embedding.tolist()
 
-    def _fetch_similar_templates(
-        self, embedding: List[float], top_k: int
-    ) -> List[Dict[str, Any]]:
+    def _fetch_similar_templates(self, embedding: List[float], top_k: int) -> List[Dict[str, Any]]:
         """
         Recherche les templates les plus similaires via similarité vectorielle (pgvector).
 
@@ -209,7 +199,7 @@ class MindMapGenerator:
 
         # Utiliser SQLAlchemy ORM avec l'opérateur pgvector <=> (cosine distance)
         # literal_column permet de créer une expression SQL brute qui sera injectée telle quelle
-        distance_expr = literal_column(f"\"Embedding\" <=> '{embedding_str}'::vector")
+        distance_expr = literal_column(f'"Embedding" <=> \'{embedding_str}\'::vector')
 
         # Construire la requête avec SQLAlchemy ORM
         query = (
@@ -218,7 +208,7 @@ class MindMapGenerator:
                 CardTemplates.TemplateFieldsUsage,
                 CardTemplates.ShortSemanticRepresentation,
                 CardTemplates.FullSemanticRepresentation,
-                distance_expr.label("distance"),
+                distance_expr.label('distance')
             )
             .filter(CardTemplates.Embedding.isnot(None))
             .order_by(distance_expr)
@@ -229,23 +219,19 @@ class MindMapGenerator:
 
         templates = []
         for row in result:
-            templates.append(
-                {
-                    "template_name": row.Path,
-                    "fields_usage": row.TemplateFieldsUsage,
-                    "short_description": row.ShortSemanticRepresentation,
-                    "full_description": row.FullSemanticRepresentation,
-                    "similarity_distance": float(row.distance),
-                }
-            )
+            templates.append({
+                "template_name": row.Path,
+                "fields_usage": row.TemplateFieldsUsage,
+                "short_description": row.ShortSemanticRepresentation,
+                "full_description": row.FullSemanticRepresentation,
+                "similarity_distance": float(row.distance)
+            })
 
         # raise NotImplementedError
 
         return templates
 
-    def _generate_json_with_llm(
-        self, raw_data: str, templates: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _generate_json_with_llm(self, raw_data: str, templates: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Utilise le LLM pour générer le JSON structuré de la carte mentale.
 
@@ -328,9 +314,10 @@ Réponds UNIQUEMENT avec le JSON valide, sans texte additionnel."""
 Génère le JSON de la carte mentale en utilisant les templates disponibles."""
 
         # Créer le prompt template
-        prompt = ChatPromptTemplate.from_messages(
-            [("system", system_prompt), ("human", user_prompt)]
-        )
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", user_prompt)
+        ])
 
         # Créer la chaîne avec parser JSON
         chain = prompt | self.llm | JsonOutputParser()
@@ -352,16 +339,14 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
         """
         formatted = []
         for i, tmpl in enumerate(templates, 1):
-            formatted.append(
-                f"""
+            formatted.append(f"""
 Template {i}:
 - Path (à utiliser comme template_name): "{tmpl['template_name']}"
 - Usage des champs: {tmpl['fields_usage']}
 - Description courte: {tmpl['short_description']}
 - Description complète: {tmpl['full_description']}
 - Score de similarité: {1 - tmpl['similarity_distance']:.3f}
-"""
-            )
+""")
         return "\n".join(formatted)
 
     def _validate_json(self, mind_map_json: Dict[str, Any]) -> Dict[str, Any]:
@@ -407,10 +392,7 @@ Template {i}:
         if isinstance(obj, dict):
             # Si c'est un dict avec template_name, vérifier sa présence
             if "template_name" in obj:
-                if (
-                    not isinstance(obj["template_name"], str)
-                    or not obj["template_name"]
-                ):
+                if not isinstance(obj["template_name"], str) or not obj["template_name"]:
                     raise ValueError(f"template_name invalide à {path}")
 
             # Valider récursivement les valeurs

@@ -54,20 +54,20 @@ class MindMapGenerator:
         templates = self._fetch_similar_templates(embedding, top_k)
 
         # Étape 3: Générer le JSON avec le LLM
-        # mind_map_json = self._generate_json_with_llm(raw_data, templates)
+        mind_map_json = self._generate_json_with_llm(raw_data, templates)
        
         # generate fake json for testing
-        mind_map_json = {
-            "recto": {
-                "template_name": "question_template",
-                "field1": "Qu'est-ce que la photosynthèse?"
-            },
-            "verso": {
-                "template_name": "answer_template",
-                "field1": "Un processus de conversion d'énergie lumineuse"
-            },
-            "version": "1.0.0"
-        }
+        # mind_map_json = {
+        #     "recto": {
+        #         "template_name": "question_template",
+        #         "field1": "Qu'est-ce que la photosynthèse?"
+        #     },
+        #     "verso": {
+        #         "template_name": "answer_template",
+        #         "field1": "Un processus de conversion d'énergie lumineuse"
+        #     },
+        #     "version": "1.0.0"
+        # }
 
         # Étape 4: Valider le JSON
         validated_json = self._validate_json(mind_map_json)

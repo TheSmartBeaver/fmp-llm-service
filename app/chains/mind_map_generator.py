@@ -258,13 +258,14 @@ TEMPLATES DISPONIBLES:
 
 RÈGLES IMPORTANTES:
 1. Tu dois créer un JSON avec DEUX parties: "recto" (la question) et "verso" (la réponse)
-2. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"
-3. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
-4. Tu dois OBLIGATOIREMENT générer un TABLEAU (array) de cartes mentales au format JSON
-5. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer des cartes riches
-6. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
-7. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
-8. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
+2. "recto" doit OBLIGATOIREMENT contenir une question et "verso" EXACTEMENT une réponse
+3. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"
+4. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
+5. Tu dois OBLIGATOIREMENT générer un TABLEAU (array) de cartes mentales au format JSON
+6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer des cartes riches
+7. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
+8. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
+9. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
 
 STRUCTURE ATTENDUE (TABLEAU DE CARTES):
 [

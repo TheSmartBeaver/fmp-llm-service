@@ -36,7 +36,8 @@ async def redis_listener():
                                 data["event"],
                                 {
                                     "task_id": data.get("task_id"),
-                                    "flashcard": data
+                                    "flashcard": data,
+                                    "prompt": message["prompt"]
                                 }
                             )
                             print("📥 Notification sent via Socket.IO :", data)

@@ -257,55 +257,71 @@ RÈGLES IMPORTANTES:
 1. Tu dois créer un JSON avec DEUX parties: "recto" (la question) et "verso" (la réponse)
 2. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"
 3. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
-4. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer des cartes riches
-5. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
-6. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
-7. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
+4. Tu dois OBLIGATOIREMENT générer un TABLEAU (array) de cartes mentales au format JSON
+5. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer des cartes riches
+6. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
+7. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
+8. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
 
-STRUCTURE ATTENDUE:
-{{
-    "recto": {{
-        "template_name": "nom_du_template",
-        "field1": "contenu ou objet imbriqué",
-        "field2": "contenu ou tableau",
-        ...
+STRUCTURE ATTENDUE (TABLEAU DE CARTES):
+[
+    {{
+        "recto": {{
+            "template_name": "nom_du_template",
+            "field1": "contenu ou objet imbriqué",
+            "field2": "contenu ou tableau",
+            ...
+        }},
+        "verso": {{
+            "template_name": "nom_du_template",
+            "field1": "contenu",
+            ...
+        }},
+        "version": "1.0.0"
     }},
-    "verso": {{
-        "template_name": "nom_du_template",
-        "field1": "contenu",
-        ...
-    }},
-    "version": "1.0.0"
-}}
+    {{
+        "recto": {{
+            "template_name": "nom_du_template",
+            ...
+        }},
+        "verso": {{
+            "template_name": "nom_du_template",
+            ...
+        }},
+        "version": "1.0.0"
+    }}
+]
 
-EXEMPLE D'IMBRICATION:
-{{
-    "recto": {{
-        "template_name": "question_template",
-        "field1": "Qu'est-ce que la photosynthèse?",
-        "field2": {{
-            "template_name": "hint_template",
-            "field1": "Pense aux plantes et à la lumière"
-        }}
-    }},
-    "verso": {{
-        "template_name": "answer_list_template",
-        "field1": "La photosynthèse est:",
-        "field2": [
-            {{
-                "template_name": "bullet_point",
-                "field1": "Un processus de conversion d'énergie lumineuse"
-            }},
-            {{
-                "template_name": "bullet_point",
-                "field1": "Réalisée par les plantes vertes"
+EXEMPLE D'IMBRICATION DANS UN TABLEAU:
+[
+    {{
+        "recto": {{
+            "template_name": "question_template",
+            "field1": "Qu'est-ce que la photosynthèse?",
+            "field2": {{
+                "template_name": "hint_template",
+                "field1": "Pense aux plantes et à la lumière"
             }}
-        ]
-    }},
-    "version": "1.0.0"
-}}
+        }},
+        "verso": {{
+            "template_name": "answer_list_template",
+            "field1": "La photosynthèse est:",
+            "field2": [
+                {{
+                    "template_name": "bullet_point",
+                    "field1": "Un processus de conversion d'énergie lumineuse"
+                }},
+                {{
+                    "template_name": "bullet_point",
+                    "field1": "Réalisée par les plantes vertes"
+                }}
+            ]
+        }},
+        "version": "1.0.0"
+    }}
+]
 
-Réponds UNIQUEMENT avec le JSON valide, sans texte additionnel."""
+Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
 
         user_prompt = f"""Voici les informations pédagogiques brutes à transformer en carte mentale:
 

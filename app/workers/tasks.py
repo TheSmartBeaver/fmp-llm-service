@@ -89,7 +89,7 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
         )
 
         # Generate mind map
-        mind_map = generator.generate_mind_map(
+        result = generator.generate_mind_map(
             raw_data=raw_data,
             top_k=top_k
         )
@@ -103,15 +103,17 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
             "task_id": task_id,
             # "mind_map": mind_map,
             "templates_used": top_k,
-            "data": mind_map
+            "data": result["mind_map"],
+            "prompt": result["prompt"]
         }))
 
         print(f"📥 Celery task ended for {task_id}")
 
         return {
             "success": True,
-            "mind_map": mind_map,
-            "templates_used": top_k
+            "mind_map": result["mind_map"],
+            "templates_used": top_k,
+            "prompt": result["prompt"]
         }
 
     except Exception as e:

@@ -40,6 +40,7 @@ class MindMapResponse(BaseModel):
     success: bool
     mind_map: Dict[str, Any]
     templates_used: int
+    prompt: str
 
     class Config:
         json_schema_extra = {
@@ -56,7 +57,8 @@ class MindMapResponse(BaseModel):
                     },
                     "version": "1.0.0"
                 },
-                "templates_used": 15
+                "templates_used": 15,
+                "prompt": "Voici les informations pédagogiques brutes..."
             }
         }
 
@@ -136,15 +138,16 @@ async def generate_mindmap(
         )
 
         # Générer la carte mentale
-        mind_map = generator.generate_mind_map(
+        result = generator.generate_mind_map(
             raw_data=request.raw_data,
             top_k=request.top_k
         )
 
         return MindMapResponse(
             success=True,
-            mind_map=mind_map,
-            templates_used=request.top_k
+            mind_map=result["mind_map"],
+            templates_used=request.top_k,
+            prompt=result["prompt"]
         )
 
     except ValueError as e:

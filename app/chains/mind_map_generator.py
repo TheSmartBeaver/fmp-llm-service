@@ -31,7 +31,7 @@ class MindMapGenerator:
         self.llm = llm
         self.embedding_model = embedding_model
 
-    def generate_mind_map(self, raw_data: str, top_k: int = 15) -> List[Dict[str, Any]]:
+    def generate_mind_map(self, raw_data: str, top_k: int = 15) -> Dict[str, Any]:
         """
         Génère un tableau de cartes mentales à partir de données brutes.
 
@@ -40,15 +40,17 @@ class MindMapGenerator:
             top_k: Nombre de templates similaires à récupérer (défaut: 15)
 
         Returns:
-            Liste de Dict contenant les cartes mentales avec structure:
-            [
-                {
-                    "recto": {...},
-                    "verso": {...},
-                    "version": "1.0.0"
-                },
-                ...
-            ]
+            Dict contenant:
+            - mind_map: Liste de Dict contenant les cartes mentales avec structure:
+                [
+                    {
+                        "recto": {...},
+                        "verso": {...},
+                        "version": "1.0.0"
+                    },
+                    ...
+                ]
+            - prompt: Le prompt complet envoyé au LLM
         """
         # Étape 1: Générer l'embedding des raw_data
         embedding = self._generate_embedding(raw_data)
@@ -57,7 +59,7 @@ class MindMapGenerator:
         templates = self._fetch_similar_templates(embedding, top_k)
 
         # Étape 3: Générer le JSON avec le LLM
-        mind_map_json = self._generate_json_with_llm(raw_data, templates)
+        mind_map_json, prompt = self._generate_json_with_llm(raw_data, templates)
        
         # generate fake json for testing
         # mind_map_json = {
@@ -164,7 +166,10 @@ class MindMapGenerator:
         # Étape 4: Valider le JSON
         validated_json = self._validate_json(mind_map_json)
 
-        return validated_json
+        return {
+            "mind_map": validated_json,
+            "prompt": prompt
+        }
 
     def _generate_embedding(self, text: str) -> List[float]:
         """
@@ -234,7 +239,7 @@ class MindMapGenerator:
 
         return templates
 
-    def _generate_json_with_llm(self, raw_data: str, templates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _generate_json_with_llm(self, raw_data: str, templates: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], str]:
         """
         Utilise le LLM pour générer le JSON structuré d'un tableau de cartes mentales.
 
@@ -243,7 +248,9 @@ class MindMapGenerator:
             templates: Liste des templates disponibles avec leurs métadonnées
 
         Returns:
-            Tableau JSON contenant les cartes mentales structurées
+            Tuple contenant:
+            - Tableau JSON contenant les cartes mentales structurées
+            - Le prompt complet envoyé au LLM
         """
         # Préparer la liste des templates pour le prompt
         templates_description = self._format_templates_for_prompt(templates)
@@ -342,10 +349,13 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
         # Créer la chaîne avec parser JSON
         chain = prompt | self.llm | JsonOutputParser()
 
+        # Préparer le prompt complet pour le retour
+        full_prompt = prompt.format(templates=templates_description)
+
         # Exécuter la chaîne
         result = chain.invoke({"templates": templates_description})
 
-        return result
+        return result, full_prompt
 
     def _format_templates_for_prompt(self, templates: List[Dict[str, Any]]) -> str:
         """

@@ -112,19 +112,19 @@ RÈGLES IMPORTANTES:
 
 STRUCTURE ATTENDUE (TABLEAU JSON):
 [
-    {
+    {{
         "question": "Question pédagogique claire et précise",
         "answer": "Réponse complète et détaillée"
-    },
-    {
+    }},
+    {{
         "question": "Autre question pertinente",
         "answer": "Autre réponse détaillée"
-    }
+    }}
 ]
 
 Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
 
-        user_prompt = f"""Voici le contenu pédagogique à analyser:
+        user_prompt = """Voici le contenu pédagogique à analyser:
 
 {raw_data}
 
@@ -140,10 +140,10 @@ Génère les paires question-réponse au format JSON."""
         chain = prompt | self.llm | JsonOutputParser()
 
         # Préparer le prompt complet pour le retour
-        full_prompt = prompt.format()
+        full_prompt = prompt.format(raw_data=raw_data)
 
         # Exécuter la chaîne
-        result = chain.invoke({})
+        result = chain.invoke({"raw_data": raw_data})
 
         return result, full_prompt
 
@@ -295,11 +295,11 @@ EXEMPLE D'IMBRICATION:
 
 Réponds UNIQUEMENT avec l'OBJET JSON valide, sans texte additionnel."""
 
-        user_prompt = f"""Voici la paire question-réponse à transformer en carte mentale:
+        user_prompt = """Voici la paire question-réponse à transformer en carte mentale:
 
-QUESTION: {qa_pair['question']}
+QUESTION: {question}
 
-RÉPONSE: {qa_pair['answer']}
+RÉPONSE: {answer}
 
 Génère le JSON de la carte mentale en utilisant les templates disponibles."""
 
@@ -313,10 +313,18 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
         chain = prompt | self.llm | JsonOutputParser()
 
         # Préparer le prompt complet pour le retour
-        full_prompt = prompt.format(templates=templates_description)
+        full_prompt = prompt.format(
+            templates=templates_description,
+            question=qa_pair['question'],
+            answer=qa_pair['answer']
+        )
 
         # Exécuter la chaîne
-        result = chain.invoke({"templates": templates_description})
+        result = chain.invoke({
+            "templates": templates_description,
+            "question": qa_pair['question'],
+            "answer": qa_pair['answer']
+        })
 
         return result, full_prompt
 

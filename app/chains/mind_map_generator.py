@@ -79,7 +79,15 @@ class MindMapGenerator:
             tasks.append(self._generate_single_card_from_qa_async(qa_pair, templates))
 
         # Exécuter toutes les tâches en parallèle
-        results = asyncio.run(asyncio.gather(*tasks))
+        # Utiliser get_event_loop() avec run_until_complete pour compatibilité avec Celery
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # Si pas de loop, en créer un nouveau
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        results = loop.run_until_complete(asyncio.gather(*tasks))
 
         # Extraire les résultats
         for mind_map, gen_prompt in results:

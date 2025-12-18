@@ -1,4 +1,5 @@
 from typing import List, Dict, Any
+import asyncio
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import literal_column
 from sentence_transformers import SentenceTransformer
@@ -60,10 +61,12 @@ class MindMapGenerator:
         # Étape 1: Générer les paires question-réponse intermédiaires
         qa_pairs, qa_prompt = self._generate_qa_pairs(raw_data)
 
-        # Étape 2 & 3: Pour chaque paire, récupérer les templates et générer la carte
+        # Étape 2 & 3: Pour chaque paire, récupérer les templates et générer la carte EN PARALLÈLE
         all_mind_maps = []
         generation_prompts = []
 
+        # Créer une liste de coroutines pour l'exécution parallèle
+        tasks = []
         for qa_pair in qa_pairs:
             # Calculer l'embedding pour cette paire (question + réponse)
             qa_text = f"{qa_pair['question']} {qa_pair['answer']}"
@@ -72,8 +75,14 @@ class MindMapGenerator:
             # Récupérer les templates pertinents pour cette paire
             templates = self._fetch_similar_templates(embedding, top_k)
 
-            # Générer la carte mentale pour cette paire
-            mind_map, gen_prompt = self._generate_single_card_from_qa(qa_pair, templates)
+            # Créer une tâche asynchrone pour générer la carte mentale
+            tasks.append(self._generate_single_card_from_qa_async(qa_pair, templates))
+
+        # Exécuter toutes les tâches en parallèle
+        results = asyncio.run(asyncio.gather(*tasks))
+
+        # Extraire les résultats
+        for mind_map, gen_prompt in results:
             all_mind_maps.append(mind_map)
             generation_prompts.append(gen_prompt)
 
@@ -215,9 +224,10 @@ Génère les paires question-réponse au format JSON."""
 
         return templates
 
-    def _generate_single_card_from_qa(self, qa_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
+    def _build_single_card_prompt_and_chain(self, qa_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Any, str]:
         """
-        Génère une carte mentale unique à partir d'une paire question-réponse.
+        Construit le prompt et la chaîne LangChain pour générer une carte mentale unique.
+        Méthode utilitaire pour éviter la duplication de code entre sync et async.
 
         Args:
             qa_pair: Dictionnaire contenant 'question' et 'answer'
@@ -225,8 +235,8 @@ Génère les paires question-réponse au format JSON."""
 
         Returns:
             Tuple contenant:
-            - Dict JSON contenant une carte mentale structurée
-            - Le prompt complet envoyé au LLM
+            - La chaîne LangChain configurée (prompt | llm | parser)
+            - Le prompt complet formaté pour le retour
         """
         # Préparer la liste des templates pour le prompt
         templates_description = self._format_templates_for_prompt(templates)
@@ -319,12 +329,52 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
             answer=qa_pair['answer']
         )
 
-        # Exécuter la chaîne
-        result = chain.invoke({
+        # Préparer les paramètres d'invocation
+        invoke_params = {
             "templates": templates_description,
             "question": qa_pair['question'],
             "answer": qa_pair['answer']
-        })
+        }
+
+        return chain, full_prompt, invoke_params
+
+    async def _generate_single_card_from_qa_async(self, qa_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
+        """
+        Génère une carte mentale unique à partir d'une paire question-réponse (VERSION ASYNCHRONE).
+
+        Args:
+            qa_pair: Dictionnaire contenant 'question' et 'answer'
+            templates: Liste des templates disponibles avec leurs métadonnées
+
+        Returns:
+            Tuple contenant:
+            - Dict JSON contenant une carte mentale structurée
+            - Le prompt complet envoyé au LLM
+        """
+        chain, full_prompt, invoke_params = self._build_single_card_prompt_and_chain(qa_pair, templates)
+
+        # Exécuter la chaîne de manière ASYNCHRONE
+        result = await chain.ainvoke(invoke_params)
+
+        return result, full_prompt
+
+    def _generate_single_card_from_qa(self, qa_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
+        """
+        Génère une carte mentale unique à partir d'une paire question-réponse (VERSION SYNCHRONE - LEGACY).
+
+        Args:
+            qa_pair: Dictionnaire contenant 'question' et 'answer'
+            templates: Liste des templates disponibles avec leurs métadonnées
+
+        Returns:
+            Tuple contenant:
+            - Dict JSON contenant une carte mentale structurée
+            - Le prompt complet envoyé au LLM
+        """
+        chain, full_prompt, invoke_params = self._build_single_card_prompt_and_chain(qa_pair, templates)
+
+        # Exécuter la chaîne de manière SYNCHRONE
+        result = chain.invoke(invoke_params)
 
         return result, full_prompt
 

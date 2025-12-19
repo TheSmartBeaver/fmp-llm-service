@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 import datetime
 import uuid
 
@@ -40,46 +40,6 @@ class HumanProofs(Base):
     Url: Mapped[str] = mapped_column(Text, nullable=False)
     ProofType: Mapped[str] = mapped_column(Text, nullable=False)
     Date: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False)
-
-
-class MarketingEvents(Base):
-    __tablename__ = 'MarketingEvents'
-    __table_args__ = (
-        ForeignKeyConstraint(['MkIdsMarketingEventSKU'], ['MarketingEventTrackingIdss.MarketingEventSKU'], name='FK_MarketingEvents_MarketingEventTrackingIdss_MkIdsMarketingEv~'),
-        PrimaryKeyConstraint('SKU', name='PK_MarketingEvents'),
-        Index('IX_MarketingEvents_MkIdsMarketingEventSKU', 'MkIdsMarketingEventSKU')
-    )
-
-    SKU: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    EventType: Mapped[int] = mapped_column(Integer, nullable=False)
-    Date: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text("'-infinity'::timestamp with time zone"))
-    Email: Mapped[Optional[str]] = mapped_column(Text)
-    Url: Mapped[Optional[str]] = mapped_column(Text)
-    Ip: Mapped[Optional[str]] = mapped_column(Text)
-    MkIdsMarketingEventSKU: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
-
-    MarketingEventTrackingIdss_: Mapped[Optional['MarketingEventTrackingIdss']] = relationship('MarketingEventTrackingIdss', foreign_keys=[MkIdsMarketingEventSKU], back_populates='MarketingEvents')
-
-class MarketingEventTrackingIdss(MarketingEvents):
-    __tablename__ = 'MarketingEventTrackingIdss'
-    __table_args__ = (
-        ForeignKeyConstraint(['MarketingEventSKU'], ['MarketingEvents.SKU'], ondelete='RESTRICT', name='FK_MarketingEventTrackingIdss_MarketingEvents_MarketingEventSKU'),
-        PrimaryKeyConstraint('MarketingEventSKU', name='PK_MarketingEventTrackingIdss')
-    )
-
-    MarketingEventSKU: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-
-    __mapper_args__ = {
-        'inherit_condition': MarketingEventSKU == MarketingEvents.SKU
-    }
-    fbp: Mapped[Optional[str]] = mapped_column(Text)
-    fbc: Mapped[Optional[str]] = mapped_column(Text)
-    ttclid: Mapped[Optional[str]] = mapped_column(Text)
-    ttp: Mapped[Optional[str]] = mapped_column(Text)
-    eventId: Mapped[Optional[str]] = mapped_column(Text)
-
-    MarketingEvents: Mapped[list['MarketingEvents']] = relationship('MarketingEvents', foreign_keys='[MarketingEvents.MkIdsMarketingEventSKU]', back_populates='MarketingEventTrackingIdss_')
-
 
 class EFMigrationsHistory(Base):
     __tablename__ = '__EFMigrationsHistory'
@@ -124,6 +84,7 @@ class CardTemplates(Base):
     TemplateFieldsUsage: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
     FullSemanticRepresentation: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
     ShortSemanticRepresentation: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
+    IsEnabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     Embedding: Mapped[Optional[bytes]] = mapped_column(NullType)
 
     AppUsers_: Mapped['AppUsers'] = relationship('AppUsers', back_populates='CardTemplates')

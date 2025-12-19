@@ -212,6 +212,7 @@ Génère les paires question-réponse au format JSON."""
                 distance_expr.label('distance')
             )
             .filter(CardTemplates.Embedding.isnot(None))
+            .filter(CardTemplates.IsEnabled == True)
             .order_by(distance_expr)
             .limit(top_k)
         )

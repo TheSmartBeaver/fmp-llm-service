@@ -68,8 +68,8 @@ class MindMapGenerator:
         # Créer une liste de coroutines pour l'exécution parallèle
         tasks = []
         for info_format_pair in info_format_pairs:
-            # Calculer l'embedding pour cette paire (information + format)
-            pair_text = f"{info_format_pair['information']} {info_format_pair['format']}"
+            # Calculer l'embedding pour cette paire (question + information + format)
+            pair_text = f"{info_format_pair['question']} {info_format_pair['information']} {info_format_pair['format']}"
             embedding = self._generate_embedding(pair_text)
 
             # Récupérer les templates pertinents pour cette paire
@@ -107,25 +107,28 @@ class MindMapGenerator:
 
     def _generate_info_format_pairs(self, raw_data: str) -> tuple[List[Dict[str, str]], str]:
         """
-        Génère des paires informations-format intermédiaires à partir des données brutes.
+        Génère des triplets question-information-format intermédiaires à partir des données brutes.
 
         Args:
             raw_data: Informations pédagogiques brutes
 
         Returns:
             Tuple contenant:
-            - Liste de dictionnaires avec les clés 'information' et 'format'
+            - Liste de dictionnaires avec les clés 'question', 'information' et 'format'
             - Le prompt complet envoyé au LLM
         """
         # Créer le prompt système
-        system_prompt = """Tu es un expert en pédagogie. Ton rôle est d'analyser du contenu éducatif brut et de le transformer en paires informations-format pertinentes.
+        system_prompt = """Tu es un expert en pédagogie. Ton rôle est d'analyser du contenu éducatif brut et de le transformer en triplets question-information-format pertinents.
 
 RÈGLES IMPORTANTES:
-1. "information" contient le contenu pédagogique brut/condensé à transmettre
-2. "format" décrit comment cette information devrait être structurée/présentée
-3. Chaque paire doit être indépendante et autonome
-4. Adapte le nombre de paires à la richesse du contenu (minimum 1, pas de maximum strict)
-5. Les formats peuvent être : définition, liste, comparaison, chronologie, processus, explication structurelle, schéma conceptuel, etc.
+1. "question" : la question dont l'information est la réponse la plus complète et représentative possible
+2. "information" : le contenu pédagogique qui répond à la question
+3. "format" : comment cette information devrait être structurée/présentée
+4. Chaque triplet doit être indépendant et autonome
+5. DÉCOUPAGE OBLIGATOIRE : crée PLUSIEURS triplets (ne pas hésiter !) pour éviter des cartes mentales trop grosses
+6. Si le contenu source est riche, découpe-le en PLUSIEURS questions/informations focalisées
+7. Une information trop volumineuse = plusieurs triplets au lieu d'un seul
+8. Les formats peuvent être : définition, liste, comparaison, chronologie, processus, explication structurelle, schéma conceptuel, etc.
 
 EXEMPLES DE FORMATS:
 - "définition scientifique avec processus chimique"
@@ -136,13 +139,21 @@ EXEMPLES DE FORMATS:
 - "description pathologique avec symptômes énumérés"
 - "définition technique avec syntaxe et exemples de méthodes"
 
+EXEMPLE DE DÉCOUPAGE (BON):
+Contenu source volumineux sur la Révolution française → créer 3 triplets :
+1. Question sur les causes → information sur les causes → format liste
+2. Question sur la période → information sur les dates → format temporel
+3. Question sur les événements → information sur les événements majeurs → format chronologie
+
 STRUCTURE ATTENDUE (TABLEAU JSON):
 [
     {{
-        "information": "Contenu pédagogique complet et détaillé",
+        "question": "Question dont l'information est la réponse complète",
+        "information": "Contenu pédagogique qui répond à la question",
         "format": "Description du format de présentation souhaité"
     }},
     {{
+        "question": "Autre question focalisée",
         "information": "Autre contenu pédagogique pertinent",
         "format": "Autre format de présentation"
     }}
@@ -154,7 +165,7 @@ Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
 
 {raw_data}
 
-Génère les paires informations-format au format JSON."""
+Génère les triplets question-information-format au format JSON. N'oublie pas de découper en PLUSIEURS triplets si le contenu est riche !"""
 
         # Créer le prompt template
         prompt = ChatPromptTemplate.from_messages([
@@ -248,7 +259,7 @@ Génère les paires informations-format au format JSON."""
         Méthode utilitaire pour éviter la duplication de code entre sync et async.
 
         Args:
-            info_format_pair: Dictionnaire contenant 'information' et 'format'
+            info_format_pair: Dictionnaire contenant 'question', 'information' et 'format'
             templates: Liste des templates disponibles avec leurs métadonnées
 
         Returns:
@@ -262,50 +273,51 @@ Génère les paires informations-format au format JSON."""
         # Créer le prompt système
         system_prompt = """Tu es un expert en pédagogie et en création de cartes mentales éducatives.
 
-Ton rôle est de transformer UNE paire informations-format en UNE carte mentale structurée au format JSON.
+Ton rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.
 
 TEMPLATES DISPONIBLES:
 {templates}
 
 RÈGLES IMPORTANTES:
 1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"
-2. "recto" doit présenter l'information de manière synthétique et visuelle
-3. "verso" doit développer l'information complète selon le format spécifié
+2. "recto" doit présenter la QUESTION de manière visuelle et engageante
+3. "verso" doit développer l'INFORMATION (la réponse) complète selon le FORMAT spécifié
 4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"
 5. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
 6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche
 7. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
 8. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
 9. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
-10. Le format spécifié doit guider ton choix de templates et la structure de la carte
+10. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte
 
 STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
 {{
     "recto": {{
         "template_name": "nom_du_template",
-        "field1": "présentation synthétique de l'information ou objet imbriqué",
+        "field1": "présentation visuelle de la question ou objet imbriqué",
         "field2": "contenu ou tableau",
         ...
     }},
     "verso": {{
         "template_name": "nom_du_template",
-        "field1": "développement complet de l'information selon le format",
+        "field1": "développement complet de l'information (réponse) selon le format",
         ...
     }},
     "version": "1.0.0"
 }}
 
 EXEMPLE D'IMBRICATION:
-Si l'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l'énergie lumineuse..."
+Si la question est "Comment fonctionne la photosynthèse ?"
+l'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l'énergie lumineuse en énergie chimique..."
 et le format est "explication structurelle avec étapes séquentielles":
 
 {{
     "recto": {{
-        "template_name": "concept_title_template",
-        "field1": "La Photosynthèse",
+        "template_name": "question_template",
+        "field1": "Comment fonctionne la photosynthèse ?",
         "field2": {{
-            "template_name": "subtitle_template",
-            "field1": "Conversion de l'énergie lumineuse"
+            "template_name": "hint_template",
+            "field1": "Pense aux plantes et à la lumière"
         }}
     }},
     "verso": {{
@@ -314,15 +326,15 @@ et le format est "explication structurelle avec étapes séquentielles":
         "field2": [
             {{
                 "template_name": "step_item",
-                "field1": "Capture de la lumière par la chlorophylle"
+                "field1": "Capture de la lumière par la chlorophylle dans les chloroplastes"
             }},
             {{
                 "template_name": "step_item",
-                "field1": "Conversion en énergie chimique"
+                "field1": "Conversion de l'énergie lumineuse en énergie chimique"
             }},
             {{
                 "template_name": "step_item",
-                "field1": "Production de glucose et oxygène"
+                "field1": "Production de glucose (C6H12O6) et libération d'oxygène (O2)"
             }}
         ]
     }},
@@ -331,13 +343,15 @@ et le format est "explication structurelle avec étapes séquentielles":
 
 Réponds UNIQUEMENT avec l'OBJET JSON valide, sans texte additionnel."""
 
-        user_prompt = """Voici la paire informations-format à transformer en carte mentale:
+        user_prompt = """Voici le triplet question-information-format à transformer en carte mentale:
+
+QUESTION: {question}
 
 INFORMATION: {information}
 
 FORMAT: {format}
 
-Génère le JSON de la carte mentale en utilisant les templates disponibles et en respectant le format spécifié."""
+Génère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l'information selon le format spécifié."""
 
         # Créer le prompt template
         prompt = ChatPromptTemplate.from_messages([
@@ -351,6 +365,7 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles et e
         # Préparer le prompt complet pour le retour
         full_prompt = prompt.format(
             templates=templates_description,
+            question=info_format_pair['question'],
             information=info_format_pair['information'],
             format=info_format_pair['format']
         )
@@ -358,6 +373,7 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles et e
         # Préparer les paramètres d'invocation
         invoke_params = {
             "templates": templates_description,
+            "question": info_format_pair['question'],
             "information": info_format_pair['information'],
             "format": info_format_pair['format']
         }
@@ -366,10 +382,10 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles et e
 
     async def _generate_single_card_from_info_format_async(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
         """
-        Génère une carte mentale unique à partir d'une paire informations-format (VERSION ASYNCHRONE).
+        Génère une carte mentale unique à partir d'un triplet question-information-format (VERSION ASYNCHRONE).
 
         Args:
-            info_format_pair: Dictionnaire contenant 'information' et 'format'
+            info_format_pair: Dictionnaire contenant 'question', 'information' et 'format'
             templates: Liste des templates disponibles avec leurs métadonnées
 
         Returns:
@@ -386,10 +402,10 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles et e
 
     def _generate_single_card_from_info_format(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
         """
-        Génère une carte mentale unique à partir d'une paire informations-format (VERSION SYNCHRONE - LEGACY).
+        Génère une carte mentale unique à partir d'un triplet question-information-format (VERSION SYNCHRONE - LEGACY).
 
         Args:
-            info_format_pair: Dictionnaire contenant 'information' et 'format'
+            info_format_pair: Dictionnaire contenant 'question', 'information' et 'format'
             templates: Liste des templates disponibles avec leurs métadonnées
 
         Returns:

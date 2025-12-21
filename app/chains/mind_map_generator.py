@@ -285,29 +285,32 @@ RÈGLES IMPORTANTES:
 2. "recto" doit présenter la QUESTION de manière visuelle et engageante
 3. "verso" doit développer l'INFORMATION (la réponse) complète selon le FORMAT spécifié
 4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"
-5. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
-6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche
-7. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
-8. Les champs "field_name_1", "field_name_2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
-9. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
-10. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte
-11. IMPORTANT : Si l'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L'idéal est que l'information soit déjà bien découpée en amont (plusieurs triplets au lieu d'un seul)
+5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)
+6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template
+7. ❌ N'INVENTE JAMAIS de template_name ou de nom de champ qui n'est pas explicitement listé dans les templates disponibles
+8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche
+9. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
+10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
+11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte
+12. IMPORTANT : Si l'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L'idéal est que l'information soit déjà bien découpée en amont (plusieurs triplets au lieu d'un seul)
 
 STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
 {{
     "recto": {{
-        "template_name": "nom_du_template",
-        "field_name_1": "présentation visuelle de la question ou objet imbriqué",
-        "field_name_2": "contenu ou tableau",
+        "template_name": "COPIE EXACTE du Path d'un template listé ci-dessus",
+        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",
+        "autre_nom_exact": "contenu ou tableau",
         ...
     }},
     "verso": {{
-        "template_name": "nom_du_template",
-        "field_name_1": "développement complet de l'information (réponse) selon le format",
+        "template_name": "COPIE EXACTE du Path d'un template listé ci-dessus",
+        "nom_de_champ_exact": "développement complet de l'information (réponse) selon le format",
         ...
     }},
     "version": "1.0.0"
 }}
+
+ATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".
 
 EXEMPLE D'IMBRICATION:
 Si la question est "Comment fonctionne la photosynthèse ?"
@@ -549,23 +552,64 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
             templates: Liste des templates avec métadonnées
 
         Returns:
-            String formaté décrivant chaque template
+            String formaté décrivant chaque template avec structure JSON attendue
         """
         formatted = []
         for i, tmpl in enumerate(templates, 1):
+            # Créer un exemple de structure JSON pour ce template
+            json_example = self._create_template_json_example(tmpl)
+
             formatted.append(f"""
 Template {i}:
-- Path (à utiliser comme template_name): "{tmpl['template_name']}"
+- Path (à utiliser EXACTEMENT comme template_name): "{tmpl['template_name']}"
 - Usage des champs: {tmpl['fields_usage']}
+- Description courte: {tmpl['short_description']}
+- Exemple de structure JSON attendue:
+{json_example}
 """)
         return "\n".join(formatted)
 
-    def _validate_json(self, mind_map_json: Any) -> List[Dict[str, Any]]:
+    def _create_template_json_example(self, template: Dict[str, Any]) -> str:
+        """
+        Crée un exemple de structure JSON pour un template donné.
+
+        Args:
+            template: Métadonnées du template
+
+        Returns:
+            String contenant un exemple de structure JSON
+        """
+        # Parser le TemplateFieldsUsage pour extraire les noms de champs
+        # Format attendu: "field_1: description, field_2: description, ..."
+        fields_usage = template.get('fields_usage', '')
+
+        # Essayer d'extraire les noms de champs (avant le ':' ou la première espace)
+        import re
+        field_matches = re.findall(r'(\w+)\s*:', fields_usage)
+
+        if field_matches:
+            # Créer un exemple JSON avec les vrais noms de champs
+            example_fields = []
+            for field_name in field_matches[:3]:  # Limiter à 3 champs pour la lisibilité
+                example_fields.append(f'    "{field_name}": "valeur du contenu pédagogique"')
+
+            example = "{\n" + f'    "template_name": "{template["template_name"]}",\n'
+            example += ",\n".join(example_fields)
+            example += "\n  }"
+        else:
+            # Fallback si on ne peut pas parser
+            example = "{\n" + f'    "template_name": "{template["template_name"]}",\n'
+            example += '    "voir_usage_des_champs_ci_dessus": "..."\n  }'
+
+        return example
+
+    def _validate_json(self, mind_map_json: Any, templates: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         Valide la structure du JSON généré (tableau de cartes mentales).
 
         Args:
             mind_map_json: JSON à valider (doit être un tableau)
+            templates: (Optionnel) Liste des templates pour validation stricte
 
         Returns:
             Tableau JSON validé
@@ -580,6 +624,11 @@ Template {i}:
         # Vérifier que le tableau n'est pas vide
         if len(mind_map_json) == 0:
             raise ValueError("Le tableau de cartes mentales ne peut pas être vide")
+
+        # Créer un set de template_names valides si fourni
+        valid_template_names = None
+        if templates:
+            valid_template_names = {tmpl['template_name'] for tmpl in templates}
 
         # Valider chaque carte du tableau
         validated_cards = []
@@ -598,20 +647,21 @@ Template {i}:
                 card["version"] = "1.0.0"
 
             # Vérifier que recto et verso ont des template_name
-            self._validate_structure(card["recto"], f"card[{i}].recto")
-            self._validate_structure(card["verso"], f"card[{i}].verso")
+            self._validate_structure(card["recto"], f"card[{i}].recto", valid_template_names)
+            self._validate_structure(card["verso"], f"card[{i}].verso", valid_template_names)
 
             validated_cards.append(card)
 
         return validated_cards
 
-    def _validate_structure(self, obj: Any, path: str):
+    def _validate_structure(self, obj: Any, path: str, valid_template_names: set = None):
         """
         Valide récursivement la structure d'un objet.
 
         Args:
             obj: Objet à valider
             path: Chemin pour les messages d'erreur
+            valid_template_names: (Optionnel) Set des template_names valides
 
         Raises:
             ValueError: Si la structure est invalide
@@ -619,16 +669,24 @@ Template {i}:
         if isinstance(obj, dict):
             # Si c'est un dict avec template_name, vérifier sa présence
             if "template_name" in obj:
-                if not isinstance(obj["template_name"], str) or not obj["template_name"]:
+                template_name = obj["template_name"]
+                if not isinstance(template_name, str) or not template_name:
                     raise ValueError(f"template_name invalide à {path}")
+
+                # Validation stricte : vérifier que le template_name existe
+                if valid_template_names is not None and template_name not in valid_template_names:
+                    raise ValueError(
+                        f"Template inexistant '{template_name}' utilisé à {path}. "
+                        f"Templates valides: {', '.join(sorted(valid_template_names))}"
+                    )
 
             # Valider récursivement les valeurs
             for key, value in obj.items():
-                self._validate_structure(value, f"{path}.{key}")
+                self._validate_structure(value, f"{path}.{key}", valid_template_names)
 
         elif isinstance(obj, list):
             # Valider récursivement les éléments de la liste
             for i, item in enumerate(obj):
-                self._validate_structure(item, f"{path}[{i}]")
+                self._validate_structure(item, f"{path}[{i}]", valid_template_names)
 
         # Les valeurs primitives (str, int, float, bool, None) sont valides

@@ -286,7 +286,7 @@ RÈGLES IMPORTANTES:
 5. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
 6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche
 7. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
-8. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
+8. Les champs "field_name_1", "field_name_2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
 9. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
 10. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte
 
@@ -294,13 +294,13 @@ STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
 {{
     "recto": {{
         "template_name": "nom_du_template",
-        "field1": "présentation visuelle de la question ou objet imbriqué",
-        "field2": "contenu ou tableau",
+        "field_name_1": "présentation visuelle de la question ou objet imbriqué",
+        "field_name_2": "contenu ou tableau",
         ...
     }},
     "verso": {{
         "template_name": "nom_du_template",
-        "field1": "développement complet de l'information (réponse) selon le format",
+        "field_name_1": "développement complet de l'information (réponse) selon le format",
         ...
     }},
     "version": "1.0.0"
@@ -314,27 +314,27 @@ et le format est "explication structurelle avec étapes séquentielles":
 {{
     "recto": {{
         "template_name": "question_template",
-        "field1": "Comment fonctionne la photosynthèse ?",
-        "field2": {{
+        "field_name_1": "Comment fonctionne la photosynthèse ?",
+        "field_name_2": {{
             "template_name": "hint_template",
-            "field1": "Pense aux plantes et à la lumière"
+            "field_name_1": "Pense aux plantes et à la lumière"
         }}
     }},
     "verso": {{
         "template_name": "sequential_steps_template",
-        "field1": "Processus de photosynthèse:",
-        "field2": [
+        "field_name_1": "Processus de photosynthèse:",
+        "field_name_2": [
             {{
                 "template_name": "step_item",
-                "field1": "Capture de la lumière par la chlorophylle dans les chloroplastes"
+                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"
             }},
             {{
                 "template_name": "step_item",
-                "field1": "Conversion de l'énergie lumineuse en énergie chimique"
+                "field_name_1": "Conversion de l'énergie lumineuse en énergie chimique"
             }},
             {{
                 "template_name": "step_item",
-                "field1": "Production de glucose (C6H12O6) et libération d'oxygène (O2)"
+                "field_name_1": "Production de glucose (C6H12O6) et libération d'oxygène (O2)"
             }}
         ]
     }},
@@ -452,7 +452,7 @@ RÈGLES IMPORTANTES:
 5. Tu dois OBLIGATOIREMENT générer un TABLEAU (array) de cartes mentales au format JSON
 6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer des cartes riches
 7. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
-8. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
+8. Les champs "field_name_1", "field_name_2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
 9. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
 
 STRUCTURE ATTENDUE (TABLEAU DE CARTES):
@@ -460,13 +460,13 @@ STRUCTURE ATTENDUE (TABLEAU DE CARTES):
     {{
         "recto": {{
             "template_name": "nom_du_template",
-            "field1": "contenu ou objet imbriqué",
-            "field2": "contenu ou tableau",
+            "field_name_1": "contenu ou objet imbriqué",
+            "field_name_2": "contenu ou tableau",
             ...
         }},
         "verso": {{
             "template_name": "nom_du_template",
-            "field1": "contenu",
+            "field_name_1": "contenu",
             ...
         }},
         "version": "1.0.0"
@@ -489,23 +489,23 @@ EXEMPLE D'IMBRICATION DANS UN TABLEAU:
     {{
         "recto": {{
             "template_name": "question_template",
-            "field1": "Qu'est-ce que la photosynthèse?",
-            "field2": {{
+            "field_name_1": "Qu'est-ce que la photosynthèse?",
+            "field_name_2": {{
                 "template_name": "hint_template",
-                "field1": "Pense aux plantes et à la lumière"
+                "field_name_1": "Pense aux plantes et à la lumière"
             }}
         }},
         "verso": {{
             "template_name": "answer_list_template",
-            "field1": "La photosynthèse est:",
-            "field2": [
+            "field_name_1": "La photosynthèse est:",
+            "field_name_2": [
                 {{
                     "template_name": "bullet_point",
-                    "field1": "Un processus de conversion d'énergie lumineuse"
+                    "field_name_1": "Un processus de conversion d'énergie lumineuse"
                 }},
                 {{
                     "template_name": "bullet_point",
-                    "field1": "Réalisée par les plantes vertes"
+                    "field_name_1": "Réalisée par les plantes vertes"
                 }}
             ]
         }},

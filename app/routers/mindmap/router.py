@@ -49,11 +49,11 @@ class MindMapResponse(BaseModel):
                 "mind_map": {
                     "recto": {
                         "template_name": "question_template",
-                        "field1": "Qu'est-ce que la photosynthèse?"
+                        "field_name_1": "Qu'est-ce que la photosynthèse?"
                     },
                     "verso": {
                         "template_name": "answer_template",
-                        "field1": "Un processus de conversion d'énergie lumineuse"
+                        "field_name_1": "Un processus de conversion d'énergie lumineuse"
                     },
                     "version": "1.0.0"
                 },

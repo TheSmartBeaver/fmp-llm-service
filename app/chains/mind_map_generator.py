@@ -122,13 +122,15 @@ class MindMapGenerator:
 
 RÈGLES IMPORTANTES:
 1. "question" : la question dont l'information est la réponse la plus complète et représentative possible
-2. "information" : le contenu pédagogique qui répond à la question
+2. "information" : le contenu pédagogique qui répond à la question (COURT et FOCALISÉ)
 3. "format" : comment cette information devrait être structurée/présentée
 4. Chaque triplet doit être indépendant et autonome
-5. DÉCOUPAGE OBLIGATOIRE : crée PLUSIEURS triplets (ne pas hésiter !) pour éviter des cartes mentales trop grosses
-6. Si le contenu source est riche, découpe-le en PLUSIEURS questions/informations focalisées
-7. Une information trop volumineuse = plusieurs triplets au lieu d'un seul
-8. Les formats peuvent être : définition, liste, comparaison, chronologie, processus, explication structurelle, schéma conceptuel, etc.
+5. ⚠️ DÉCOUPAGE OBLIGATOIRE : crée PLUSIEURS triplets (ne pas hésiter !) pour éviter des cartes mentales trop grosses
+6. ⚠️ PRIVILÉGIE TOUJOURS la création de PLUSIEURS petites cartes focalisées plutôt qu'une seule carte surchargée
+7. Si le contenu source est riche, découpe-le en PLUSIEURS questions/informations focalisées (3-5 triplets minimum pour un contenu riche)
+8. Une information trop volumineuse = plusieurs triplets au lieu d'un seul
+9. Chaque information devrait tenir sur 2-4 phrases maximum (au-delà = découper en plusieurs triplets)
+10. Les formats peuvent être : définition, liste, comparaison, chronologie, processus, explication structurelle, schéma conceptuel, etc.
 
 EXEMPLES DE FORMATS:
 - "définition scientifique avec processus chimique"
@@ -289,6 +291,7 @@ RÈGLES IMPORTANTES:
 8. Les champs "field_name_1", "field_name_2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
 9. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
 10. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte
+11. IMPORTANT : Si l'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L'idéal est que l'information soit déjà bien découpée en amont (plusieurs triplets au lieu d'un seul)
 
 STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
 {{

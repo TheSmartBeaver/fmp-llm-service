@@ -37,7 +37,7 @@ class MindMapGenerator:
         Génère un tableau de cartes mentales à partir de données brutes.
 
         Nouveau workflow:
-        1. Génère des paires question-réponse intermédiaires à partir des raw_data
+        1. Génère des paires informations-format intermédiaires à partir des raw_data
         2. Pour chaque paire, calcule l'embedding et récupère les templates pertinents
         3. Génère une carte mentale pour chaque paire avec ses templates spécifiques
 
@@ -58,8 +58,8 @@ class MindMapGenerator:
                 ]
             - prompt: Le prompt complet envoyé au LLM (premier et derniers prompts)
         """
-        # Étape 1: Générer les paires question-réponse intermédiaires
-        qa_pairs, qa_prompt = self._generate_qa_pairs(raw_data)
+        # Étape 1: Générer les paires informations-format intermédiaires
+        info_format_pairs, info_format_prompt = self._generate_info_format_pairs(raw_data)
 
         # Étape 2 & 3: Pour chaque paire, récupérer les templates et générer la carte EN PARALLÈLE
         all_mind_maps = []
@@ -67,16 +67,16 @@ class MindMapGenerator:
 
         # Créer une liste de coroutines pour l'exécution parallèle
         tasks = []
-        for qa_pair in qa_pairs:
-            # Calculer l'embedding pour cette paire (question + réponse)
-            qa_text = f"{qa_pair['question']} {qa_pair['answer']}"
-            embedding = self._generate_embedding(qa_text)
+        for info_format_pair in info_format_pairs:
+            # Calculer l'embedding pour cette paire (information + format)
+            pair_text = f"{info_format_pair['information']} {info_format_pair['format']}"
+            embedding = self._generate_embedding(pair_text)
 
             # Récupérer les templates pertinents pour cette paire
             templates = self._fetch_similar_templates(embedding, top_k)
 
             # Créer une tâche asynchrone pour générer la carte mentale
-            tasks.append(self._generate_single_card_from_qa_async(qa_pair, templates))
+            tasks.append(self._generate_single_card_from_info_format_async(info_format_pair, templates))
 
         # Exécuter toutes les tâches en parallèle
         # Utiliser get_event_loop() avec run_until_complete pour compatibilité avec Celery
@@ -95,7 +95,7 @@ class MindMapGenerator:
             generation_prompts.append(gen_prompt)
 
         # Préparer le prompt complet pour le retour
-        full_prompt = f"=== PROMPT DE GÉNÉRATION DES PAIRES Q/R ===\n{qa_prompt}\n\n=== PROMPTS DE GÉNÉRATION DES CARTES ===\n" + "\n\n---\n\n".join(generation_prompts)
+        full_prompt = f"=== PROMPT DE GÉNÉRATION DES PAIRES INFORMATIONS-FORMAT ===\n{info_format_prompt}\n\n=== PROMPTS DE GÉNÉRATION DES CARTES ===\n" + "\n\n---\n\n".join(generation_prompts)
 
         # Étape 4: Valider le JSON de toutes les cartes
         validated_json = self._validate_json(all_mind_maps)
@@ -105,37 +105,46 @@ class MindMapGenerator:
             "prompt": full_prompt
         }
 
-    def _generate_qa_pairs(self, raw_data: str) -> tuple[List[Dict[str, str]], str]:
+    def _generate_info_format_pairs(self, raw_data: str) -> tuple[List[Dict[str, str]], str]:
         """
-        Génère des paires question-réponse intermédiaires à partir des données brutes.
+        Génère des paires informations-format intermédiaires à partir des données brutes.
 
         Args:
             raw_data: Informations pédagogiques brutes
 
         Returns:
             Tuple contenant:
-            - Liste de dictionnaires avec les clés 'question' et 'answer'
+            - Liste de dictionnaires avec les clés 'information' et 'format'
             - Le prompt complet envoyé au LLM
         """
         # Créer le prompt système
-        system_prompt = """Tu es un expert en pédagogie. Ton rôle est d'analyser du contenu éducatif brut et de le transformer en paires question-réponse pertinentes.
+        system_prompt = """Tu es un expert en pédagogie. Ton rôle est d'analyser du contenu éducatif brut et de le transformer en paires informations-format pertinentes.
 
 RÈGLES IMPORTANTES:
-1. Crée des questions claires et précises qui testent la compréhension du sujet
-2. Les réponses doivent être complètes et pédagogiques
+1. "information" contient le contenu pédagogique brut/condensé à transmettre
+2. "format" décrit comment cette information devrait être structurée/présentée
 3. Chaque paire doit être indépendante et autonome
 4. Adapte le nombre de paires à la richesse du contenu (minimum 1, pas de maximum strict)
-5. Les questions peuvent être de différents types: définition, explication, application, comparaison, etc.
+5. Les formats peuvent être : définition, liste, comparaison, chronologie, processus, explication structurelle, schéma conceptuel, etc.
+
+EXEMPLES DE FORMATS:
+- "définition scientifique avec processus chimique"
+- "chronologie avec dates et événements majeurs"
+- "comparaison avec critères (mutabilité, performance, usage)"
+- "liste de causes avec catégorisation"
+- "explication structurelle avec étapes séquentielles"
+- "description pathologique avec symptômes énumérés"
+- "définition technique avec syntaxe et exemples de méthodes"
 
 STRUCTURE ATTENDUE (TABLEAU JSON):
 [
     {{
-        "question": "Question pédagogique claire et précise",
-        "answer": "Réponse complète et détaillée"
+        "information": "Contenu pédagogique complet et détaillé",
+        "format": "Description du format de présentation souhaité"
     }},
     {{
-        "question": "Autre question pertinente",
-        "answer": "Autre réponse détaillée"
+        "information": "Autre contenu pédagogique pertinent",
+        "format": "Autre format de présentation"
     }}
 ]
 
@@ -145,7 +154,7 @@ Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
 
 {raw_data}
 
-Génère les paires question-réponse au format JSON."""
+Génère les paires informations-format au format JSON."""
 
         # Créer le prompt template
         prompt = ChatPromptTemplate.from_messages([
@@ -233,13 +242,13 @@ Génère les paires question-réponse au format JSON."""
 
         return templates
 
-    def _build_single_card_prompt_and_chain(self, qa_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Any, str]:
+    def _build_single_card_prompt_and_chain(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Any, str]:
         """
         Construit le prompt et la chaîne LangChain pour générer une carte mentale unique.
         Méthode utilitaire pour éviter la duplication de code entre sync et async.
 
         Args:
-            qa_pair: Dictionnaire contenant 'question' et 'answer'
+            info_format_pair: Dictionnaire contenant 'information' et 'format'
             templates: Liste des templates disponibles avec leurs métadonnées
 
         Returns:
@@ -253,59 +262,67 @@ Génère les paires question-réponse au format JSON."""
         # Créer le prompt système
         system_prompt = """Tu es un expert en pédagogie et en création de cartes mentales éducatives.
 
-Ton rôle est de transformer UNE paire question-réponse en UNE carte mentale structurée au format JSON.
+Ton rôle est de transformer UNE paire informations-format en UNE carte mentale structurée au format JSON.
 
 TEMPLATES DISPONIBLES:
 {templates}
 
 RÈGLES IMPORTANTES:
-1. Tu dois créer UN JSON avec DEUX parties: "recto" (la question) et "verso" (la réponse)
-2. "recto" doit contenir la question de manière visuelle et engageante
-3. "verso" doit contenir la réponse complète et pédagogique
+1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"
+2. "recto" doit présenter l'information de manière synthétique et visuelle
+3. "verso" doit développer l'information complète selon le format spécifié
 4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"
 5. Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus
 6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche
 7. Utilise l'imbrication seulement si cela améliore la pédagogie de la carte
 8. Les champs "field1", "field2", etc. correspondent aux placeholders {{{{field_1}}}}, {{{{field_2}}}}, etc. dans le HTML
 9. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
+10. Le format spécifié doit guider ton choix de templates et la structure de la carte
 
 STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
 {{
     "recto": {{
         "template_name": "nom_du_template",
-        "field1": "contenu de la question ou objet imbriqué",
+        "field1": "présentation synthétique de l'information ou objet imbriqué",
         "field2": "contenu ou tableau",
         ...
     }},
     "verso": {{
         "template_name": "nom_du_template",
-        "field1": "contenu de la réponse",
+        "field1": "développement complet de l'information selon le format",
         ...
     }},
     "version": "1.0.0"
 }}
 
 EXEMPLE D'IMBRICATION:
+Si l'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l'énergie lumineuse..."
+et le format est "explication structurelle avec étapes séquentielles":
+
 {{
     "recto": {{
-        "template_name": "question_template",
-        "field1": "Qu'est-ce que la photosynthèse?",
+        "template_name": "concept_title_template",
+        "field1": "La Photosynthèse",
         "field2": {{
-            "template_name": "hint_template",
-            "field1": "Pense aux plantes et à la lumière"
+            "template_name": "subtitle_template",
+            "field1": "Conversion de l'énergie lumineuse"
         }}
     }},
     "verso": {{
-        "template_name": "answer_list_template",
-        "field1": "La photosynthèse est:",
+        "template_name": "sequential_steps_template",
+        "field1": "Processus de photosynthèse:",
         "field2": [
             {{
-                "template_name": "bullet_point",
-                "field1": "Un processus de conversion d'énergie lumineuse"
+                "template_name": "step_item",
+                "field1": "Capture de la lumière par la chlorophylle"
             }},
             {{
-                "template_name": "bullet_point",
-                "field1": "Réalisée par les plantes vertes"
+                "template_name": "step_item",
+                "field1": "Conversion en énergie chimique"
+            }},
+            {{
+                "template_name": "step_item",
+                "field1": "Production de glucose et oxygène"
             }}
         ]
     }},
@@ -314,13 +331,13 @@ EXEMPLE D'IMBRICATION:
 
 Réponds UNIQUEMENT avec l'OBJET JSON valide, sans texte additionnel."""
 
-        user_prompt = """Voici la paire question-réponse à transformer en carte mentale:
+        user_prompt = """Voici la paire informations-format à transformer en carte mentale:
 
-QUESTION: {question}
+INFORMATION: {information}
 
-RÉPONSE: {answer}
+FORMAT: {format}
 
-Génère le JSON de la carte mentale en utilisant les templates disponibles."""
+Génère le JSON de la carte mentale en utilisant les templates disponibles et en respectant le format spécifié."""
 
         # Créer le prompt template
         prompt = ChatPromptTemplate.from_messages([
@@ -334,25 +351,25 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
         # Préparer le prompt complet pour le retour
         full_prompt = prompt.format(
             templates=templates_description,
-            question=qa_pair['question'],
-            answer=qa_pair['answer']
+            information=info_format_pair['information'],
+            format=info_format_pair['format']
         )
 
         # Préparer les paramètres d'invocation
         invoke_params = {
             "templates": templates_description,
-            "question": qa_pair['question'],
-            "answer": qa_pair['answer']
+            "information": info_format_pair['information'],
+            "format": info_format_pair['format']
         }
 
         return chain, full_prompt, invoke_params
 
-    async def _generate_single_card_from_qa_async(self, qa_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
+    async def _generate_single_card_from_info_format_async(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
         """
-        Génère une carte mentale unique à partir d'une paire question-réponse (VERSION ASYNCHRONE).
+        Génère une carte mentale unique à partir d'une paire informations-format (VERSION ASYNCHRONE).
 
         Args:
-            qa_pair: Dictionnaire contenant 'question' et 'answer'
+            info_format_pair: Dictionnaire contenant 'information' et 'format'
             templates: Liste des templates disponibles avec leurs métadonnées
 
         Returns:
@@ -360,19 +377,19 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
             - Dict JSON contenant une carte mentale structurée
             - Le prompt complet envoyé au LLM
         """
-        chain, full_prompt, invoke_params = self._build_single_card_prompt_and_chain(qa_pair, templates)
+        chain, full_prompt, invoke_params = self._build_single_card_prompt_and_chain(info_format_pair, templates)
 
         # Exécuter la chaîne de manière ASYNCHRONE
         result = await chain.ainvoke(invoke_params)
 
         return result, full_prompt
 
-    def _generate_single_card_from_qa(self, qa_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
+    def _generate_single_card_from_info_format(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
         """
-        Génère une carte mentale unique à partir d'une paire question-réponse (VERSION SYNCHRONE - LEGACY).
+        Génère une carte mentale unique à partir d'une paire informations-format (VERSION SYNCHRONE - LEGACY).
 
         Args:
-            qa_pair: Dictionnaire contenant 'question' et 'answer'
+            info_format_pair: Dictionnaire contenant 'information' et 'format'
             templates: Liste des templates disponibles avec leurs métadonnées
 
         Returns:
@@ -380,7 +397,7 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles."""
             - Dict JSON contenant une carte mentale structurée
             - Le prompt complet envoyé au LLM
         """
-        chain, full_prompt, invoke_params = self._build_single_card_prompt_and_chain(qa_pair, templates)
+        chain, full_prompt, invoke_params = self._build_single_card_prompt_and_chain(info_format_pair, templates)
 
         # Exécuter la chaîne de manière SYNCHRONE
         result = chain.invoke(invoke_params)

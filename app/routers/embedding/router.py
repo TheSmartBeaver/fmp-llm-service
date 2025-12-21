@@ -64,7 +64,6 @@ async def search_similar(request: SearchSimilarRequest, db: Session = Depends(ge
             CardTemplates.ShortSemanticRepresentation,
             distance_expr.label('distance')
         )
-        .filter(CardTemplates.AppUserSKU == request.app_user_sku)
         .filter(CardTemplates.Embedding.isnot(None))
         .filter(CardTemplates.IsEnabled == True)
         .order_by(distance_expr)

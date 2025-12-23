@@ -12,6 +12,7 @@ from app.routers.chat import router
 from app.routers.flashcard.router import flashcard_router
 from app.routers.embedding.router import embedding_router
 from app.routers.mindmap.router import mindmap_router
+from app.routers.course_material.router import course_material_router
 from app.services.lifespan import customlifespan
 from app.services.socket import sio
 
@@ -32,6 +33,7 @@ app.include_router(router)
 app.include_router(flashcard_router)
 app.include_router(embedding_router)
 app.include_router(mindmap_router)
+app.include_router(course_material_router)
 
 @app.get("/")
 def root():

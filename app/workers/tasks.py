@@ -15,6 +15,7 @@ from .celery_app import celery
 from app.chains.generator import generate_flashcard
 from app.chains.llm.open_ai_gpt5_nano_llm import OpenAiGPT5NanoLlm
 from app.chains.mind_map_generator import MindMapGenerator
+from app.chains.course_material_generator import CourseMaterialGenerator
 from app.services.socket import socket_notify
 
 # Load environment variables
@@ -123,6 +124,82 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
         # Publish error to Redis
         redis.publish("mindmap_events", json.dumps({
             "event": "mindmap_error",
+            "task_id": task_id,
+            "error": str(e)
+        }))
+
+        raise
+
+    finally:
+        # Close database session
+        db.close()
+
+
+@celery.task(name="generate.course_material")
+def generate_course_material_task(task_id: str, user_entry_dict: dict, top_k: int = 15):
+    """
+    Tâche Celery pour générer un support de cours.
+
+    Args:
+        task_id: Identifiant unique de la tâche
+        user_entry_dict: Dictionnaire UserEntryDto contenant le contexte, le contenu et les médias
+        top_k: Nombre de templates à utiliser
+
+    Returns:
+        Dict contenant les supports de cours générés
+    """
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
+    print(f"📥 Starting course material generation for task {task_id}")
+
+    # Create database session
+    db = SessionLocal()
+
+    try:
+        # Reconstruct UserEntryDto from dict
+        user_entry = UserEntryDto(**user_entry_dict)
+        print(f"📥 UserEntryDto reconstructed: {user_entry}")
+
+        # Create course material generator
+        generator = CourseMaterialGenerator(
+            db_session=db,
+            llm=openai_llm,
+            embedding_model=embedding_model
+        )
+
+        # Generate course material
+        result = generator.generate_course_material(
+            user_entry=user_entry,
+            top_k=top_k
+        )
+
+        print(f"📥 Course material generation completed for task {task_id}")
+
+        # Publish result to Redis
+        redis.publish("course_material_events", json.dumps({
+            "event": "course_material_generated",
+            "type": "message",
+            "task_id": task_id,
+            "templates_used": top_k,
+            "data": result["supports"],
+            "prompt": result["prompt"]
+        }))
+
+        print(f"📥 Celery task ended for {task_id}")
+
+        return {
+            "success": True,
+            "supports": result["supports"],
+            "templates_used": top_k,
+            "prompt": result["prompt"]
+        }
+
+    except Exception as e:
+        print(f"❌ Error generating course material for task {task_id}: {str(e)}")
+
+        # Publish error to Redis
+        redis.publish("course_material_events", json.dumps({
+            "event": "course_material_error",
             "task_id": task_id,
             "error": str(e)
         }))

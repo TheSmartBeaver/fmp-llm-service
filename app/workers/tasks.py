@@ -174,64 +174,64 @@ def generate_course_material_task(
         )
 
         # Generate course material
-        result = generator.generate_course_material(
-            user_entry=user_entry,
-            top_k=top_k
-        )
+        # result = generator.generate_course_material(
+        #     user_entry=user_entry,
+        #     top_k=top_k
+        # )
 
         # MOCK DATA for debugging FCM
-        # result = {
-        #     "success": True,
-        #     "supports": [
-        #         {
-        #             "support": {
-        #                 "template_name": "conceptual/theorie",
-        #                 "icon": "🔬",
-        #                 "label": "THÉORIE",
-        #                 "title": "Photosynthèse",
-        #                 "description": [
-        #                     "La photosynthèse est le processus par lequel les plantes, les algues et certaines bactéries convertissent l'énergie lumineuse en énergie chimique stockée, principalement sous forme de glucides. Ce processus a lieu essentiellement dans les chloroplastes des cellules végétales et comprend des réactions photochimiques localisées dans les thylakoïdes (phase lumineuse) et des réactions biochimiques dans le stroma (phase sombre ou cycle de Calvin).",
-        #                     {
-        #                         "template_name": "text/detail_technique",
-        #                         "icon": "🖼️",
-        #                         "text": "Image illustrative — schéma détaillé d'un chloroplaste montrant les thylakoïdes et le stroma. URL: https://example.com/images/chloroplaste.png",
-        #                     },
-        #                 ],
-        #             },
-        #             "version": "1.0.0",
-        #         },
-        #         {
-        #             "support": {
-        #                 "template_name": "layouts/vertical_column/container",
-        #                 "spacing": "12px",
-        #                 "items": [
-        #                     {
-        #                         "template_name": "text/description_longue",
-        #                         "text": "Les chloroplastes sont des organites cellulaires des plantes et des algues, spécialisés dans la photosynthèse. Ils présentent une double membrane externe et interne et contiennent deux compartiments principaux visibles sur les schémas structuraux : les thylakoïdes (souvent empilés en grana) et le stroma. Les thylakoïdes forment des sacs membranaires internes où sont insérées les protéines des photosystèmes et la chaîne de transport d'électrons.",
-        #                         "max_width": "700px",
-        #                     },
-        #                     {
-        #                         "template_name": "text/description_longue",
-        #                         "text": "Fonctionnellement, ces compartiments permettent de séparer les étapes de la photosynthèse :\n- Réactions lumineuses (localisées au niveau des membranes des thylakoïdes) : absorption de la lumière par les photosystèmes, transfert d'électrons, pompage de protons dans la lumière de thylakoïde (lumen) et production d'ATP et de NADPH.\n- Réactions de fixation du carbone (localisées dans le stroma) : le cycle de Calvin utilise l'ATP et le NADPH produits dans les thylakoïdes pour fixer le CO2 et synthétiser des sucres. Le stroma contient également les enzymes nécessaires, de l'ADN chloroplastique et des ribosomes pour la synthèse protéique locale.",
-        #                         "max_width": "700px",
-        #                     },
-        #                     {
-        #                         "template_name": "text/description_longue",
-        #                         "text": "La séparation spatiale optimise l'efficacité : la membrane des thylakoïdes établit un gradient de protons indispensable à la synthèse d'ATP, tandis que le stroma offre le milieu aqueux adapté aux réactions enzymatiques de fixation du carbone. Les grana (empilements de thylakoïdes) augmentent la surface membranaire disponible pour capter la lumière, et les lamelles stromales assurent la connexion entre les grana.",
-        #                         "max_width": "700px",
-        #                     },
-        #                     {
-        #                         "template_name": "text/annotation",
-        #                         "text": "Illustration : Schéma détaillé d'un chloroplaste montrant les thylakoïdes (empilés en grana), le lumen thylakoïdal et le stroma — https://example.com/images/chloroplaste.png",
-        #                     },
-        #                 ],
-        #             },
-        #             "version": "1.0.0",
-        #         },
-        #     ],
-        #     "templates_used": 15,
-        #     "prompt": "TO DO: long prompt here...",
-        # }
+        result = {
+            "success": True,
+            "supports": [
+                {
+                    "support": {
+                        "template_name": "conceptual/theorie",
+                        "icon": "🔬",
+                        "label": "THÉORIE",
+                        "title": "Photosynthèse",
+                        "description": [
+                            "La photosynthèse est le processus par lequel les plantes, les algues et certaines bactéries convertissent l'énergie lumineuse en énergie chimique stockée, principalement sous forme de glucides. Ce processus a lieu essentiellement dans les chloroplastes des cellules végétales et comprend des réactions photochimiques localisées dans les thylakoïdes (phase lumineuse) et des réactions biochimiques dans le stroma (phase sombre ou cycle de Calvin).",
+                            {
+                                "template_name": "text/detail_technique",
+                                "icon": "🖼️",
+                                "text": "Image illustrative — schéma détaillé d'un chloroplaste montrant les thylakoïdes et le stroma. URL: https://example.com/images/chloroplaste.png",
+                            },
+                        ],
+                    },
+                    "version": "1.0.0",
+                },
+                {
+                    "support": {
+                        "template_name": "layouts/vertical_column/container",
+                        "spacing": "12px",
+                        "items": [
+                            {
+                                "template_name": "text/description_longue",
+                                "text": "Les chloroplastes sont des organites cellulaires des plantes et des algues, spécialisés dans la photosynthèse. Ils présentent une double membrane externe et interne et contiennent deux compartiments principaux visibles sur les schémas structuraux : les thylakoïdes (souvent empilés en grana) et le stroma. Les thylakoïdes forment des sacs membranaires internes où sont insérées les protéines des photosystèmes et la chaîne de transport d'électrons.",
+                                "max_width": "700px",
+                            },
+                            {
+                                "template_name": "text/description_longue",
+                                "text": "Fonctionnellement, ces compartiments permettent de séparer les étapes de la photosynthèse :\n- Réactions lumineuses (localisées au niveau des membranes des thylakoïdes) : absorption de la lumière par les photosystèmes, transfert d'électrons, pompage de protons dans la lumière de thylakoïde (lumen) et production d'ATP et de NADPH.\n- Réactions de fixation du carbone (localisées dans le stroma) : le cycle de Calvin utilise l'ATP et le NADPH produits dans les thylakoïdes pour fixer le CO2 et synthétiser des sucres. Le stroma contient également les enzymes nécessaires, de l'ADN chloroplastique et des ribosomes pour la synthèse protéique locale.",
+                                "max_width": "700px",
+                            },
+                            {
+                                "template_name": "text/description_longue",
+                                "text": "La séparation spatiale optimise l'efficacité : la membrane des thylakoïdes établit un gradient de protons indispensable à la synthèse d'ATP, tandis que le stroma offre le milieu aqueux adapté aux réactions enzymatiques de fixation du carbone. Les grana (empilements de thylakoïdes) augmentent la surface membranaire disponible pour capter la lumière, et les lamelles stromales assurent la connexion entre les grana.",
+                                "max_width": "700px",
+                            },
+                            {
+                                "template_name": "text/annotation",
+                                "text": "Illustration : Schéma détaillé d'un chloroplaste montrant les thylakoïdes (empilés en grana), le lumen thylakoïdal et le stroma — https://example.com/images/chloroplaste.png",
+                            },
+                        ],
+                    },
+                    "version": "1.0.0",
+                },
+            ],
+            "templates_used": 15,
+            "prompt": "TO DO: long prompt here...",
+        }
 
         print(f"📥 Course material generation completed for task {task_id}")
 

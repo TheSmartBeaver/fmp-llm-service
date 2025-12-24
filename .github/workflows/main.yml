@@ -32,6 +32,14 @@ jobs:
       run: |
         echo "${{ secrets.ENV_FILE }}" | ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "cat > ${{ secrets.DEPLOY_PATH }}/.env"
 
+    - name: Create Firebase credentials file
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          mkdir -p ${{ secrets.DEPLOY_PATH }}/config
+          echo '${{ secrets.FIREBASE_CREDENTIALS }}' > ${{ secrets.DEPLOY_PATH }}/config/firebase-credentials.json
+          chmod 600 ${{ secrets.DEPLOY_PATH }}/config/firebase-credentials.json
+        EOF
+
     - name: Deploy with Docker Compose
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'

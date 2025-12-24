@@ -84,6 +84,7 @@ Ajoutez les secrets suivants :
 | `VPS_USER` | Ex: `root` | Utilisateur SSH sur le VPS |
 | `DEPLOY_PATH` | Ex: `/opt/fmp-llm-service` | Chemin de déploiement sur le VPS |
 | `ENV_FILE` | Contenu complet de votre `.env` | Variables d'environnement de l'application |
+| `FIREBASE_CREDENTIALS` | Contenu JSON de votre fichier Firebase | Credentials Firebase (service account JSON) |
 
 ### 2. Récupérer la clé privée SSH
 
@@ -100,10 +101,32 @@ Votre fichier `.env` devrait contenir :
 ```env
 OPENAI_API_KEY=your_openai_api_key
 DATABASE_URL=postgresql://user:password@host:5432/dbname
+FIREBASE_CREDENTIALS_PATH=/app/config/firebase-credentials.json
 # Ajoutez toutes vos autres variables d'environnement
 ```
 
 Copiez le **contenu complet** dans le secret `ENV_FILE`.
+
+### 4. Préparer FIREBASE_CREDENTIALS
+
+Récupérez votre fichier de service account Firebase depuis la [Console Firebase](https://console.firebase.google.com/) :
+
+1. Allez dans **Project Settings > Service Accounts**
+2. Cliquez sur **Generate new private key**
+3. Téléchargez le fichier JSON
+4. Copiez **tout le contenu du fichier JSON** dans le secret `FIREBASE_CREDENTIALS`
+
+Le contenu devrait ressembler à :
+```json
+{
+  "type": "service_account",
+  "project_id": "your-project",
+  "private_key_id": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "...",
+  ...
+}
+```
 
 ---
 

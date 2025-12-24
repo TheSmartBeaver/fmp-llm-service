@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Header, Depends
+from fastapi import APIRouter, Header, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 import uuid
+from celery.result import AsyncResult
 
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.workers.tasks import generate_course_material_task
+from app.workers.celery_app import celery
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.course_material_generator import CourseMaterialGenerator
 from app.database import get_db
@@ -166,6 +168,64 @@ async def generate_course_material_sync(
         templates_used=top_k,
         prompt=full_prompt
     )
+
+
+@course_material_router.get("/result/{task_id}")
+async def get_course_material_result(task_id: str):
+    """
+    Récupère le résultat d'une tâche de génération de supports de cours via son task_id.
+
+    Args:
+        task_id: ID unique de la tâche Celery
+
+    Returns:
+        - Si PENDING: {"status": "PENDING", "task_id": "..."}
+        - Si SUCCESS: {"status": "SUCCESS", "result": {...}}
+        - Si FAILURE: {"status": "FAILURE", "error": "..."}
+
+    Raises:
+        HTTPException 404: Si la tâche n'existe pas
+        HTTPException 500: Si une erreur interne se produit
+    """
+    try:
+        # Récupérer le résultat de la tâche depuis Celery
+        task_result = AsyncResult(task_id, app=celery)
+
+        if task_result.state == "PENDING":
+            return {
+                "status": "PENDING",
+                "task_id": task_id,
+                "message": "La génération est en cours..."
+            }
+
+        elif task_result.state == "SUCCESS":
+            result = task_result.result
+            return {
+                "status": "SUCCESS",
+                "task_id": task_id,
+                "result": result
+            }
+
+        elif task_result.state == "FAILURE":
+            return {
+                "status": "FAILURE",
+                "task_id": task_id,
+                "error": str(task_result.info)
+            }
+
+        else:
+            # États intermédiaires (STARTED, RETRY, etc.)
+            return {
+                "status": task_result.state,
+                "task_id": task_id,
+                "message": f"État actuel: {task_result.state}"
+            }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la récupération du résultat: {str(e)}"
+        )
 
 
 @course_material_router.get("/health")

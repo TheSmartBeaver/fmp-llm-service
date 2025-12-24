@@ -271,6 +271,7 @@ def generate_course_material_task(
                     else 1
                 )
 
+                # Send only metadata in FCM notification (Android has 4KB limit)
                 fcm_result = fcm_service.send_multicast_notification(
                     tokens=tokens,
                     title="Supports de cours générés",
@@ -280,8 +281,7 @@ def generate_course_material_task(
                         "event": "course_material_generated",
                         "templates_used": str(top_k),
                         "supports_count": str(supports_count),
-                        "data": json.dumps(result["supports"]),
-                        "prompt": result["prompt"],
+                        # Don't send full data, app will fetch from Redis/API using task_id
                     },
                     notification_id=task_id,
                 )

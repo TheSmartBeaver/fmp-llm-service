@@ -135,7 +135,7 @@ class FCMService:
                 apns=apns_config
             )
 
-            response = messaging.send_multicast(message)
+            response = messaging.send_each_for_multicast(message)
 
             failed_tokens = []
             for idx, resp in enumerate(response.responses):

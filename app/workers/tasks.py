@@ -171,10 +171,39 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, auth_uid:
         )
 
         # Generate course material
-        result = generator.generate_course_material(
-            user_entry=user_entry,
-            top_k=top_k
-        )
+        # result = generator.generate_course_material(
+        #     user_entry=user_entry,
+        #     top_k=top_k
+        # )
+
+        # MOCK DATA for debugging FCM
+        result = {
+            "supports": [
+                {
+                    "type": "flashcard",
+                    "question": "Qu'est-ce que la photosynthèse ?",
+                    "answer": "La photosynthèse est le processus par lequel les plantes transforment l'énergie lumineuse en énergie chimique.",
+                    "difficulty": "easy"
+                },
+                {
+                    "type": "flashcard",
+                    "question": "Quels sont les produits de la photosynthèse ?",
+                    "answer": "Les produits sont le glucose (C6H12O6) et l'oxygène (O2).",
+                    "difficulty": "medium"
+                },
+                {
+                    "type": "summary",
+                    "title": "Résumé - La photosynthèse",
+                    "content": "La photosynthèse se déroule en deux phases : les réactions lumineuses dans les thylakoïdes et le cycle de Calvin dans le stroma."
+                }
+            ],
+            "prompt": "Generate course materials about photosynthesis including flashcards and summaries",
+            "metadata": {
+                "generated_at": "2024-12-24T17:30:00Z",
+                "model": "gpt-4-mini",
+                "templates_count": top_k
+            }
+        }
 
         print(f"📥 Course material generation completed for task {task_id}")
 

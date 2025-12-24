@@ -191,6 +191,11 @@ async def get_course_material_result(task_id: str):
         # Récupérer le résultat de la tâche depuis Celery
         task_result = AsyncResult(task_id, app=celery)
 
+        # Debug logging
+        print(f"🔍 Task {task_id} - State: {task_result.state}")
+        print(f"🔍 Task {task_id} - Ready: {task_result.ready()}")
+        print(f"🔍 Task {task_id} - Successful: {task_result.successful() if task_result.ready() else 'N/A'}")
+
         if task_result.state == "PENDING":
             return {
                 "status": "PENDING",

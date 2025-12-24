@@ -1,7 +1,7 @@
 import os
 import json
 from typing import Dict, List, Optional
-#import firebase_admin
+import firebase_admin
 from firebase_admin import credentials, messaging
 from dotenv import load_dotenv
 

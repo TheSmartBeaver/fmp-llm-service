@@ -14,7 +14,7 @@ redis
 # tf-keras
 transformers
 python-dotenv
-firebase-admin
+firebase-admin>=6.0.0
 
 torch
 sentence-transformers

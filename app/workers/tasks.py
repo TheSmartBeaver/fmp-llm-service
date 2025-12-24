@@ -27,7 +27,9 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 
 # Database configuration for Celery worker
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:rambaudin@fmp_postgres:5432/FlashMemProDb")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://postgres:rambaudin@fmp_postgres:5432/FlashMemProDb"
+)
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -35,6 +37,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 embedding_model = SentenceTransformer(MODEL_NAME)
 openai_llm = OpenAiGPT5MiniLlm().get_llm()
+
 
 @celery.task(name="generate.flashcard")
 def generate_flashcard_task(task_id: str, instructions: dict):
@@ -53,11 +56,12 @@ def generate_flashcard_task(task_id: str, instructions: dict):
 
     # Run async socket notification
 
-    redis.publish("flashcard_events", json.dumps({
-        "event": "flashcard_generated",
-        "task_id": task_id,
-        "flashcard": flashcard
-    }))
+    redis.publish(
+        "flashcard_events",
+        json.dumps(
+            {"event": "flashcard_generated", "task_id": task_id, "flashcard": flashcard}
+        ),
+    )
 
     print("📥 Celery task ended")
 
@@ -87,29 +91,29 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
     try:
         # Create mind map generator
         generator = MindMapGenerator(
-            db_session=db,
-            llm=openai_llm,
-            embedding_model=embedding_model
+            db_session=db, llm=openai_llm, embedding_model=embedding_model
         )
 
         # Generate mind map
-        result = generator.generate_mind_map(
-            raw_data=raw_data,
-            top_k=top_k
-        )
+        result = generator.generate_mind_map(raw_data=raw_data, top_k=top_k)
 
         print(f"📥 Mindmap generation completed for task {task_id}")
 
         # Publish result to Redis
-        redis.publish("mindmap_events", json.dumps({
-            "event": "mindmap_generated",
-            "type": "message",
-            "task_id": task_id,
-            # "mind_map": mind_map,
-            "templates_used": top_k,
-            "data": result["mind_map"],
-            "prompt": result["prompt"]
-        }))
+        redis.publish(
+            "mindmap_events",
+            json.dumps(
+                {
+                    "event": "mindmap_generated",
+                    "type": "message",
+                    "task_id": task_id,
+                    # "mind_map": mind_map,
+                    "templates_used": top_k,
+                    "data": result["mind_map"],
+                    "prompt": result["prompt"],
+                }
+            ),
+        )
 
         print(f"📥 Celery task ended for {task_id}")
 
@@ -117,18 +121,17 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
             "success": True,
             "mind_map": result["mind_map"],
             "templates_used": top_k,
-            "prompt": result["prompt"]
+            "prompt": result["prompt"],
         }
 
     except Exception as e:
         print(f"❌ Error generating mindmap for task {task_id}: {str(e)}")
 
         # Publish error to Redis
-        redis.publish("mindmap_events", json.dumps({
-            "event": "mindmap_error",
-            "task_id": task_id,
-            "error": str(e)
-        }))
+        redis.publish(
+            "mindmap_events",
+            json.dumps({"event": "mindmap_error", "task_id": task_id, "error": str(e)}),
+        )
 
         raise
 
@@ -138,7 +141,9 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
 
 
 @celery.task(name="generate.course_material")
-def generate_course_material_task(task_id: str, user_entry_dict: dict, auth_uid: str, top_k: int = 15):
+def generate_course_material_task(
+    task_id: str, user_entry_dict: dict, auth_uid: str, top_k: int = 15
+):
     """
     Tâche Celery pour générer un support de cours et envoyer une notification FCM.
 
@@ -165,9 +170,7 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, auth_uid:
 
         # Create course material generator
         generator = CourseMaterialGenerator(
-            db_session=db,
-            llm=openai_llm,
-            embedding_model=embedding_model
+            db_session=db, llm=openai_llm, embedding_model=embedding_model
         )
 
         # Generate course material
@@ -178,58 +181,95 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, auth_uid:
 
         # MOCK DATA for debugging FCM
         result = {
+            "success": True,
             "supports": [
                 {
-                    "type": "flashcard",
-                    "question": "Qu'est-ce que la photosynthèse ?",
-                    "answer": "La photosynthèse est le processus par lequel les plantes transforment l'énergie lumineuse en énergie chimique.",
-                    "difficulty": "easy"
+                    "support": {
+                        "template_name": "conceptual/theorie",
+                        "icon": "🔬",
+                        "label": "THÉORIE",
+                        "title": "Photosynthèse",
+                        "description": [
+                            "La photosynthèse est le processus par lequel les plantes, les algues et certaines bactéries convertissent l'énergie lumineuse en énergie chimique stockée, principalement sous forme de glucides. Ce processus a lieu essentiellement dans les chloroplastes des cellules végétales et comprend des réactions photochimiques localisées dans les thylakoïdes (phase lumineuse) et des réactions biochimiques dans le stroma (phase sombre ou cycle de Calvin).",
+                            {
+                                "template_name": "text/detail_technique",
+                                "icon": "🖼️",
+                                "text": "Image illustrative — schéma détaillé d'un chloroplaste montrant les thylakoïdes et le stroma. URL: https://example.com/images/chloroplaste.png",
+                            },
+                        ],
+                    },
+                    "version": "1.0.0",
                 },
                 {
-                    "type": "flashcard",
-                    "question": "Quels sont les produits de la photosynthèse ?",
-                    "answer": "Les produits sont le glucose (C6H12O6) et l'oxygène (O2).",
-                    "difficulty": "medium"
+                    "support": {
+                        "template_name": "layouts/vertical_column/container",
+                        "spacing": "12px",
+                        "items": [
+                            {
+                                "template_name": "text/description_longue",
+                                "text": "Les chloroplastes sont des organites cellulaires des plantes et des algues, spécialisés dans la photosynthèse. Ils présentent une double membrane externe et interne et contiennent deux compartiments principaux visibles sur les schémas structuraux : les thylakoïdes (souvent empilés en grana) et le stroma. Les thylakoïdes forment des sacs membranaires internes où sont insérées les protéines des photosystèmes et la chaîne de transport d'électrons.",
+                                "max_width": "700px",
+                            },
+                            {
+                                "template_name": "text/description_longue",
+                                "text": "Fonctionnellement, ces compartiments permettent de séparer les étapes de la photosynthèse :\n- Réactions lumineuses (localisées au niveau des membranes des thylakoïdes) : absorption de la lumière par les photosystèmes, transfert d'électrons, pompage de protons dans la lumière de thylakoïde (lumen) et production d'ATP et de NADPH.\n- Réactions de fixation du carbone (localisées dans le stroma) : le cycle de Calvin utilise l'ATP et le NADPH produits dans les thylakoïdes pour fixer le CO2 et synthétiser des sucres. Le stroma contient également les enzymes nécessaires, de l'ADN chloroplastique et des ribosomes pour la synthèse protéique locale.",
+                                "max_width": "700px",
+                            },
+                            {
+                                "template_name": "text/description_longue",
+                                "text": "La séparation spatiale optimise l'efficacité : la membrane des thylakoïdes établit un gradient de protons indispensable à la synthèse d'ATP, tandis que le stroma offre le milieu aqueux adapté aux réactions enzymatiques de fixation du carbone. Les grana (empilements de thylakoïdes) augmentent la surface membranaire disponible pour capter la lumière, et les lamelles stromales assurent la connexion entre les grana.",
+                                "max_width": "700px",
+                            },
+                            {
+                                "template_name": "text/annotation",
+                                "text": "Illustration : Schéma détaillé d'un chloroplaste montrant les thylakoïdes (empilés en grana), le lumen thylakoïdal et le stroma — https://example.com/images/chloroplaste.png",
+                            },
+                        ],
+                    },
+                    "version": "1.0.0",
                 },
-                {
-                    "type": "summary",
-                    "title": "Résumé - La photosynthèse",
-                    "content": "La photosynthèse se déroule en deux phases : les réactions lumineuses dans les thylakoïdes et le cycle de Calvin dans le stroma."
-                }
             ],
-            "prompt": "Generate course materials about photosynthesis including flashcards and summaries",
-            "metadata": {
-                "generated_at": "2024-12-24T17:30:00Z",
-                "model": "gpt-4-mini",
-                "templates_count": top_k
-            }
+            "templates_used": 15,
+            "prompt": "TO DO: long prompt here...",
         }
 
         print(f"📥 Course material generation completed for task {task_id}")
 
         # Publish result to Redis (keep for backward compatibility)
-        redis.publish("course_material_events", json.dumps({
-            "event": "course_material_generated",
-            "type": "message",
-            "task_id": task_id,
-            "templates_used": top_k,
-            "data": result["supports"],
-            "prompt": result["prompt"]
-        }))
+        redis.publish(
+            "course_material_events",
+            json.dumps(
+                {
+                    "event": "course_material_generated",
+                    "type": "message",
+                    "task_id": task_id,
+                    "templates_used": top_k,
+                    "data": result["supports"],
+                    "prompt": result["prompt"],
+                }
+            ),
+        )
 
         # Send FCM notification
         user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
         if user:
-            active_devices = db.query(DeviceTokens).filter(
-                DeviceTokens.AppUserSKU == user.SKU,
-                DeviceTokens.IsActive == True
-            ).all()
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(
+                    DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True
+                )
+                .all()
+            )
 
             if active_devices:
                 fcm_service = FCMService()
                 tokens = [device.FcmToken for device in active_devices]
 
-                supports_count = len(result["supports"]) if isinstance(result["supports"], list) else 1
+                supports_count = (
+                    len(result["supports"])
+                    if isinstance(result["supports"], list)
+                    else 1
+                )
 
                 fcm_result = fcm_service.send_multicast_notification(
                     tokens=tokens,
@@ -241,12 +281,14 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, auth_uid:
                         "templates_used": str(top_k),
                         "supports_count": str(supports_count),
                         "data": json.dumps(result["supports"]),
-                        "prompt": result["prompt"]
+                        "prompt": result["prompt"],
                     },
-                    notification_id=task_id
+                    notification_id=task_id,
                 )
 
-                print(f"📱 FCM notifications sent: {fcm_result['success_count']} succeeded, {fcm_result['failure_count']} failed")
+                print(
+                    f"📱 FCM notifications sent: {fcm_result['success_count']} succeeded, {fcm_result['failure_count']} failed"
+                )
             else:
                 print(f"⚠️ No active devices found for user {auth_uid}")
         else:
@@ -258,27 +300,32 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, auth_uid:
             "success": True,
             "supports": result["supports"],
             "templates_used": top_k,
-            "prompt": result["prompt"]
+            "prompt": result["prompt"],
         }
 
     except Exception as e:
         print(f"❌ Error generating course material for task {task_id}: {str(e)}")
 
         # Publish error to Redis
-        redis.publish("course_material_events", json.dumps({
-            "event": "course_material_error",
-            "task_id": task_id,
-            "error": str(e)
-        }))
+        redis.publish(
+            "course_material_events",
+            json.dumps(
+                {"event": "course_material_error", "task_id": task_id, "error": str(e)}
+            ),
+        )
 
         # Send FCM error notification
         try:
             user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
             if user:
-                active_devices = db.query(DeviceTokens).filter(
-                    DeviceTokens.AppUserSKU == user.SKU,
-                    DeviceTokens.IsActive == True
-                ).all()
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(
+                        DeviceTokens.AppUserSKU == user.SKU,
+                        DeviceTokens.IsActive == True,
+                    )
+                    .all()
+                )
 
                 if active_devices:
                     fcm_service = FCMService()
@@ -291,9 +338,9 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, auth_uid:
                         data={
                             "task_id": task_id,
                             "event": "course_material_error",
-                            "error": str(e)
+                            "error": str(e),
                         },
-                        notification_id=task_id
+                        notification_id=task_id,
                     )
         except Exception as fcm_error:
             print(f"❌ Error sending FCM error notification: {str(fcm_error)}")

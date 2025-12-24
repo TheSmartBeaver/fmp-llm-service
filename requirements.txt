@@ -14,8 +14,9 @@ redis
 # tf-keras
 transformers
 python-dotenv
+firebase-admin
 
-torch 
+torch
 sentence-transformers
 
 sqlacodegen

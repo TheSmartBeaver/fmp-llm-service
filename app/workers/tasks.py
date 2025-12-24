@@ -10,6 +10,7 @@ from dotenv import load_dotenv, find_dotenv
 
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
+from app.models.db.fmp_models import AppUsers, DeviceTokens
 
 from .celery_app import celery
 from app.chains.generator import generate_flashcard
@@ -17,6 +18,7 @@ from app.chains.llm.open_ai_gpt5_nano_llm import OpenAiGPT5NanoLlm
 from app.chains.mind_map_generator import MindMapGenerator
 from app.chains.course_material_generator import CourseMaterialGenerator
 from app.services.socket import socket_notify
+from app.services.fcm_service import FCMService
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -136,13 +138,14 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
 
 
 @celery.task(name="generate.course_material")
-def generate_course_material_task(task_id: str, user_entry_dict: dict, top_k: int = 15):
+def generate_course_material_task(task_id: str, user_entry_dict: dict, auth_uid: str, top_k: int = 15):
     """
-    Tâche Celery pour générer un support de cours.
+    Tâche Celery pour générer un support de cours et envoyer une notification FCM.
 
     Args:
         task_id: Identifiant unique de la tâche
         user_entry_dict: Dictionnaire UserEntryDto contenant le contexte, le contenu et les médias
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
         top_k: Nombre de templates à utiliser
 
     Returns:
@@ -175,7 +178,7 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, top_k: in
 
         print(f"📥 Course material generation completed for task {task_id}")
 
-        # Publish result to Redis
+        # Publish result to Redis (keep for backward compatibility)
         redis.publish("course_material_events", json.dumps({
             "event": "course_material_generated",
             "type": "message",
@@ -184,6 +187,41 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, top_k: in
             "data": result["supports"],
             "prompt": result["prompt"]
         }))
+
+        # Send FCM notification
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = db.query(DeviceTokens).filter(
+                DeviceTokens.AppUserSKU == user.SKU,
+                DeviceTokens.IsActive == True
+            ).all()
+
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+
+                supports_count = len(result["supports"]) if isinstance(result["supports"], list) else 1
+
+                fcm_result = fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Supports de cours générés",
+                    body=f"{supports_count} support(s) de cours ont été générés avec succès",
+                    data={
+                        "task_id": task_id,
+                        "event": "course_material_generated",
+                        "templates_used": str(top_k),
+                        "supports_count": str(supports_count),
+                        "data": json.dumps(result["supports"]),
+                        "prompt": result["prompt"]
+                    },
+                    notification_id=task_id
+                )
+
+                print(f"📱 FCM notifications sent: {fcm_result['success_count']} succeeded, {fcm_result['failure_count']} failed")
+            else:
+                print(f"⚠️ No active devices found for user {auth_uid}")
+        else:
+            print(f"⚠️ User not found with auth_uid: {auth_uid}")
 
         print(f"📥 Celery task ended for {task_id}")
 
@@ -203,6 +241,33 @@ def generate_course_material_task(task_id: str, user_entry_dict: dict, top_k: in
             "task_id": task_id,
             "error": str(e)
         }))
+
+        # Send FCM error notification
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = db.query(DeviceTokens).filter(
+                    DeviceTokens.AppUserSKU == user.SKU,
+                    DeviceTokens.IsActive == True
+                ).all()
+
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de génération",
+                        body="Une erreur s'est produite lors de la génération des supports de cours",
+                        data={
+                            "task_id": task_id,
+                            "event": "course_material_error",
+                            "error": str(e)
+                        },
+                        notification_id=task_id
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
 
         raise
 

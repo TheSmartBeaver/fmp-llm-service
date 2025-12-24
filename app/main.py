@@ -1,4 +1,4 @@
-# http://127.0.0.1:8000/docs
+# http://127.0.0.1:8003/docs
 # uvicorn app.main:app --reload 
 # pip3 install -r requirements.txt
 # source env/bin/activate 
@@ -13,6 +13,7 @@ from app.routers.flashcard.router import flashcard_router
 from app.routers.embedding.router import embedding_router
 from app.routers.mindmap.router import mindmap_router
 from app.routers.course_material.router import course_material_router
+from app.routers.device.router import device_router
 from app.services.lifespan import customlifespan
 from app.services.socket import sio
 
@@ -34,6 +35,7 @@ app.include_router(flashcard_router)
 app.include_router(embedding_router)
 app.include_router(mindmap_router)
 app.include_router(course_material_router)
+app.include_router(device_router)
 
 @app.get("/")
 def root():

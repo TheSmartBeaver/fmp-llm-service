@@ -28,6 +28,7 @@ class AppUsers(Base):
     HtmlContents: Mapped[list['HtmlContents']] = relationship('HtmlContents', back_populates='AppUsers_')
     Cards: Mapped[list['Cards']] = relationship('Cards', back_populates='AppUsers_')
     Topics: Mapped[list['Topics']] = relationship('Topics', back_populates='AppUsers_')
+    DeviceTokens: Mapped[list['DeviceTokens']] = relationship('DeviceTokens', back_populates='AppUsers_')
 
 
 class HumanProofs(Base):
@@ -277,3 +278,25 @@ class Topics(Base):
     Courses_: Mapped[Optional['Courses']] = relationship('Courses', back_populates='Topics')
     Topics: Mapped[Optional['Topics']] = relationship('Topics', remote_side=[SKU], back_populates='Topics_reverse')
     Topics_reverse: Mapped[list['Topics']] = relationship('Topics', remote_side=[ParentSKU], back_populates='Topics')
+
+
+class DeviceTokens(Base):
+    __tablename__ = 'DeviceTokens'
+    __table_args__ = (
+        ForeignKeyConstraint(['AppUserSKU'], ['AppUsers.SKU'], ondelete='CASCADE', name='FK_DeviceTokens_AppUsers_AppUserSKU'),
+        PrimaryKeyConstraint('SKU', name='PK_DeviceTokens'),
+        Index('IX_DeviceTokens_AppUserSKU', 'AppUserSKU'),
+        Index('IX_DeviceTokens_FcmToken', 'FcmToken')
+    )
+
+    SKU: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    AppUserSKU: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    FcmToken: Mapped[str] = mapped_column(Text, nullable=False)
+    DeviceType: Mapped[str] = mapped_column(Text, nullable=False)
+    DeviceName: Mapped[Optional[str]] = mapped_column(Text)
+    IsActive: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    CreatedAt: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('NOW()'))
+    UpdatedAt: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('NOW()'))
+    LastUsed: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+    AppUsers_: Mapped['AppUsers'] = relationship('AppUsers', back_populates='DeviceTokens')

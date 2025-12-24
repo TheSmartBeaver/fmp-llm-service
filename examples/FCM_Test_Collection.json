@@ -1,0 +1,128 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "FCM Test Notifications",
+  "dateExported": "2025-12-24",
+  "version": "1.1",
+  "folders": [],
+  "requests": [
+    {
+      "name": "1. Test Notification - Simple",
+      "method": "POST",
+      "url": "http://localhost:8000/devices/test-notification",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Auth-Uid",
+          "value": "{{AUTH_UID}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "name": "2. Test Notification - Personnalisée",
+      "method": "POST",
+      "url": "http://localhost:8000/devices/test-notification",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Auth-Uid",
+          "value": "{{AUTH_UID}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"🎉 Test Réussi!\",\n  \"body\": \"Votre notification FCM fonctionne parfaitement\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "name": "3. Test Notification - Avec Données",
+      "method": "POST",
+      "url": "http://localhost:8000/devices/test-notification",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Auth-Uid",
+          "value": "{{AUTH_UID}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Supports générés\",\n  \"body\": \"3 supports de cours ont été créés\",\n  \"data\": {\n    \"action\": \"navigate\",\n    \"screen\": \"course_materials\",\n    \"course_id\": \"12345\",\n    \"supports_count\": \"3\"\n  }\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "name": "4. Liste des Appareils",
+      "method": "GET",
+      "url": "http://localhost:8000/devices/",
+      "headers": [
+        {
+          "name": "X-Auth-Uid",
+          "value": "{{AUTH_UID}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "name": "5. Enregistrer un Appareil",
+      "method": "POST",
+      "url": "http://localhost:8000/devices/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "X-Auth-Uid",
+          "value": "{{AUTH_UID}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"fcm_token\": \"VOTRE_TOKEN_FCM\",\n  \"device_type\": \"android\",\n  \"device_name\": \"Mon Téléphone Test\"\n}",
+        "form": []
+      },
+      "tests": []
+    }
+  ],
+  "settings": {
+    "options": {
+      "baseUrl": "http://localhost:8000"
+    },
+    "envFile": ""
+  },
+  "envVariables": [
+    {
+      "name": "AUTH_UID",
+      "value": "REMPLACEZ_PAR_VOTRE_AUTH_UID",
+      "enabled": true
+    },
+    {
+      "name": "BASE_URL",
+      "value": "http://localhost:8000",
+      "enabled": true
+    }
+  ]
+}

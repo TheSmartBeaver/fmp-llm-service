@@ -1,12 +1,22 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Header, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from sentence_transformers import SentenceTransformer
 import uuid
 
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.workers.tasks import generate_course_material_task
+from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
+from app.chains.course_material_generator import CourseMaterialGenerator
+from app.database import get_db
 
 
 course_material_router = APIRouter(prefix="/course_material")
+
+# Load embedding model and LLM
+MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+embedding_model = SentenceTransformer(MODEL_NAME)
+openai_llm = OpenAiGPT5MiniLlm().get_llm()
 
 
 class CourseMaterialTaskResponse(BaseModel):
@@ -23,34 +33,138 @@ class CourseMaterialTaskResponse(BaseModel):
         }
 
 
+class CourseMaterialResponse(BaseModel):
+    """Réponse contenant les supports de cours générés"""
+    success: bool
+    supports: list
+    templates_used: int
+    prompt: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "supports": [],
+                "templates_used": 15,
+                "prompt": "Génère des supports de cours..."
+            }
+        }
+
+
 @course_material_router.post("/generate_CELERY", response_model=CourseMaterialTaskResponse)
 async def generate_course_material(
-    request: UserEntryDto
+    request: UserEntryDto,
+    auth_uid: str = Header(..., alias="X-Auth-Uid")
 ):
     """
     Lance une génération asynchrone de support de cours via Celery.
 
     Args:
         request: UserEntryDto contenant le contexte, le contenu textuel et les médias
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
 
     Returns:
         CourseMaterialTaskResponse avec l'ID de la tâche Celery
 
     Note:
-        Le résultat sera publié sur Redis (canal 'course_material_events') une fois la génération terminée.
+        Une notification FCM sera envoyée aux appareils actifs de l'utilisateur une fois la génération terminée.
     """
     # Générer un ID unique pour cette tâche
     task_id = str(uuid.uuid4())
 
-    # Lancer la tâche Celery de manière asynchrone
+    # Lancer la tâche Celery de manière asynchrone avec l'auth_uid
     generate_course_material_task.apply_async(
-        args=[task_id, request.model_dump()],
+        args=[task_id, request.model_dump(), auth_uid],
         task_id=task_id
     )
 
     return CourseMaterialTaskResponse(
         task_id=task_id,
         status="pending"
+    )
+
+
+@course_material_router.post("/generate", response_model=CourseMaterialResponse)
+async def generate_course_material_sync(
+    request: UserEntryDto,
+    db: Session = Depends(get_db),
+    auth_uid: str = Header(..., alias="X-Auth-Uid"),
+    top_k: int = 15
+):
+    """
+    Génère un support de cours de manière synchrone (sans Celery).
+
+    Args:
+        request: UserEntryDto contenant le contexte, le contenu textuel et les médias
+        db: Session de base de données
+        auth_uid: AuthentUid de l'utilisateur (pour compatibilité future)
+        top_k: Nombre de templates à utiliser (par défaut: 15)
+
+    Returns:
+        CourseMaterialResponse avec les supports générés
+
+    Note:
+        Cette version est synchrone et retourne directement les résultats.
+        Pour une version asynchrone avec notifications FCM, utilisez /generate_CELERY
+    """
+    import asyncio
+
+    # Create course material generator
+    generator = CourseMaterialGenerator(
+        db_session=db,
+        llm=openai_llm,
+        embedding_model=embedding_model
+    )
+
+    # Étape 1: Agréger le contenu
+    aggregated_content = generator._aggregate_content(request)
+
+    # Étape 2: Générer les paires informations-format intermédiaires
+    info_format_pairs, info_format_prompt = generator._generate_info_format_pairs(
+        aggregated_content,
+        request.context_entry
+    )
+
+    # Étape 3 & 4: Pour chaque paire, récupérer les templates et générer le support EN PARALLÈLE
+    all_supports = []
+    generation_prompts = []
+
+    # Créer une liste de coroutines pour l'exécution parallèle
+    tasks = []
+    for info_format_pair in info_format_pairs:
+        # Calculer l'embedding pour cette paire
+        pair_text = f"{info_format_pair['information']} {info_format_pair['format']}"
+        embedding = generator._generate_embedding(pair_text)
+
+        # Récupérer les templates pertinents pour cette paire
+        templates = generator._fetch_similar_templates(embedding, top_k)
+
+        # Créer une tâche asynchrone pour générer le support
+        tasks.append(generator._generate_single_support_from_info_format_async(
+            info_format_pair,
+            templates,
+            aggregated_content
+        ))
+
+    # Exécuter toutes les tâches en parallèle avec asyncio.gather (compatible avec FastAPI)
+    results = await asyncio.gather(*tasks)
+
+    # Extraire les résultats
+    for support, gen_prompt in results:
+        all_supports.append(support)
+        generation_prompts.append(gen_prompt)
+
+    # Préparer le prompt complet pour le retour
+    full_prompt = f"=== PROMPT DE GÉNÉRATION DES PAIRES INFORMATIONS-FORMAT ===\n{info_format_prompt}\n\n=== PROMPTS DE GÉNÉRATION DES SUPPORTS ===\n" + "\n\n---\n\n".join(generation_prompts)
+
+    # Étape 5: Valider le JSON de tous les supports
+    validated_json = generator._validate_json(all_supports)
+
+    return CourseMaterialResponse(
+        success=True,
+        supports=validated_json,
+        templates_used=top_k,
+        prompt=full_prompt
     )
 
 

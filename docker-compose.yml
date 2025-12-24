@@ -24,6 +24,8 @@ services:
     volumes:
       # Persister les modèles téléchargés
       - ./dl_models:/app/dl_models
+      # Firebase credentials (read-only)
+      - ./config/firebase-credentials.json:/app/config/firebase-credentials.json:ro
     environment:
       - PYTHONUNBUFFERED=1
       - REDIS_HOST=redis
@@ -50,6 +52,8 @@ services:
     volumes:
       # Partager les modèles avec l'API
       - ./dl_models:/app/dl_models
+      # Firebase credentials (read-only)
+      - ./config/firebase-credentials.json:/app/config/firebase-credentials.json:ro
     environment:
       - PYTHONUNBUFFERED=1
       - REDIS_HOST=redis

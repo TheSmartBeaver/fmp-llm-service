@@ -23,7 +23,12 @@ class CourseMaterialGenerator:
     5. Valide et retourne le JSON final
     """
 
-    def __init__(self, db_session: Session, llm: BaseChatModel, embedding_model: SentenceTransformer):
+    def __init__(
+        self,
+        db_session: Session,
+        llm: BaseChatModel,
+        embedding_model: SentenceTransformer,
+    ):
         """
         Args:
             db_session: Session SQLAlchemy pour accéder à la DB
@@ -34,7 +39,9 @@ class CourseMaterialGenerator:
         self.llm = llm
         self.embedding_model = embedding_model
 
-    def generate_course_material(self, user_entry: UserEntryDto, top_k: int = 15) -> Dict[str, Any]:
+    def generate_course_material(
+        self, user_entry: UserEntryDto, top_k: int = 15
+    ) -> Dict[str, Any]:
         """
         Génère des supports de cours à partir d'un UserEntryDto.
 
@@ -59,8 +66,7 @@ class CourseMaterialGenerator:
 
         # Étape 2: Générer les paires informations-format intermédiaires
         info_format_pairs, info_format_prompt = self._generate_info_format_pairs(
-            aggregated_content,
-            user_entry.context_entry
+            aggregated_content, user_entry.context_entry
         )
 
         # Étape 3 & 4: Pour chaque paire, récupérer les templates et générer le support EN PARALLÈLE
@@ -71,18 +77,20 @@ class CourseMaterialGenerator:
         tasks = []
         for info_format_pair in info_format_pairs:
             # Calculer l'embedding pour cette paire
-            pair_text = f"{info_format_pair['information']} {info_format_pair['format']}"
+            pair_text = (
+                f"{info_format_pair['information']} {info_format_pair['format']}"
+            )
             embedding = self._generate_embedding(pair_text)
 
             # Récupérer les templates pertinents pour cette paire
             templates = self._fetch_similar_templates(embedding, top_k)
 
             # Créer une tâche asynchrone pour générer le support
-            tasks.append(self._generate_single_support_from_info_format_async(
-                info_format_pair,
-                templates,
-                aggregated_content
-            ))
+            tasks.append(
+                self._generate_single_support_from_info_format_async(
+                    info_format_pair, templates, aggregated_content
+                )
+            )
 
         # Exécuter toutes les tâches en parallèle
         try:
@@ -99,15 +107,15 @@ class CourseMaterialGenerator:
             generation_prompts.append(gen_prompt)
 
         # Préparer le prompt complet pour le retour
-        full_prompt = f"=== PROMPT DE GÉNÉRATION DES PAIRES INFORMATIONS-FORMAT ===\n{info_format_prompt}\n\n=== PROMPTS DE GÉNÉRATION DES SUPPORTS ===\n" + "\n\n---\n\n".join(generation_prompts)
+        full_prompt = (
+            f"=== PROMPT DE GÉNÉRATION DES PAIRES INFORMATIONS-FORMAT ===\n{info_format_prompt}\n\n=== PROMPTS DE GÉNÉRATION DES SUPPORTS ===\n"
+            + "\n\n---\n\n".join(generation_prompts)
+        )
 
         # Étape 5: Valider le JSON de tous les supports
         validated_json = self._validate_json(all_supports)
 
-        return {
-            "supports": validated_json,
-            "prompt": full_prompt
-        }
+        return {"supports": validated_json, "prompt": full_prompt}
 
     def _aggregate_content(self, user_entry: UserEntryDto) -> Dict[str, Any]:
         """
@@ -128,21 +136,17 @@ class CourseMaterialGenerator:
 
         # Ajouter book_scan_entry
         for entry in user_entry.book_scan_entry:
-            text_entries.append({
-                "order": entry.order,
-                "content": entry.raw_data,
-                "type": "book_scan"
-            })
+            text_entries.append(
+                {"order": entry.order, "content": entry.raw_data, "type": "book_scan"}
+            )
 
         # Ajouter diction_entry
         for entry in user_entry.diction_entry:
             # Combiner les blocs de texte
             combined_text = "\n".join(entry.text_blocs)
-            text_entries.append({
-                "order": entry.order,
-                "content": combined_text,
-                "type": "diction"
-            })
+            text_entries.append(
+                {"order": entry.order, "content": combined_text, "type": "diction"}
+            )
 
         # Trier par order
         text_entries.sort(key=lambda x: x["order"])
@@ -152,11 +156,7 @@ class CourseMaterialGenerator:
 
         # Agréger les médias
         images = [
-            {
-                "order": img.order,
-                "description": img.img_description,
-                "url": img.img_url
-            }
+            {"order": img.order, "description": img.img_description, "url": img.img_url}
             for img in user_entry.img_entry
         ]
 
@@ -165,7 +165,7 @@ class CourseMaterialGenerator:
                 "order": video.order,
                 "url": video.video_url,
                 "description": video.video_description,
-                "start_time": video.video_start_time
+                "start_time": video.video_start_time,
             }
             for video in user_entry.video_entry
         ]
@@ -176,11 +176,13 @@ class CourseMaterialGenerator:
             "videos": videos,
             "context": {
                 "course": user_entry.context_entry.course,
-                "topic_path": user_entry.context_entry.topic_path
-            }
+                "topic_path": user_entry.context_entry.topic_path,
+            },
         }
 
-    def _generate_info_format_pairs(self, aggregated_content: Dict[str, Any], context_entry) -> tuple[List[Dict[str, str]], str]:
+    def _generate_info_format_pairs(
+        self, aggregated_content: Dict[str, Any], context_entry
+    ) -> tuple[List[Dict[str, str]], str]:
         """
         Génère des paires information-format intermédiaires à partir du contenu agrégé.
 
@@ -195,8 +197,7 @@ class CourseMaterialGenerator:
         """
         # Construire la description des médias disponibles
         media_description = self._format_media_for_prompt(
-            aggregated_content["images"],
-            aggregated_content["videos"]
+            aggregated_content["images"], aggregated_content["videos"]
         )
 
         # Créer le prompt système
@@ -209,34 +210,11 @@ CONTEXTE PÉDAGOGIQUE:
 RÈGLES IMPORTANTES:
 1. "information" : le contenu pédagogique à présenter dans le support (COURT et FOCALISÉ)
 2. "format" : comment cette information devrait être structurée/présentée
-3. Chaque paire doit être indépendante et autonome
-4. ⚠️ DÉCOUPAGE OBLIGATOIRE : crée PLUSIEURS paires (ne pas hésiter !) pour éviter des supports trop lourds
-5. ⚠️ PRIVILÉGIE TOUJOURS la création de PLUSIEURS petits supports focalisés plutôt qu'un seul support surchargé
-6. Si le contenu source est riche, découpe-le en PLUSIEURS informations focalisées (3-5 paires minimum pour un contenu riche)
-7. Une information trop volumineuse = plusieurs paires au lieu d'une seule
-8. Chaque information devrait tenir sur 2-4 phrases maximum (au-delà = découper en plusieurs paires)
-9. Les formats peuvent inclure : texte, définition, liste, comparaison, chronologie, processus, explication, image, vidéo, etc.
-10. ⚠️ IMPORTANT : Tu DOIS utiliser les médias disponibles (images et vidéos) dans tes paires quand c'est pertinent
-11. Pour intégrer un média, spécifie-le clairement dans le format (ex: "explication avec image illustrative", "processus avec vidéo démonstrative")
+3. ⚠️ DÉCOUPAGE OBLIGATOIRE : crée PLUSIEURS paires (ne pas hésiter !) pour éviter des supports trop lourds
+4. ⚠️ IMPORTANT : Tu DOIS utiliser les médias disponibles (images et vidéos) dans tes paires quand c'est pertinent
 
 MÉDIAS DISPONIBLES:
 {media_description}
-
-EXEMPLES DE FORMATS:
-- "définition scientifique avec processus chimique"
-- "chronologie avec dates et événements majeurs"
-- "comparaison avec critères (mutabilité, performance, usage)"
-- "liste de causes avec catégorisation"
-- "explication structurelle avec étapes séquentielles"
-- "description avec image illustrative" (quand une image est disponible)
-- "processus avec vidéo démonstrative" (quand une vidéo est disponible)
-- "concept avec schéma visuel et vidéo explicative"
-
-EXEMPLE DE DÉCOUPAGE (BON):
-Contenu source volumineux sur la photosynthèse → créer 3 paires :
-1. Information sur la définition → format texte avec image du processus
-2. Information sur les étapes → format séquentiel
-3. Information sur les produits → format liste avec vidéo démonstrative
 
 STRUCTURE ATTENDUE (TABLEAU JSON):
 [
@@ -255,14 +233,12 @@ Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
         user_prompt = """Voici le contenu pédagogique à analyser:
 
 {text}
-
-Génère les paires information-format au format JSON. N'oublie pas de découper en PLUSIEURS paires si le contenu est riche, et d'utiliser les médias disponibles !"""
+"""
 
         # Créer le prompt template
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", user_prompt)
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", system_prompt), ("human", user_prompt)]
+        )
 
         # Créer la chaîne avec parser JSON
         chain = prompt | self.llm | JsonOutputParser()
@@ -272,16 +248,18 @@ Génère les paires information-format au format JSON. N'oublie pas de découper
             course=context_entry.course,
             topic_path=context_entry.topic_path,
             media_description=media_description,
-            text=aggregated_content["text"]
+            text=aggregated_content["text"],
         )
 
         # Exécuter la chaîne
-        result = chain.invoke({
-            "course": context_entry.course,
-            "topic_path": context_entry.topic_path,
-            "media_description": media_description,
-            "text": aggregated_content["text"]
-        })
+        result = chain.invoke(
+            {
+                "course": context_entry.course,
+                "topic_path": context_entry.topic_path,
+                "media_description": media_description,
+                "text": aggregated_content["text"],
+            }
+        )
 
         return result, full_prompt
 
@@ -301,12 +279,16 @@ Génère les paires information-format au format JSON. N'oublie pas de découper
         if images:
             formatted_parts.append("IMAGES DISPONIBLES:")
             for i, img in enumerate(images, 1):
-                formatted_parts.append(f"  - Image {i}: {img['description']} (URL: {img['url']})")
+                formatted_parts.append(
+                    f"  - Image {i}: {img['description']} (URL: {img['url']})"
+                )
 
         if videos:
             formatted_parts.append("\nVIDÉOS DISPONIBLES:")
             for i, video in enumerate(videos, 1):
-                formatted_parts.append(f"  - Vidéo {i}: {video['description']} (URL: {video['url']}, Début: {video['start_time']})")
+                formatted_parts.append(
+                    f"  - Vidéo {i}: {video['description']} (URL: {video['url']}, Début: {video['start_time']})"
+                )
 
         if not formatted_parts:
             return "Aucun média disponible."
@@ -323,13 +305,12 @@ Génère les paires information-format au format JSON. N'oublie pas de découper
         Returns:
             Liste de 384 floats représentant l'embedding
         """
-        embedding = self.embedding_model.encode(
-            text,
-            normalize_embeddings=True
-        )
+        embedding = self.embedding_model.encode(text, normalize_embeddings=True)
         return embedding.tolist()
 
-    def _fetch_similar_templates(self, embedding: List[float], top_k: int) -> List[Dict[str, Any]]:
+    def _fetch_similar_templates(
+        self, embedding: List[float], top_k: int
+    ) -> List[Dict[str, Any]]:
         """
         Recherche les templates les plus similaires via similarité vectorielle (pgvector).
 
@@ -344,7 +325,7 @@ Génère les paires information-format au format JSON. N'oublie pas de découper
         embedding_str = "[" + ",".join(str(float(x)) for x in embedding) + "]"
 
         # Utiliser SQLAlchemy ORM avec l'opérateur pgvector <=> (cosine distance)
-        distance_expr = literal_column(f'"Embedding" <=> \'{embedding_str}\'::vector')
+        distance_expr = literal_column(f"\"Embedding\" <=> '{embedding_str}'::vector")
 
         # Construire la requête avec SQLAlchemy ORM
         query = (
@@ -353,7 +334,7 @@ Génère les paires information-format au format JSON. N'oublie pas de découper
                 CardTemplates.TemplateFieldsUsage,
                 CardTemplates.ShortSemanticRepresentation,
                 CardTemplates.FullSemanticRepresentation,
-                distance_expr.label('distance')
+                distance_expr.label("distance"),
             )
             .filter(CardTemplates.Embedding.isnot(None))
             .filter(CardTemplates.IsEnabled == True)
@@ -365,13 +346,15 @@ Génère les paires information-format au format JSON. N'oublie pas de découper
 
         templates = []
         for row in result:
-            templates.append({
-                "template_name": row.Path,
-                "fields_usage": row.TemplateFieldsUsage,
-                "short_description": row.ShortSemanticRepresentation,
-                "full_description": row.FullSemanticRepresentation,
-                "similarity_distance": float(row.distance)
-            })
+            templates.append(
+                {
+                    "template_name": row.Path,
+                    "fields_usage": row.TemplateFieldsUsage,
+                    "short_description": row.ShortSemanticRepresentation,
+                    "full_description": row.FullSemanticRepresentation,
+                    "similarity_distance": float(row.distance),
+                }
+            )
 
         return templates
 
@@ -379,7 +362,7 @@ Génère les paires information-format au format JSON. N'oublie pas de découper
         self,
         info_format_pair: Dict[str, str],
         templates: List[Dict[str, Any]],
-        aggregated_content: Dict[str, Any]
+        aggregated_content: Dict[str, Any],
     ) -> tuple[Any, str, Dict]:
         """
         Construit le prompt et la chaîne LangChain pour générer un support de cours unique.
@@ -400,8 +383,7 @@ Génère les paires information-format au format JSON. N'oublie pas de découper
 
         # Préparer la description des médias
         media_description = self._format_media_for_prompt(
-            aggregated_content["images"],
-            aggregated_content["videos"]
+            aggregated_content["images"], aggregated_content["videos"]
         )
 
         # Créer le prompt système
@@ -471,10 +453,9 @@ FORMAT: {format}
 Génère le JSON du support de cours en utilisant les templates disponibles. Si le format mentionne des médias (image/vidéo), utilise les médias disponibles listés ci-dessus."""
 
         # Créer le prompt template
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", user_prompt)
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", system_prompt), ("human", user_prompt)]
+        )
 
         # Créer la chaîne avec parser JSON
         chain = prompt | self.llm | JsonOutputParser()
@@ -485,8 +466,8 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
             "topic_path": aggregated_content["context"]["topic_path"],
             "templates": templates_description,
             "media_description": media_description,
-            "information": info_format_pair['information'],
-            "format": info_format_pair['format']
+            "information": info_format_pair["information"],
+            "format": info_format_pair["format"],
         }
 
         # Préparer le prompt complet pour le retour
@@ -498,7 +479,7 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
         self,
         info_format_pair: Dict[str, str],
         templates: List[Dict[str, Any]],
-        aggregated_content: Dict[str, Any]
+        aggregated_content: Dict[str, Any],
     ) -> tuple[Dict[str, Any], str]:
         """
         Génère un support de cours unique à partir d'une paire information-format (VERSION ASYNCHRONE).
@@ -514,9 +495,7 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
             - Le prompt complet envoyé au LLM
         """
         chain, full_prompt, invoke_params = self._build_single_support_prompt_and_chain(
-            info_format_pair,
-            templates,
-            aggregated_content
+            info_format_pair, templates, aggregated_content
         )
 
         # Exécuter la chaîne de manière ASYNCHRONE
@@ -539,14 +518,16 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
             # Créer un exemple de structure JSON pour ce template
             json_example = self._create_template_json_example(tmpl)
 
-            formatted.append(f"""
+            formatted.append(
+                f"""
 Template {i}:
 - Path (à utiliser EXACTEMENT comme template_name): "{tmpl['template_name']}"
 - Usage des champs: {tmpl['fields_usage']}
 - Description courte: {tmpl['short_description']}
 - Exemple de structure JSON attendue:
 {json_example}
-""")
+"""
+            )
         return "\n".join(formatted)
 
     def _create_template_json_example(self, template: Dict[str, Any]) -> str:
@@ -561,13 +542,15 @@ Template {i}:
         """
         import re
 
-        fields_usage = template.get('fields_usage', '')
-        field_matches = re.findall(r'(\w+)\s*:', fields_usage)
+        fields_usage = template.get("fields_usage", "")
+        field_matches = re.findall(r"(\w+)\s*:", fields_usage)
 
         if field_matches:
             example_fields = []
             for field_name in field_matches[:3]:
-                example_fields.append(f'    "{field_name}": "valeur du contenu pédagogique"')
+                example_fields.append(
+                    f'    "{field_name}": "valeur du contenu pédagogique"'
+                )
 
             example = "{\n" + f'    "template_name": "{template["template_name"]}",\n'
             example += ",\n".join(example_fields)
@@ -578,7 +561,9 @@ Template {i}:
 
         return example
 
-    def _validate_json(self, supports_json: Any, templates: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def _validate_json(
+        self, supports_json: Any, templates: List[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """
         Valide la structure du JSON généré (tableau de supports de cours).
 
@@ -603,7 +588,7 @@ Template {i}:
         # Créer un set de template_names valides si fourni
         valid_template_names = None
         if templates:
-            valid_template_names = {tmpl['template_name'] for tmpl in templates}
+            valid_template_names = {tmpl["template_name"] for tmpl in templates}
 
         # Valider chaque support du tableau
         validated_supports = []
@@ -613,20 +598,26 @@ Template {i}:
 
             # Vérifier la présence de la clé obligatoire
             if "support" not in support_item:
-                raise ValueError(f"Clé obligatoire manquante dans l'élément {i}: support")
+                raise ValueError(
+                    f"Clé obligatoire manquante dans l'élément {i}: support"
+                )
 
             # Ajouter la version si absente
             if "version" not in support_item:
                 support_item["version"] = "1.0.0"
 
             # Vérifier que support a un template_name
-            self._validate_structure(support_item["support"], f"support[{i}].support", valid_template_names)
+            self._validate_structure(
+                support_item["support"], f"support[{i}].support", valid_template_names
+            )
 
             validated_supports.append(support_item)
 
         return validated_supports
 
-    def _validate_structure(self, obj: Any, path: str, valid_template_names: set = None):
+    def _validate_structure(
+        self, obj: Any, path: str, valid_template_names: set = None
+    ):
         """
         Valide récursivement la structure d'un objet.
 
@@ -646,7 +637,10 @@ Template {i}:
                     raise ValueError(f"template_name invalide à {path}")
 
                 # Validation stricte : vérifier que le template_name existe
-                if valid_template_names is not None and template_name not in valid_template_names:
+                if (
+                    valid_template_names is not None
+                    and template_name not in valid_template_names
+                ):
                     raise ValueError(
                         f"Template inexistant '{template_name}' utilisé à {path}. "
                         f"Templates valides: {', '.join(sorted(valid_template_names))}"

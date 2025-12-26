@@ -78,7 +78,7 @@ class CourseMaterialGenerator:
         for info_format_pair in info_format_pairs:
             # Calculer l'embedding pour cette paire
             pair_text = (
-                f"{info_format_pair['information']} {info_format_pair['format']}"
+                f"{info_format_pair['objectif']} {info_format_pair['texte_associe']} {info_format_pair['format']}"
             )
             embedding = self._generate_embedding(pair_text)
 
@@ -201,36 +201,35 @@ class CourseMaterialGenerator:
         )
 
         # Créer le prompt système
-        system_prompt = """Tu es un expert en pédagogie. Ton rôle est d'analyser du contenu éducatif et de le transformer en paires information-format pertinentes pour créer des supports de cours.
+        system_prompt = """Tu es un expert en pédagogie spécialisé dans la structuration de contenu éducatif pour application mobile.
 
 CONTEXTE PÉDAGOGIQUE:
 - Cours: {course}
 - Chemin du sujet: {topic_path}
 
-RÈGLES IMPORTANTES:
-1. "information" : le contenu pédagogique à présenter dans le support (COURT et FOCALISÉ)
-2. "format" : comment cette information devrait être structurée/présentée
-3. ⚠️ DÉCOUPAGE OBLIGATOIRE : crée PLUSIEURS paires (ne pas hésiter !) pour éviter des supports trop lourds
-4. ⚠️ IMPORTANT : Tu DOIS utiliser les médias disponibles (images et vidéos) dans tes paires quand c'est pertinent
-
 MÉDIAS DISPONIBLES:
 {media_description}
+
+Ta mission est d'analyser des notes de cours et de produire une structure optimale pour l'apprentissage sur mobile.
+
+RÈGLES DE STRUCTURATION:
+1. "objectif" : l'objectif d'apprentissage spécifique et focalisé
+2. "texte_associe" : le texte exact issu des notes (ne pas inventer ou reformuler, juste extraire)
+3. "format" : le format de présentation le plus adapté pour atteindre cet objectif d'apprentissage
+
 
 STRUCTURE ATTENDUE (TABLEAU JSON):
 [
     {{
-        "information": "Contenu pédagogique focalisé",
-        "format": "Description du format de présentation souhaité"
-    }},
-    {{
-        "information": "Autre contenu pédagogique pertinent",
-        "format": "Autre format de présentation (peut inclure image/vidéo)"
+        "objectif": "Objectif d'apprentissage précis et actionnable",
+        "texte_associe": "Citation exacte du texte original, sans modification",
+        "format": "comment cette information devrait être structurée/présentée"
     }}
 ]
 
 Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
 
-        user_prompt = """Voici le contenu pédagogique à analyser:
+        user_prompt = """Voici la prise de notes de mes cours. Donne-moi la structure optimale pour apprendre ce lot d'informations:
 
 {text}
 """
@@ -368,7 +367,7 @@ Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
         Construit le prompt et la chaîne LangChain pour générer un support de cours unique.
 
         Args:
-            info_format_pair: Dictionnaire contenant 'information' et 'format'
+            info_format_pair: Dictionnaire contenant 'objectif', 'texte_associe' et 'format'
             templates: Liste des templates disponibles avec leurs métadonnées
             aggregated_content: Contenu agrégé incluant les médias
 
@@ -389,7 +388,7 @@ Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
         # Créer le prompt système
         system_prompt = """Tu es un expert en pédagogie et en création de supports de cours éducatifs.
 
-Ton rôle est de transformer UNE paire information-format en UN support de cours structuré au format JSON.
+Ton rôle est de transformer UN objectif d'apprentissage avec son texte et format associés en UN support de cours structuré au format JSON.
 
 CONTEXTE PÉDAGOGIQUE:
 - Cours: {course}
@@ -412,6 +411,7 @@ RÈGLES IMPORTANTES:
 8. Le FORMAT spécifié doit guider ton choix de templates et la structure du support
 9. ⚠️ IMPORTANT: Si le format mentionne une image ou vidéo, tu DOIS l'intégrer en utilisant les médias disponibles ci-dessus
 10. Pour intégrer un média, utilise un template approprié et référence l'URL du média disponible
+11. ⚠️ IMPORTANT: Utilise le TEXTE ASSOCIÉ fourni sans l'inventer ou le reformuler (c'est le texte original des notes de cours)
 
 STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
 {{
@@ -444,9 +444,11 @@ Si le format demande "explication avec image illustrative" et qu'une image perti
 
 Réponds UNIQUEMENT avec l'OBJET JSON valide, sans texte additionnel."""
 
-        user_prompt = """Voici la paire information-format à transformer en support de cours:
+        user_prompt = """Voici l'objectif d'apprentissage à transformer en support de cours:
 
-INFORMATION: {information}
+OBJECTIF: {objectif}
+
+TEXTE ASSOCIÉ (texte original à utiliser): {texte_associe}
 
 FORMAT: {format}
 
@@ -466,7 +468,8 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
             "topic_path": aggregated_content["context"]["topic_path"],
             "templates": templates_description,
             "media_description": media_description,
-            "information": info_format_pair["information"],
+            "objectif": info_format_pair["objectif"],
+            "texte_associe": info_format_pair["texte_associe"],
             "format": info_format_pair["format"],
         }
 

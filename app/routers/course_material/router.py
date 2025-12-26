@@ -135,7 +135,7 @@ async def generate_course_material_sync(
     tasks = []
     for info_format_pair in info_format_pairs:
         # Calculer l'embedding pour cette paire
-        pair_text = f"{info_format_pair['information']} {info_format_pair['format']}"
+        pair_text = f"{info_format_pair['objectif']} {info_format_pair['texte_associe']} {info_format_pair['format']}"
         embedding = generator._generate_embedding(pair_text)
 
         # Récupérer les templates pertinents pour cette paire

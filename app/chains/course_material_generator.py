@@ -362,10 +362,10 @@ RÈGLES IMPORTANTES:
 5. ❌ N'INVENTE JAMAIS de template_name ou de nom de champ qui n'est pas explicitement listé dans les templates disponibles
 6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer un support riche
 7. ❌ Ne duplique pas le même contenu textuel dans plusieurs champs du support
-8. ❌ Ne crée pas d'exercices ou de quiz, concentre-toi sur le contenu pédagogique
+8. ❌ Ne crée pas d'exercices, concentre-toi sur le contenu pédagogique
 9. ⚠️ IMPORTANT: Si le format mentionne une image ou vidéo, tu DOIS l'intégrer en utilisant les médias disponibles ci-dessus
 10. Pour intégrer un média, utilise un template approprié et référence l'URL du média disponible
-11. ⚠️ IMPORTANT: Utilise le TEXTE ASSOCIÉ fourni sans l'inventer ou le reformuler (c'est le texte original des notes de cours)
+11. ⚠️ IMPORTANT: Enrichis et reformule si besoin le TEXTE ASSOCIÉ avec le minimum pour faciliter la compréhension
 12. ⚠️ IMPORTANT: Si aucune template ne convient parfaitement, écris avec une template qu'il manque une template pour tel texte et format.
 
 STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
@@ -431,6 +431,8 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
 
         # Préparer le prompt complet pour le retour
         full_prompt = prompt.format(**invoke_params)
+
+        print(full_prompt)
 
         return chain, full_prompt, invoke_params
 

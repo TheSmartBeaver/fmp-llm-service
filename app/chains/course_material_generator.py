@@ -360,7 +360,7 @@ RÈGLES IMPORTANTES:
 4. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template
 5. ❌ N'INVENTE JAMAIS de template_name ou de nom de champ qui n'est pas explicitement listé dans les templates disponibles
 6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer un support riche
-7. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent
+7. ❌ Ne duplique pas le même contenu textuel dans plusieurs champs du support
 8. Le FORMAT spécifié doit guider ton choix de templates et la structure du support
 9. ⚠️ IMPORTANT: Si le format mentionne une image ou vidéo, tu DOIS l'intégrer en utilisant les médias disponibles ci-dessus
 10. Pour intégrer un média, utilise un template approprié et référence l'URL du média disponible

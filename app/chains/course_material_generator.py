@@ -9,7 +9,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.utils.template_search import fetch_similar_templates
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
-from app.chains.llm.open_ai_o1_mini_llm import OpenAiO1MiniLlm
+from app.chains.llm.open_ai_o3_mini_llm import OpenAiO3MiniLlm
 
 
 class CourseMaterialGenerator:
@@ -414,7 +414,7 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
         )
 
         # Créer la chaîne avec parser JSON
-        o1_mini_llm = OpenAiO1MiniLlm().get_llm()
+        o1_mini_llm = OpenAiO3MiniLlm().get_llm()
         chain = prompt | o1_mini_llm | JsonOutputParser()
 
         # Préparer les paramètres d'invocation

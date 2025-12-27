@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv, find_dotenv
 
+from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
@@ -37,7 +38,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Load embedding model and LLM for mind map generation
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 embedding_model = SentenceTransformer(MODEL_NAME)
-openai_llm = OpenAiGPT5MiniLlm().get_llm()
+openai_llm = ClaudeHaiku45Llm().get_llm()
 
 
 @celery.task(name="generate.flashcard")

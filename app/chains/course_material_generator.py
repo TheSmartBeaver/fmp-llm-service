@@ -365,6 +365,7 @@ RÈGLES IMPORTANTES:
 9. ⚠️ IMPORTANT: Si le format mentionne une image ou vidéo, tu DOIS l'intégrer en utilisant les médias disponibles ci-dessus
 10. Pour intégrer un média, utilise un template approprié et référence l'URL du média disponible
 11. ⚠️ IMPORTANT: Utilise le TEXTE ASSOCIÉ fourni sans l'inventer ou le reformuler (c'est le texte original des notes de cours)
+12. ⚠️ IMPORTANT: Si aucune template ne convient parfaitement, écris avec une template qu'il manque une template pour tel texte et format.
 
 STRUCTURE ATTENDUE (UN SEUL OBJET JSON):
 {{

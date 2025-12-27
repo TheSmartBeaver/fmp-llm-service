@@ -9,7 +9,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.utils.template_search import fetch_similar_templates
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
-from app.chains.llm.open_ai_gpt41_llm import OpenAiGPT41Llm
+from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
 
 
 class CourseMaterialGenerator:
@@ -414,8 +414,8 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
         )
 
         # Créer la chaîne avec parser JSON
-        gpt42_llm = OpenAiGPT41Llm().get_llm()
-        chain = prompt | gpt42_llm | JsonOutputParser()
+        o3_llm = OpenAiO3Llm().get_llm()
+        chain = prompt | o3_llm | JsonOutputParser()
 
         # Préparer les paramètres d'invocation
         invoke_params = {

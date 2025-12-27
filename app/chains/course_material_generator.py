@@ -63,6 +63,9 @@ class CourseMaterialGenerator:
                 ]
             - prompt: Le prompt complet envoyé au LLM (premier et derniers prompts)
         """
+
+        top_k=10
+
         # Étape 1: Agréger le contenu
         aggregated_content = self._aggregate_content(user_entry)
 

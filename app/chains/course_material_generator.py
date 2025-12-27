@@ -6,11 +6,12 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
+from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.utils.template_search import fetch_similar_templates
-from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.llm.open_ai_o3_mini_llm import OpenAiO3MiniLlm
+from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
 
 
 class CourseMaterialGenerator:
@@ -418,8 +419,8 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
         )
 
         # Créer la chaîne avec parser JSON
-        o3_llm = OpenAiO3Llm().get_llm()
-        chain = prompt | o3_llm | JsonOutputParser()
+        claude_haiku_llm = ClaudeHaiku45Llm().get_llm()
+        chain = prompt | claude_haiku_llm | JsonOutputParser()
 
         # Préparer les paramètres d'invocation
         invoke_params = {

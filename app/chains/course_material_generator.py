@@ -1,14 +1,13 @@
 from typing import List, Dict, Any
 import asyncio
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import literal_column
 from sentence_transformers import SentenceTransformer
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
-from app.models.db.fmp_models import CardTemplates
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
+from app.utils.template_search import fetch_similar_templates
 
 
 class CourseMaterialGenerator:
@@ -83,7 +82,7 @@ class CourseMaterialGenerator:
             embedding = self._generate_embedding(pair_text)
 
             # Récupérer les templates pertinents pour cette paire
-            templates = self._fetch_similar_templates(embedding, top_k)
+            templates = fetch_similar_templates(self.db, embedding, top_k, { "layouts/": 3, "text/": 5}, True)
 
             # Créer une tâche asynchrone pour générer le support
             tasks.append(
@@ -307,55 +306,6 @@ Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
         embedding = self.embedding_model.encode(text, normalize_embeddings=True)
         return embedding.tolist()
 
-    def _fetch_similar_templates(
-        self, embedding: List[float], top_k: int
-    ) -> List[Dict[str, Any]]:
-        """
-        Recherche les templates les plus similaires via similarité vectorielle (pgvector).
-
-        Args:
-            embedding: Vecteur d'embedding de dimension 384
-            top_k: Nombre de résultats à retourner
-
-        Returns:
-            Liste de dictionnaires contenant les métadonnées des templates
-        """
-        # Convertir l'embedding en format string PostgreSQL array
-        embedding_str = "[" + ",".join(str(float(x)) for x in embedding) + "]"
-
-        # Utiliser SQLAlchemy ORM avec l'opérateur pgvector <=> (cosine distance)
-        distance_expr = literal_column(f"\"Embedding\" <=> '{embedding_str}'::vector")
-
-        # Construire la requête avec SQLAlchemy ORM
-        query = (
-            self.db.query(
-                CardTemplates.Path,
-                CardTemplates.TemplateFieldsUsage,
-                CardTemplates.ShortSemanticRepresentation,
-                CardTemplates.FullSemanticRepresentation,
-                distance_expr.label("distance"),
-            )
-            .filter(CardTemplates.Embedding.isnot(None))
-            .filter(CardTemplates.IsEnabled == True)
-            .order_by(distance_expr)
-            .limit(top_k)
-        )
-
-        result = query.all()
-
-        templates = []
-        for row in result:
-            templates.append(
-                {
-                    "template_name": row.Path,
-                    "fields_usage": row.TemplateFieldsUsage,
-                    "short_description": row.ShortSemanticRepresentation,
-                    "full_description": row.FullSemanticRepresentation,
-                    "similarity_distance": float(row.distance),
-                }
-            )
-
-        return templates
 
     def _build_single_support_prompt_and_chain(
         self,

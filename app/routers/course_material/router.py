@@ -139,7 +139,7 @@ async def generate_course_material_sync(
         embedding = generator._generate_embedding(pair_text)
 
         # Récupérer les templates pertinents pour cette paire
-        templates = generator._fetch_similar_templates(embedding, top_k)
+        templates = generator._fetch_similar_templates(embedding, top_k, { "layouts/": 3, "text/": 5}, True)
 
         # Créer une tâche asynchrone pour générer le support
         tasks.append(generator._generate_single_support_from_info_format_async(

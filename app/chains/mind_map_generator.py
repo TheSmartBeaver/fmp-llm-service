@@ -1,13 +1,12 @@
 from typing import List, Dict, Any
 import asyncio
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import literal_column
 from sentence_transformers import SentenceTransformer
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
-from app.models.db.fmp_models import CardTemplates
+from app.utils.template_search import fetch_similar_templates
 
 
 class MindMapGenerator:
@@ -73,7 +72,7 @@ class MindMapGenerator:
             embedding = self._generate_embedding(pair_text)
 
             # Récupérer les templates pertinents pour cette paire
-            templates = self._fetch_similar_templates(embedding, top_k)
+            templates = fetch_similar_templates(self.db, embedding, top_k, { "layouts/": 3, "text/": 5}, True)
 
             # Créer une tâche asynchrone pour générer la carte mentale
             tasks.append(self._generate_single_card_from_info_format_async(info_format_pair, templates))
@@ -201,59 +200,6 @@ Génère les triplets question-information-format au format JSON. N'oublie pas d
             normalize_embeddings=True  # Important pour cosine similarity
         )
         return embedding.tolist()
-
-    def _fetch_similar_templates(self, embedding: List[float], top_k: int) -> List[Dict[str, Any]]:
-        """
-        Recherche les templates les plus similaires via similarité vectorielle (pgvector).
-
-        Args:
-            embedding: Vecteur d'embedding de dimension 384
-            top_k: Nombre de résultats à retourner
-
-        Returns:
-            Liste de dictionnaires contenant les métadonnées des templates:
-            - Path: nom du template
-            - TemplateFieldsUsage: description des champs
-            - ShortSemanticRepresentation: description courte
-            - FullSemanticRepresentation: description complète
-        """
-        # Convertir l'embedding en format string PostgreSQL array
-        embedding_str = "[" + ",".join(str(float(x)) for x in embedding) + "]"
-
-        # Utiliser SQLAlchemy ORM avec l'opérateur pgvector <=> (cosine distance)
-        # literal_column permet de créer une expression SQL brute qui sera injectée telle quelle
-        distance_expr = literal_column(f'"Embedding" <=> \'{embedding_str}\'::vector')
-
-        # Construire la requête avec SQLAlchemy ORM
-        query = (
-            self.db.query(
-                CardTemplates.Path,
-                CardTemplates.TemplateFieldsUsage,
-                CardTemplates.ShortSemanticRepresentation,
-                CardTemplates.FullSemanticRepresentation,
-                distance_expr.label('distance')
-            )
-            .filter(CardTemplates.Embedding.isnot(None))
-            .filter(CardTemplates.IsEnabled == True)
-            .order_by(distance_expr)
-            .limit(top_k)
-        )
-
-        result = query.all()
-
-        templates = []
-        for row in result:
-            templates.append({
-                "template_name": row.Path,
-                "fields_usage": row.TemplateFieldsUsage,
-                "short_description": row.ShortSemanticRepresentation,
-                "full_description": row.FullSemanticRepresentation,
-                "similarity_distance": float(row.distance)
-            })
-
-        # raise NotImplementedError
-
-        return templates
 
     def _build_single_card_prompt_and_chain(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Any, str]:
         """

@@ -1,15 +1,14 @@
 import uuid
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import literal_column, text
 from app.models.dto.embedding.simple_text_dto import SimpleTextDto
 from app.models.dto.embedding.search_similar_dto import (
     SearchSimilarRequest,
     SearchSimilarResponse,
     SimilarCardTemplate
 )
-from app.models.db.fmp_models import CardTemplates
 from app.database import get_db
+from app.utils.template_search import fetch_similar_templates
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
@@ -38,6 +37,7 @@ async def search_similar(request: SearchSimilarRequest, db: Session = Depends(ge
     """
     Recherche les CardTemplates dont l'embedding est le plus proche du texte fourni.
     Utilise la similarité cosinus (via l'opérateur <=> de pgvector).
+    Supporte les quotas par catégorie pour contrôler la distribution des templates.
     """
     # 1. Générer l'embedding du texte de recherche
     query_embedding = model.encode(
@@ -45,46 +45,28 @@ async def search_similar(request: SearchSimilarRequest, db: Session = Depends(ge
         normalize_embeddings=True
     ).tolist()
 
-    # 2. Convertir l'embedding en format compatible avec PostgreSQL
-    # Pour pgvector, on doit formater comme un string: '[0.1, 0.2, 0.3, ...]'
-
-    embedding_str = "[" + ",".join(str(float(x)) for x in query_embedding) + "]"
-
-    # Utiliser SQLAlchemy ORM avec l'opérateur pgvector <=> (cosine distance)
-    # literal_column permet de créer une expression SQL brute qui sera injectée telle quelle
-    distance_expr = literal_column(f'"Embedding" <=> \'{embedding_str}\'::vector')
-
-    # 4. Requête avec l'ORM SQLAlchemy
-    query = (
-        db.query(
-            CardTemplates.SKU,
-            CardTemplates.Path,
-            CardTemplates.Template,
-            CardTemplates.FullSemanticRepresentation,
-            CardTemplates.ShortSemanticRepresentation,
-            distance_expr.label('distance')
-        )
-        .filter(CardTemplates.Embedding.isnot(None))
-        .filter(CardTemplates.IsEnabled == True)
-        .order_by(distance_expr)
-        .limit(request.top_n)
+    # 2. Récupérer les templates similaires avec fetch_similar_templates
+    templates = fetch_similar_templates(
+        db=db,
+        embedding=query_embedding,
+        top_k=request.top_n,
+        category_quotas=request.category_quotas,
+        include_full_data=request.include_full_data
     )
 
-    result = query.all()
-
-    # 5. Convertir les résultats en objets SimilarCardTemplate
+    # 3. Convertir les résultats en objets SimilarCardTemplate
     # La distance cosinus est dans [0, 2], on convertit en similarité [0, 1]
     # similarité = 1 - (distance / 2)
     similar_templates = [
         SimilarCardTemplate(
-            sku=row.SKU,
-            path=row.Path,
-            template=row.Template,
-            full_semantic_representation=row.FullSemanticRepresentation,
-            short_semantic_representation=row.ShortSemanticRepresentation,
-            similarity_score=1.0 - (row.distance / 2.0)  # Convertir distance en similarité
+            sku=template.get("sku"),
+            path=template["template_name"],
+            template=template.get("template"),
+            full_semantic_representation=template["full_description"],
+            short_semantic_representation=template["short_description"],
+            similarity_score=1.0 - (template["similarity_distance"] / 2.0)
         )
-        for row in result
+        for template in templates
     ]
 
     return SearchSimilarResponse(

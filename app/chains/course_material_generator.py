@@ -6,6 +6,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
+from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.utils.template_search import fetch_similar_templates
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
@@ -361,7 +362,7 @@ RÈGLES IMPORTANTES:
 5. ❌ N'INVENTE JAMAIS de template_name ou de nom de champ qui n'est pas explicitement listé dans les templates disponibles
 6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer un support riche
 7. ❌ Ne duplique pas le même contenu textuel dans plusieurs champs du support
-8. Le FORMAT spécifié doit guider ton choix de templates et la structure du support
+8. ❌ Ne crée pas d'exercices ou de quiz, concentre-toi sur le contenu pédagogique
 9. ⚠️ IMPORTANT: Si le format mentionne une image ou vidéo, tu DOIS l'intégrer en utilisant les médias disponibles ci-dessus
 10. Pour intégrer un média, utilise un template approprié et référence l'URL du média disponible
 11. ⚠️ IMPORTANT: Utilise le TEXTE ASSOCIÉ fourni sans l'inventer ou le reformuler (c'est le texte original des notes de cours)
@@ -414,8 +415,8 @@ Génère le JSON du support de cours en utilisant les templates disponibles. Si 
         )
 
         # Créer la chaîne avec parser JSON
-        o1_mini_llm = OpenAiO3MiniLlm().get_llm()
-        chain = prompt | o1_mini_llm | JsonOutputParser()
+        o3_llm = OpenAiO3Llm().get_llm()
+        chain = prompt | o3_llm | JsonOutputParser()
 
         # Préparer les paramètres d'invocation
         invoke_params = {

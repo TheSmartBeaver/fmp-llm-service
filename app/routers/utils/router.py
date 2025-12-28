@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer
 
 from app.utils.structure_process import extract_json_structure
 from app.chains.template_structure_generator import TemplateStructureGenerator
+from app.utils.template_substitution import substitute_template_values
 from app.database import get_db
 
 utils_router = APIRouter(prefix="/api/utils", tags=["utils"])
@@ -158,4 +159,156 @@ async def generate_template_structure(
             success=False,
             template_structure={},
             prompt=f"Error: {str(e)}"
+        )
+
+
+class TemplateSubstitutionRequest(BaseModel):
+    """Request model pour la substitution de templates"""
+    template_schema: Dict[str, Any]
+    source_json: Dict[str, Any]
+    remove_unsubstituted: Optional[bool] = False
+
+
+class TemplateSubstitutionResponse(BaseModel):
+    """Response model pour la substitution de templates"""
+    success: bool
+    result: Any
+    error: Optional[str] = None
+
+
+@utils_router.post("/substitute-template", response_model=TemplateSubstitutionResponse)
+async def substitute_template(request: TemplateSubstitutionRequest):
+    """
+    Substitue les références {chemin} dans un schéma de templates par les valeurs du JSON source.
+
+    Cette route prend un JSON schéma (généré par le LLM) avec des références comme {course_title}
+    ou {course_sections[]section_title} et les remplace par les vraies valeurs du JSON source.
+
+    Example:
+        Request:
+        {
+            "template_schema": {
+                "template_name": "layouts/vertical_column/container",
+                "spacing": "2rem",
+                "items": [
+                    {
+                        "template_name": "layouts/vertical_column/item",
+                        "title": "{course_title}",
+                        "content": {
+                            "template_name": "text/sous_titre",
+                            "text": "{learning_objective}"
+                        }
+                    },
+                    {
+                        "template_name": "layouts/vertical_column/item",
+                        "title": "{course_sections[]section_title}",
+                        "content": {
+                            "template_name": "text/description",
+                            "text": "{course_sections[]description}"
+                        }
+                    },
+                    {
+                        "template_name": "text/annotation",
+                        "text": "{course_sections[]tables[]infinitive}"
+                    }
+                ]
+            },
+            "source_json": {
+                "course_title": "Les verbes espagnols",
+                "learning_objective": "Apprendre la conjugaison",
+                "course_sections": [
+                    {
+                        "section_title": "Présent de l'indicatif",
+                        "description": "Le présent exprime des actions actuelles",
+                        "tables": [
+                            {
+                                "infinitive": "hablar"
+                            },
+                            {
+                                "infinitive": "comer"
+                            }
+                        ]
+                    },
+                    {
+                        "section_title": "Imparfait",
+                        "description": "L'imparfait exprime des actions passées",
+                        "tables": [
+                            {
+                                "infinitive": "vivir"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+
+        Response:
+        {
+            "success": true,
+            "result": {
+                "template_name": "layouts/vertical_column/container",
+                "spacing": "2rem",
+                "items": [
+                    {
+                        "template_name": "layouts/vertical_column/item",
+                        "title": "Les verbes espagnols",
+                        "content": {
+                            "template_name": "text/sous_titre",
+                            "text": "Apprendre la conjugaison"
+                        }
+                    },
+                    [
+                        {
+                            "template_name": "layouts/vertical_column/item",
+                            "title": "Présent de l'indicatif",
+                            "content": {
+                                "template_name": "text/description",
+                                "text": "Le présent exprime des actions actuelles"
+                            }
+                        },
+                        {
+                            "template_name": "layouts/vertical_column/item",
+                            "title": "Imparfait",
+                            "content": {
+                                "template_name": "text/description",
+                                "text": "L'imparfait exprime des actions passées"
+                            }
+                        }
+                    ],
+                    [
+                        {
+                            "template_name": "text/annotation",
+                            "text": "hablar"
+                        },
+                        {
+                            "template_name": "text/annotation",
+                            "text": "comer"
+                        },
+                        {
+                            "template_name": "text/annotation",
+                            "text": "vivir"
+                        }
+                    ]
+                ]
+            },
+            "error": null
+        }
+    """
+    try:
+        result = substitute_template_values(
+            template_structure=request.template_schema,
+            source_data=request.source_json,
+            remove_unsubstituted=request.remove_unsubstituted
+        )
+
+        return TemplateSubstitutionResponse(
+            success=True,
+            result=result,
+            error=None
+        )
+    except Exception as e:
+        return TemplateSubstitutionResponse(
+            success=False,
+            result={},
+            error=f"Error: {str(e)}"
         )

@@ -223,6 +223,10 @@ RÈGLES DE STRUCTURATION:
 2. "texte_associe" : le texte exact issu des notes (ne pas inventer ou reformuler, juste extraire)
 3. "format" : le format de présentation le plus adapté pour atteindre cet objectif d'apprentissage
 
+🚫 INTERDICTION ABSOLUE: NE PROPOSE JAMAIS D'EXERCICES, QUESTIONS, QCM, QUIZ OU ÉVALUATIONS
+- Les formats doivent être des PRÉSENTATIONS d'information (explications, définitions, exemples concrets)
+- PAS de formats interactifs demandant à l'étudiant de répondre ou de résoudre quelque chose
+
 
 STRUCTURE ATTENDUE (TABLEAU JSON):
 [
@@ -366,7 +370,10 @@ RÈGLES IMPORTANTES:
 5. ❌ N'INVENTE JAMAIS de template_name ou de nom de champ qui n'est pas explicitement listé dans les templates disponibles
 6. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer un support riche
 7. ❌ Ne duplique pas le même contenu textuel dans plusieurs champs du support
-8. ❌ Ne crée pas d'exercices, concentre-toi sur le contenu pédagogique
+8. 🚫 INTERDICTION ABSOLUE: NE GÉNÈRE JAMAIS D'EXERCICES, QUESTIONS, QCM, QUIZ, OU ÉVALUATIONS
+   - Ton rôle est UNIQUEMENT de présenter l'information pour l'apprentissage
+   - Crée des EXPLICATIONS, DÉFINITIONS, EXEMPLES, ILLUSTRATIONS, DÉMONSTRATIONS
+   - NE crée PAS de questions à répondre, problèmes à résoudre, ou tests de connaissances
 9. ⚠️ IMPORTANT: Si le format mentionne une image ou vidéo, tu DOIS l'intégrer en utilisant les médias disponibles ci-dessus
 10. Pour intégrer un média, utilise un template approprié et référence l'URL du média disponible
 11. ⚠️ IMPORTANT: Enrichis et reformule si besoin le TEXTE ASSOCIÉ avec le minimum pour faciliter la compréhension

@@ -1,0 +1,173 @@
+def extract_json_structure(data):
+    """
+    Extrait la structure d'un JSON en cartographiant tous les chemins de clés.
+
+    - Les valeurs primitives sont remplacées par leur type ("string", "number", "boolean", "null")
+    - Les arrays conservent un élément représentatif fusionnant toutes les clés possibles
+    - Les objets imbriqués sont traités récursivement
+
+    Args:
+        data: Le JSON à analyser (dict, list, ou valeur primitive)
+
+    Returns:
+        La structure du JSON avec les types au lieu des valeurs
+
+    Example:
+        >>> json_data = {
+        ...     "name": "John",
+        ...     "age": 30,
+        ...     "items": [
+        ...         {"id": 1, "type": "A"},
+        ...         {"id": 2, "category": "B"}
+        ...     ]
+        ... }
+        >>> extract_json_structure(json_data)
+        {
+            "name": "string",
+            "age": "number",
+            "items": [
+                {
+                    "id": "number",
+                    "type": "string",
+                    "category": "string"
+                }
+            ]
+        }
+    """
+    if data is None:
+        return "null"
+
+    elif isinstance(data, bool):
+        # bool doit être testé AVANT int car bool est une sous-classe de int en Python
+        return "boolean"
+
+    elif isinstance(data, (int, float)):
+        return "number"
+
+    elif isinstance(data, str):
+        return "string"
+
+    elif isinstance(data, list):
+        if len(data) == 0:
+            return []
+
+        # Fusionner toutes les structures des éléments du tableau
+        merged_structure = None
+
+        for item in data:
+            item_structure = extract_json_structure(item)
+
+            if merged_structure is None:
+                merged_structure = item_structure
+            else:
+                # Fusionner les structures (uniquement pour les objets)
+                if isinstance(merged_structure, dict) and isinstance(item_structure, dict):
+                    merged_structure = merge_structures(merged_structure, item_structure)
+
+        return [merged_structure] if merged_structure is not None else []
+
+    elif isinstance(data, dict):
+        return {key: extract_json_structure(value) for key, value in data.items()}
+
+    else:
+        # Type inconnu, retourner une représentation string
+        return "unknown"
+
+
+def merge_structures(struct1, struct2):
+    """
+    Fusionne deux structures d'objets en combinant toutes les clés possibles.
+
+    Args:
+        struct1: Première structure (dict)
+        struct2: Deuxième structure (dict)
+
+    Returns:
+        Structure fusionnée contenant toutes les clés des deux structures
+    """
+    if not isinstance(struct1, dict) or not isinstance(struct2, dict):
+        # Si l'un des deux n'est pas un dict, retourner struct2 (ou struct1)
+        return struct2 if struct2 is not None else struct1
+
+    merged = struct1.copy()
+
+    for key, value2 in struct2.items():
+        if key in merged:
+            value1 = merged[key]
+
+            # Si les deux valeurs sont des dicts, les fusionner récursivement
+            if isinstance(value1, dict) and isinstance(value2, dict):
+                merged[key] = merge_structures(value1, value2)
+
+            # Si les deux valeurs sont des listes avec des dicts, fusionner les structures
+            elif isinstance(value1, list) and isinstance(value2, list):
+                if len(value1) > 0 and len(value2) > 0:
+                    if isinstance(value1[0], dict) and isinstance(value2[0], dict):
+                        merged[key] = [merge_structures(value1[0], value2[0])]
+                    else:
+                        # Garder value2 (ou value1, peu importe si ce sont des primitives)
+                        merged[key] = value2
+                elif len(value2) > 0:
+                    merged[key] = value2
+
+            # Sinon, garder value2 (la nouvelle valeur écrase l'ancienne)
+            else:
+                merged[key] = value2
+        else:
+            # Nouvelle clé, l'ajouter
+            merged[key] = value2
+
+    return merged
+
+
+# Exemple d'utilisation
+if __name__ == "__main__":
+    import json
+
+    # Exemple de JSON d'entrée
+    sample_json = {
+        "course_title": "Mini cours d'espagnol – Apprendre la conjugaison",
+        "learning_objective": "Maîtriser la conjugaison des verbes espagnols réguliers",
+        "course_sections": [
+            {
+                "section_id": "general_rules",
+                "section_type": "theory",
+                "section_title": "Règles générales",
+                "description": "En espagnol, les verbes se terminent par -ar, -er ou -ir."
+            },
+            {
+                "section_id": "regular_verbs_conjugation_tables",
+                "section_type": "conjugation_tables",
+                "section_title": "Verbes réguliers au présent de l'indicatif",
+                "tables": [
+                    {
+                        "verb_group": "-ar",
+                        "infinitive": "hablar",
+                        "infinitive_translation": "parler",
+                        "conjugation_table": [
+                            {
+                                "pronoun_es": "yo",
+                                "verb_form": "hablo",
+                                "translation_fr": "je parle"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "section_id": "learning_tips",
+                "section_type": "study_tips",
+                "section_title": "Conseils pour progresser",
+                "tips": [
+                    "Mémoriser un verbe modèle par groupe (-ar, -er, -ir).",
+                    "Lire les tables en associant systématiquement la forme espagnole"
+                ]
+            }
+        ]
+    }
+
+    # Extraire la structure
+    structure = extract_json_structure(sample_json)
+
+    # Afficher le résultat formaté
+    print(json.dumps(structure, indent=2, ensure_ascii=False))

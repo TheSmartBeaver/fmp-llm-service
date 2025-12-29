@@ -128,135 +128,10 @@ class TemplateStructureGenerator:
         source_json: Dict[str, Any],
         templates: List[Dict[str, Any]],
         context_description: str
-    ) -> tuple[Dict[str, Any], str]:
-        """
-        Utilise le LLM pour générer la structure de templates.
-
-        Args:
-            source_json: Le JSON source contenant les données
-            templates: Liste des templates disponibles
-            context_description: Description du contexte
-
-        Returns:
-            Tuple contenant:
-            - Le JSON structuré généré
-            - Le prompt complet envoyé au LLM
-        """
-        # Formater les templates pour le prompt
-        templates_description = self._format_templates_for_prompt(templates)
-
-        # Extraire TOUS les chemins disponibles dans le JSON source
-        all_paths = self._extract_all_json_paths(source_json)
-
-        # Créer le prompt système
-        system_prompt = """Tu es un expert en structuration de données et en mapping de templates.
-
-Ta mission est de transformer un JSON de données source en un JSON structuré basé sur des templates disponibles.
-
-TEMPLATES DISPONIBLES:
-{templates}
-
-CHEMINS DISPONIBLES DANS LE JSON SOURCE (À TOUS MAPPER):
-{all_paths}
-
-RÈGLES CRITIQUES - À RESPECTER ABSOLUMENT:
-
-1. ⚠️ EXHAUSTIVITÉ OBLIGATOIRE:
-   - Tu DOIS mapper TOUS les chemins listés ci-dessus dans "CHEMINS DISPONIBLES"
-   - Chaque chemin de la liste doit apparaître au moins une fois dans la structure finale avec la notation {{...}}
-   - AUCUN chemin ne doit être oublié
-   - Coche mentalement chaque chemin au fur et à mesure que tu le mappe
-
-2. ⚠️ CHEMINS EXACTS UNIQUEMENT:
-   - Tu ne peux utiliser QUE les chemins listés dans "CHEMINS DISPONIBLES" ci-dessus
-   - ❌ INTERDIT d'inventer des chemins qui ne sont pas dans la liste
-   - ✅ AUTORISÉ: Uniquement les chemins de la liste complète fournie ci-dessus
-   - Copie-colle les chemins exactement comme ils apparaissent dans la liste
-
-3. ⚠️ TEMPLATES ET CHAMPS EXACTS:
-   - Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles
-   - Les noms de champs doivent STRICTEMENT correspondre à "Usage des champs" de chaque template
-   - ❌ N'invente JAMAIS de template_name ou de nom de champ
-
-4. 🎯 STRUCTURE COMPLÈTE:
-   - Crée une hiérarchie profonde et complète qui reflète TOUTES les données
-   - Pour les tableaux imbriqués (ex: course_sections contient tables), crée des structures imbriquées
-   - N'oublie aucun niveau de profondeur (ex: conjugation_table dans tables)
-
-NOTATION DES CHEMINS (RAPPEL):
-- {{champ}} : référence directe à la racine
-- {{objet->sous_champ}} : navigation dans un objet (opérateur ->)
-- {{tableau[]champ}} : parcourt un tableau (opérateur [])
-- {{tableau[]sous_tableau[]champ}} : double parcours
-- {{tableau[]objet->champ}} : combine tableau et objet
-
-ALGORITHME À SUIVRE:
-1. Regarde la liste "CHEMINS DISPONIBLES" ci-dessus - ce sont TOUS les chemins que tu dois mapper
-2. Pour chaque chemin de la liste, trouve le template approprié pour l'afficher
-3. Crée une structure imbriquée qui utilise TOUS les chemins de la liste
-4. Vérifie que tu as utilisé CHAQUE chemin de la liste au moins une fois
-5. N'utilise AUCUN chemin qui n'est pas dans la liste
-
-STRUCTURE ATTENDUE:
-{{
-  "template_name": "nom_exact_du_template",
-  "items": [
-    {{
-      "template_name": "autre_template",
-      "field_name_1": "{{reference_reelle_du_json}}",
-      "field_name_2": {{
-        "template_name": "template_imbrique",
-        "field_X": "{{autre_reference_reelle}}"
-      }}
-    }}
-  ]
-}}
-
-Réponds UNIQUEMENT avec le JSON valide, sans texte additionnel."""
-
-        user_prompt = """Voici le JSON de données source à structurer:
-
-CONTEXTE: {context}
-
-DONNÉES SOURCE:
-```json
-{source_json}
-```
-
-RAPPEL CRITIQUE:
-- Mappe TOUS les chemins listés dans "CHEMINS DISPONIBLES" ci-dessus
-- Utilise UNIQUEMENT les chemins de cette liste, rien d'autre
-- Vérifie que chaque chemin de la liste apparaît au moins une fois dans ton JSON final
-
-Génère un JSON structuré COMPLET en utilisant les templates disponibles."""
-
-        # Créer le prompt template
-        prompt = ChatPromptTemplate.from_messages(
-            [("system", system_prompt), ("human", user_prompt)]
-        )
-
-        # Créer la chaîne avec parser JSON
-        chain = prompt | self.llm | JsonOutputParser()
-
-        # Préparer les paramètres
-        import json
-        source_json_str = json.dumps(source_json, ensure_ascii=False, indent=2)
-
-        invoke_params = {
-            "templates": templates_description,
-            "all_paths": all_paths,
-            "context": context_description or "Non spécifié",
-            "source_json": source_json_str,
-        }
-
-        # Générer le prompt complet pour le retour
-        full_prompt = prompt.format(**invoke_params)
-
-        #raise NotImplementedError("LLM invocation is disabled in this environment.")
-        # Exécuter la chaîne
-        result = chain.invoke(invoke_params)
-
-        return result, full_prompt
+    ):
+        test1 = self._extract_all_json_paths(source_json)
+        test2 = self._format_templates_for_prompt(templates)
+        raise NotImplementedError("Méthode _generate_structure_with_llm non implémentée")
 
     def _extract_all_json_paths(self, data: Any) -> str:
         """
@@ -338,48 +213,11 @@ Génère un JSON structuré COMPLET en utilisant les templates disponibles."""
         """
         formatted = []
         for i, tmpl in enumerate(templates, 1):
-            # Créer un exemple de structure JSON pour ce template
-            json_example = self._create_template_json_example(tmpl)
-
             formatted.append(
                 f"""
 Template {i}:
 - Path (à utiliser EXACTEMENT comme template_name): "{tmpl['template_name']}"
 - Usage des champs: {tmpl['fields_usage']}
-- Description courte: {tmpl['short_description']}
-- Exemple de structure JSON attendue:
-{json_example}
 """
             )
         return "\n".join(formatted)
-
-    def _create_template_json_example(self, template: Dict[str, Any]) -> str:
-        """
-        Crée un exemple de structure JSON pour un template donné.
-
-        Args:
-            template: Métadonnées du template
-
-        Returns:
-            String contenant un exemple de structure JSON
-        """
-        import re
-
-        fields_usage = template.get("fields_usage", "")
-        field_matches = re.findall(r"(\w+)\s*:", fields_usage)
-
-        if field_matches:
-            example_fields = []
-            for field_name in field_matches[:3]:
-                example_fields.append(
-                    f'    "{field_name}": "{{{{reference_ou_valeur}}}}"'
-                )
-
-            example = "{\n" + f'    "template_name": "{template["template_name"]}",\n'
-            example += ",\n".join(example_fields)
-            example += "\n  }"
-        else:
-            example = "{\n" + f'    "template_name": "{template["template_name"]}",\n'
-            example += '    "voir_usage_des_champs_ci_dessus": "..."\n  }'
-
-        return example

@@ -131,9 +131,10 @@ class TemplateStructureGenerator:
     ):
         test1 = self._extract_all_json_paths(source_json)
         test2 = self._format_templates_for_prompt(templates)
+        test3 = self._extract_all_json_paths(source_json, include_indices=True)
         raise NotImplementedError("Méthode _generate_structure_with_llm non implémentée")
 
-    def _extract_all_json_paths(self, data: Any) -> str:
+    def _extract_all_json_paths(self, data: Any, include_indices: bool = False) -> str:
         """
         Extrait récursivement tous les chemins disponibles dans un JSON.
 
@@ -142,14 +143,32 @@ class TemplateStructureGenerator:
 
         Args:
             data: Le JSON à analyser
+            include_indices: Si True, retourne tous les chemins avec les index réels des tableaux
+                           (ex: {{course_sections[0]description}}, {{course_sections[1]description}})
+                           Si False (défaut), utilise la notation compactée []
+                           (ex: {{course_sections[]description}})
 
         Returns:
             String formaté avec tous les chemins disponibles
         """
-        # Étape 1: Obtenir la structure minimale avec extract_json_structure
-        structure = extract_json_structure(data)
+        if include_indices:
+            # Mode avec indices: extraire tous les chemins du JSON original
+            return self._extract_paths_with_indices(data)
+        else:
+            # Mode compact: utiliser extract_json_structure pour fusionner
+            structure = extract_json_structure(data)
+            return self._extract_paths_compact(structure)
 
-        # Étape 2: Extraire tous les chemins de cette structure
+    def _extract_paths_compact(self, structure: Any) -> str:
+        """
+        Extrait les chemins en notation compactée avec [].
+
+        Args:
+            structure: La structure JSON fusionnée
+
+        Returns:
+            String formaté avec tous les chemins compactés
+        """
         paths = []
 
         def extract_paths(obj: Any, path: str = ""):
@@ -198,8 +217,64 @@ class TemplateStructureGenerator:
         unique_paths = sorted(set(paths))
 
         # Formater la liste des chemins
-        formatted_paths = "\n".join([f"  - {path}" for path in unique_paths])
-        return formatted_paths
+        #formatted_paths = "\n".join([f"  - {path}" for path in unique_paths])
+        return unique_paths
+
+    def _extract_paths_with_indices(self, data: Any) -> str:
+        """
+        Extrait tous les chemins avec les index réels des tableaux.
+
+        Args:
+            data: Le JSON original
+
+        Returns:
+            String formaté avec tous les chemins incluant les index
+        """
+        paths = []
+
+        def extract_paths(obj: Any, path: str = ""):
+            if isinstance(obj, dict):
+                # Parcourir les clés de l'objet
+                for key, value in obj.items():
+                    # Créer le chemin pour cette clé
+                    if path:
+                        # Si on est dans un chemin existant, utiliser ->
+                        new_path = f"{path}->{key}"
+                    else:
+                        # Racine
+                        new_path = key
+
+                    # Ajouter ce chemin à la liste
+                    paths.append(f"{{{{{new_path}}}}}")
+
+                    # Continuer la récursion
+                    extract_paths(value, new_path)
+
+            elif isinstance(obj, list):
+                # Pour chaque élément du tableau, créer un chemin avec son index
+                for idx, item in enumerate(obj):
+                    array_path = f"{path}[{idx}]"
+
+                    if isinstance(item, dict):
+                        # Tableau d'objets
+                        for key, value in item.items():
+                            new_path = f"{array_path}{key}"
+                            paths.append(f"{{{{{new_path}}}}}")
+
+                            # Récursion pour les valeurs imbriquées
+                            extract_paths(value, new_path)
+                    else:
+                        # Tableau de primitives
+                        paths.append(f"{{{{{array_path}}}}}")
+
+        extract_paths(data)
+
+        # Supprimer les doublons et trier
+        unique_paths = sorted(set(paths))
+
+        # Formater la liste des chemins
+        # formatted_paths = "\n".join([f"  - {path}" for path in unique_paths])
+        return unique_paths
 
     def _format_templates_for_prompt(self, templates: List[Dict[str, Any]]) -> str:
         """

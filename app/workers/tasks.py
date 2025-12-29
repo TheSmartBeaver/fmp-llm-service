@@ -187,7 +187,10 @@ def generate_course_material_task(
         result = {
             "success": True,
             "supports": [
-                shit_test,
+                {
+                    "support": shit_test,
+                    "version": "1.0.0",
+                },
                 {
                     "support": {
                         "template_name": "conceptual/theorie",

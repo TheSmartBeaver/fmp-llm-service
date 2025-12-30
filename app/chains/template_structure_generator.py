@@ -141,9 +141,14 @@ class TemplateStructureGenerator:
 
         json_paths_with_indices = self._extract_all_json_paths(source_json, include_indices=True)
 
-        # TODO: Utiliser destination_mappings pour construire le JSON final
+        # Construire le JSON final
+        final_json = self._build_final_json(
+            source_json=source_json,
+            destination_mappings=destination_mappings,
+            json_paths_with_indices=json_paths_with_indices
+        )
 
-        raise NotImplementedError("Méthode _generate_structure_with_llm non implémentée")
+        return final_json, "TODO: prompt"
 
     def _extract_all_json_paths(self, data: Any, include_indices: bool = False, use_variables: bool = False) -> str:
         """
@@ -409,3 +414,343 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
         })
 
         return result
+
+    def _convert_indices_to_variables(self, path_with_indices: str) -> tuple[str, dict[str, int]]:
+        """
+        Convertit un chemin avec indices réels en chemin avec variables et retourne le mapping.
+
+        Args:
+            path_with_indices: Chemin avec indices réels (ex: "course_sections[0]lessons[1]title")
+
+        Returns:
+            Tuple (chemin_avec_variables, mapping_variables)
+            Ex: ("course_sections[x]lessons[y]title", {x: 0, y: 1})
+        """
+        import re
+
+        # Variables pour les niveaux d'imbrication
+        array_vars = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's', 'r', 'q']
+
+        # Extraire tous les indices avec leur position
+        indices = []
+        pattern = r'\[(\d+)\]'
+        for match in re.finditer(pattern, path_with_indices):
+            indices.append(int(match.group(1)))
+
+        # Créer le mapping {variable: indice}
+        var_mapping = {}
+        for i, idx in enumerate(indices):
+            if i < len(array_vars):
+                var_mapping[array_vars[i]] = idx
+
+        # Remplacer les indices par des variables dans le chemin
+        path_with_vars = path_with_indices
+        for i, var in enumerate(array_vars[:len(indices)]):
+            # Remplacer le premier [nombre] trouvé par [variable]
+            path_with_vars = re.sub(r'\[\d+\]', f'[{var}]', path_with_vars, count=1)
+
+        return path_with_vars, var_mapping
+
+    def _substitute_variables_in_destination(self, destination_path: str, var_mapping: dict[str, int]) -> str:
+        """
+        Substitue les variables dans un chemin de destination par leurs valeurs réelles.
+
+        Args:
+            destination_path: Chemin avec variables (ex: "container[\"items\"][x]concept[\"title\"]")
+            var_mapping: Mapping des variables vers indices (ex: {x: 0, y: 1})
+
+        Returns:
+            Chemin avec indices substitués (ex: "container[\"items\"][0]concept[\"title\"]")
+        """
+        import re
+
+        result = destination_path
+        for var, idx in var_mapping.items():
+            # Remplacer [variable] par [indice]
+            result = re.sub(rf'\[{var}\]', f'[{idx}]', result)
+
+        return result
+
+    def _get_value_from_path(self, data: Any, path: str) -> Any:
+        """
+        Récupère une valeur dans un JSON en suivant un chemin.
+
+        Args:
+            data: Le JSON source
+            path: Chemin avec indices (ex: "course_sections[0]lessons[1]title")
+
+        Returns:
+            La valeur trouvée
+        """
+        import re
+
+        # Séparer le chemin en segments
+        # Ex: "course_sections[0]lessons[1]title" → ["course_sections", "[0]", "lessons", "[1]", "title"]
+        segments = re.split(r'(->|\[\d+\])', path)
+        segments = [s for s in segments if s and s != '->']
+
+        current = data
+        for segment in segments:
+            if segment.startswith('[') and segment.endswith(']'):
+                # C'est un index de tableau
+                idx = int(segment[1:-1])
+                current = current[idx]
+            else:
+                # C'est une clé d'objet
+                current = current[segment]
+
+        return current
+
+    def _parse_destination_path(self, destination_path: str) -> List[Dict[str, Any]]:
+        """
+        Parse un chemin de destination en segments structurés.
+
+        Args:
+            destination_path: Chemin de destination (ex: "layouts/vertical_column/container[\"items\"][0]conceptual/concept[\"title\"]")
+
+        Returns:
+            Liste de segments avec leur type et valeur
+            Ex: [
+                {"type": "template", "value": "layouts/vertical_column/container"},
+                {"type": "field", "value": "items"},
+                {"type": "index", "value": 0},
+                {"type": "template", "value": "conceptual/concept"},
+                {"type": "field", "value": "title"}
+            ]
+        """
+        import re
+
+        segments = []
+
+        # Pattern pour détecter les différents éléments
+        # 1. Template name: commence par une lettre et contient des /
+        # 2. Field access: ["nom_du_champ"]
+        # 3. Array index: [nombre]
+
+        # On va scanner le chemin caractère par caractère
+        i = 0
+        while i < len(destination_path):
+            # Vérifier si on a un field access ["..."]
+            if destination_path[i:i+2] == '["':
+                # Trouver la fin du field name
+                end_quote = destination_path.find('"]', i + 2)
+                if end_quote != -1:
+                    field_name = destination_path[i+2:end_quote]
+                    segments.append({"type": "field", "value": field_name})
+                    i = end_quote + 2
+                    continue
+
+            # Vérifier si on a un array index [nombre]
+            if destination_path[i] == '[' and i + 1 < len(destination_path) and destination_path[i+1].isdigit():
+                # Trouver la fin de l'index
+                end_bracket = destination_path.find(']', i + 1)
+                if end_bracket != -1:
+                    index_str = destination_path[i+1:end_bracket]
+                    segments.append({"type": "index", "value": int(index_str)})
+                    i = end_bracket + 1
+                    continue
+
+            # Sinon, c'est un template name
+            # Trouver la fin du template name (jusqu'au prochain [ ou fin)
+            template_name = ""
+            start = i
+            while i < len(destination_path) and destination_path[i] != '[':
+                i += 1
+
+            template_name = destination_path[start:i]
+            if template_name:
+                segments.append({"type": "template", "value": template_name})
+
+        return segments
+
+    def _build_final_json(
+        self,
+        source_json: Dict[str, Any],
+        destination_mappings: Dict[str, str],
+        json_paths_with_indices: List[str]
+    ) -> Dict[str, Any]:
+        """
+        Construit le JSON final en utilisant les mappings de destination.
+
+        Args:
+            source_json: Le JSON source contenant les données
+            destination_mappings: Mappings source (avec variables) → destination
+            json_paths_with_indices: Liste de tous les chemins source avec indices réels
+
+        Returns:
+            Le JSON final structuré avec les templates
+        """
+        result = {}
+
+        for path_source in json_paths_with_indices:
+            # 1. Convertir le chemin avec indices en chemin avec variables
+            path_with_vars, var_mapping = self._convert_indices_to_variables(path_source)
+
+            # 2. Trouver le chemin de destination correspondant
+            if path_with_vars not in destination_mappings:
+                # Pas de mapping pour ce chemin, on l'ignore
+                continue
+
+            destination_path = destination_mappings[path_with_vars]
+
+            # 3. Substituer les variables dans le chemin de destination
+            final_destination = self._substitute_variables_in_destination(
+                destination_path,
+                var_mapping
+            )
+
+            # 4. Récupérer la valeur source
+            source_value = self._get_value_from_path(source_json, path_source)
+
+            # 5. Parser le chemin de destination
+            segments = self._parse_destination_path(final_destination)
+
+            # 6. Construire la structure et insérer la valeur
+            try:
+                self._insert_value_in_structure(result, segments, source_value)
+            except Exception as e:
+                # Ajouter du contexte à l'erreur
+                raise ValueError(
+                    f"Error inserting value for path '{path_source}' -> '{final_destination}': {str(e)}"
+                ) from e
+
+        return result
+
+    def _insert_value_in_structure(
+        self,
+        root: Dict[str, Any],
+        segments: List[Dict[str, Any]],
+        value: Any
+    ):
+        """
+        Insère une valeur dans la structure JSON en suivant les segments du chemin.
+
+        Cette fonction navigue ou crée la structure selon les segments et insère la valeur finale.
+
+        Args:
+            root: Le dictionnaire racine où insérer
+            segments: Liste des segments du chemin (template, field, index)
+            value: La valeur à insérer à la fin du chemin
+        """
+        current = root
+
+        for i, segment in enumerate(segments):
+            seg_type = segment["type"]
+            seg_value = segment["value"]
+
+            # Déterminer si c'est le dernier segment
+            is_last = (i == len(segments) - 1)
+
+            if seg_type == "template":
+                # Un template doit être ajouté comme template_name
+                # On doit vérifier le segment suivant pour savoir comment structurer
+
+                if is_last:
+                    # Le template est la dernière chose, donc la valeur va directement dedans
+                    # On crée un objet avec template_name
+                    if not isinstance(current, dict):
+                        raise ValueError(f"Expected dict but got {type(current)}")
+
+                    # Si current est vide ou n'a pas de template_name, on l'ajoute
+                    if "template_name" not in current:
+                        current["template_name"] = seg_value
+                else:
+                    # Il y a d'autres segments après, on doit déterminer la structure
+                    next_seg = segments[i + 1]
+
+                    if next_seg["type"] == "field":
+                        # Le template est suivi d'un field, on crée la structure
+                        # Si current n'a pas encore de template_name, on l'ajoute
+                        if "template_name" not in current:
+                            current["template_name"] = seg_value
+                        # On continue, le prochain segment gérera le field
+
+                    elif next_seg["type"] == "template":
+                        # Deux templates consécutifs: le premier est un wrapper
+                        # On ne fait rien, le prochain segment gérera
+                        if "template_name" not in current:
+                            current["template_name"] = seg_value
+
+            elif seg_type == "field":
+                # Accès à un champ
+                field_name = seg_value
+
+                # Vérifier que current est bien un dict
+                if not isinstance(current, dict):
+                    raise ValueError(f"Cannot access field '{field_name}' on non-dict type {type(current).__name__}")
+
+                # Créer le champ s'il n'existe pas
+                if field_name not in current:
+                    # Déterminer le type à créer en regardant le segment suivant
+                    if not is_last:
+                        next_seg = segments[i + 1]
+                        if next_seg["type"] == "index":
+                            # Le prochain est un index, donc on crée un tableau
+                            current[field_name] = []
+                        else:
+                            # Sinon un objet
+                            current[field_name] = {}
+                    else:
+                        # Dernier segment: on met la valeur directement
+                        # Mais il faut gérer le cas où value est un objet/tableau complexe
+                        current[field_name] = self._process_value(value)
+                        return
+                elif not is_last:
+                    # Le champ existe déjà, vérifier qu'on peut naviguer dedans
+                    existing_value = current[field_name]
+                    next_seg = segments[i + 1]
+
+                    # Si le prochain segment est un index, on s'attend à une liste
+                    if next_seg["type"] == "index" and not isinstance(existing_value, list):
+                        raise ValueError(f"Field '{field_name}' exists but is not a list (found {type(existing_value).__name__})")
+
+                    # Si le prochain segment est un field ou template, on s'attend à un dict
+                    if next_seg["type"] in ("field", "template") and not isinstance(existing_value, dict):
+                        raise ValueError(f"Field '{field_name}' exists but is not a dict (found {type(existing_value).__name__})")
+
+                # Naviguer vers ce champ
+                current = current[field_name]
+
+            elif seg_type == "index":
+                # Accès à un index de tableau
+                idx = seg_value
+
+                # S'assurer que current est un tableau
+                if not isinstance(current, list):
+                    raise ValueError(f"Expected list but got {type(current)} for index {idx}")
+
+                # Étendre le tableau si nécessaire
+                while len(current) <= idx:
+                    current.append({})
+
+                # Naviguer vers cet index
+                current = current[idx]
+
+        # Si on arrive ici et qu'on n'a pas encore inséré la valeur, c'est qu'on doit l'insérer maintenant
+        # Cela arrive quand le dernier segment est un template
+        # Dans ce cas, on suppose que la valeur va dans un champ par défaut ou remplace le dict
+        # Pour simplifier, on va ajouter la valeur comme contenu si c'est pertinent
+        # Mais en général, cela ne devrait pas arriver avec notre structure
+
+    def _process_value(self, value: Any) -> Any:
+        """
+        Traite une valeur avant de l'insérer dans la structure finale.
+
+        Si la valeur est un objet ou un tableau complexe, cette fonction
+        la copie profondément pour éviter les références partagées.
+
+        Args:
+            value: La valeur à traiter (peut être primitif, dict, list, etc.)
+
+        Returns:
+            La valeur traitée, prête à être insérée
+        """
+        import copy
+
+        # Pour les types primitifs (str, int, float, bool, None), on retourne tel quel
+        if isinstance(value, (str, int, float, bool, type(None))):
+            return value
+
+        # Pour les objets et tableaux, on fait une copie profonde
+        # pour éviter les références partagées qui pourraient causer des problèmes
+        return copy.deepcopy(value)

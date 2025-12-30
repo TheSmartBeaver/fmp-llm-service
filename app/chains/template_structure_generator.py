@@ -193,6 +193,18 @@ class TemplateStructureGenerator:
         # Variables pour les niveaux d'imbrication de tableaux
         array_vars = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's', 'r', 'q']
 
+        def is_simple_value(val: Any) -> bool:
+            """Vérifie si une valeur est simple (primitive, tableau de primitives, ou objet plat)"""
+            if isinstance(val, (str, int, float, bool, type(None))):
+                return True
+            if isinstance(val, list):
+                # Tableau de primitives
+                return all(isinstance(item, (str, int, float, bool, type(None))) for item in val)
+            if isinstance(val, dict):
+                # Objet plat (toutes les valeurs sont des primitives)
+                return all(isinstance(v, (str, int, float, bool, type(None))) for v in val.values())
+            return False
+
         def extract_paths(obj: Any, path: str = "", array_depth: int = 0):
             if isinstance(obj, dict):
                 # Parcourir les clés de l'objet
@@ -205,11 +217,13 @@ class TemplateStructureGenerator:
                         # Racine
                         new_path = key
 
-                    # Ajouter ce chemin à la liste
-                    paths.append(new_path)
+                    # Ajouter ce chemin SEULEMENT si la valeur est simple
+                    if is_simple_value(value):
+                        paths.append(new_path)
 
-                    # Continuer la récursion
-                    extract_paths(value, new_path, array_depth)
+                    # Continuer la récursion pour les objets/tableaux complexes
+                    if isinstance(value, (dict, list)) and not is_simple_value(value):
+                        extract_paths(value, new_path, array_depth)
 
             elif isinstance(obj, list):
                 if len(obj) > 0:
@@ -229,11 +243,13 @@ class TemplateStructureGenerator:
                             array_path = f"{path}{index_notation}"
                             new_path = f"{array_path}{key}"
 
-                            # Ajouter ce chemin
-                            paths.append(new_path)
+                            # Ajouter ce chemin SEULEMENT si la valeur est simple
+                            if is_simple_value(value):
+                                paths.append(new_path)
 
                             # Récursion pour les valeurs imbriquées avec profondeur incrémentée
-                            extract_paths(value, new_path, array_depth + 1)
+                            if isinstance(value, (dict, list)) and not is_simple_value(value):
+                                extract_paths(value, new_path, array_depth + 1)
                     else:
                         # Tableau de primitives
                         array_path = f"{path}{index_notation}"
@@ -260,6 +276,18 @@ class TemplateStructureGenerator:
         """
         paths = []
 
+        def is_simple_value(val: Any) -> bool:
+            """Vérifie si une valeur est simple (primitive, tableau de primitives, ou objet plat)"""
+            if isinstance(val, (str, int, float, bool, type(None))):
+                return True
+            if isinstance(val, list):
+                # Tableau de primitives
+                return all(isinstance(item, (str, int, float, bool, type(None))) for item in val)
+            if isinstance(val, dict):
+                # Objet plat (toutes les valeurs sont des primitives)
+                return all(isinstance(v, (str, int, float, bool, type(None))) for v in val.values())
+            return False
+
         def extract_paths(obj: Any, path: str = ""):
             if isinstance(obj, dict):
                 # Parcourir les clés de l'objet
@@ -272,11 +300,13 @@ class TemplateStructureGenerator:
                         # Racine
                         new_path = key
 
-                    # Ajouter ce chemin à la liste
-                    paths.append(new_path)
+                    # Ajouter ce chemin SEULEMENT si la valeur est simple
+                    if is_simple_value(value):
+                        paths.append(new_path)
 
-                    # Continuer la récursion
-                    extract_paths(value, new_path)
+                    # Continuer la récursion pour les objets/tableaux complexes
+                    if isinstance(value, (dict, list)) and not is_simple_value(value):
+                        extract_paths(value, new_path)
 
             elif isinstance(obj, list):
                 # Pour chaque élément du tableau, créer un chemin avec son index
@@ -287,10 +317,14 @@ class TemplateStructureGenerator:
                         # Tableau d'objets
                         for key, value in item.items():
                             new_path = f"{array_path}{key}"
-                            paths.append(new_path)
+
+                            # Ajouter ce chemin SEULEMENT si la valeur est simple
+                            if is_simple_value(value):
+                                paths.append(new_path)
 
                             # Récursion pour les valeurs imbriquées
-                            extract_paths(value, new_path)
+                            if isinstance(value, (dict, list)) and not is_simple_value(value):
+                                extract_paths(value, new_path)
                     else:
                         # Tableau de primitives
                         paths.append(array_path)
@@ -692,7 +726,6 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
                             current[field_name] = {}
                     else:
                         # Dernier segment: on met la valeur directement
-                        # Mais il faut gérer le cas où value est un objet/tableau complexe
                         current[field_name] = self._process_value(value)
                         return
                 elif not is_last:

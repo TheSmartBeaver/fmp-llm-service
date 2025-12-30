@@ -10,6 +10,7 @@ from app.workers.tasks import generate_course_material_task
 from app.workers.celery_app import celery
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.course_material_generator import CourseMaterialGenerator
+from app.chains.course_material_generator_v2 import CourseMaterialGeneratorV2
 from app.database import get_db
 
 
@@ -231,6 +232,62 @@ async def get_course_material_result(task_id: str):
             status_code=500,
             detail=f"Erreur lors de la récupération du résultat: {str(e)}"
         )
+
+
+@course_material_router.post("/generate_v2", response_model=CourseMaterialResponse)
+async def generate_course_material_v2(
+    request: UserEntryDto,
+    db: Session = Depends(get_db),
+    auth_uid: str = Header(..., alias="X-Auth-Uid"),
+    top_k: int = 20
+):
+    """
+    Génère un support de cours avec le CourseMaterialGeneratorV2 (utilise TemplateStructureGenerator).
+
+    Cette version améliore la V1 en:
+    - Créant d'abord un JSON pédagogique enrichi avec explications complètes et contextualisées
+    - Utilisant TemplateStructureGenerator pour mapper vers des templates de manière cohérente
+    - Produisant une structure globale cohérente (vs morceaux isolés)
+
+    Args:
+        request: UserEntryDto contenant le contexte, le contenu textuel et les médias
+        db: Session de base de données
+        auth_uid: AuthentUid de l'utilisateur (pour compatibilité future)
+        top_k: Nombre de templates à utiliser (par défaut: 20)
+
+    Returns:
+        CourseMaterialResponse avec le support généré
+
+    Note:
+        Cette version est synchrone et retourne directement le résultat.
+    """
+    # Créer le générateur V2
+    generator = CourseMaterialGeneratorV2(
+        db_session=db,
+        embedding_model=embedding_model
+    )
+
+    # Générer le support de cours
+    result = generator.generate_course_material(
+        user_entry=request,
+        top_k=top_k,
+        category_quotas={"layouts/": 5, "conceptual/": 10, "text/": 5}
+    )
+
+    # Construire le prompt complet pour la réponse
+    full_prompt = (
+        f"=== ÉTAPE 1: GÉNÉRATION DU JSON PÉDAGOGIQUE ===\n"
+        f"{result['prompts']['step1_pedagogical_json']}\n\n"
+        f"=== ÉTAPE 2: MAPPING VERS TEMPLATES ===\n"
+        f"{result['prompts']['step2_template_structure']}"
+    )
+
+    return CourseMaterialResponse(
+        success=True,
+        supports=[result["support"]],  # Encapsuler dans une liste pour compatibilité
+        templates_used=top_k,
+        prompt=full_prompt
+    )
 
 
 @course_material_router.get("/health")

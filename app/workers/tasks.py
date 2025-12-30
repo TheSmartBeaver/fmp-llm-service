@@ -19,6 +19,7 @@ from app.chains.generator import generate_flashcard
 from app.chains.llm.open_ai_gpt5_nano_llm import OpenAiGPT5NanoLlm
 from app.chains.mind_map_generator import MindMapGenerator
 from app.chains.course_material_generator import CourseMaterialGenerator
+from app.chains.course_material_generator_v2 import CourseMaterialGeneratorV2
 from app.services.socket import socket_notify
 from app.services.fcm_service import FCMService
 
@@ -146,23 +147,28 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
 
 @celery.task(name="generate.course_material")
 def generate_course_material_task(
-    task_id: str, user_entry_dict: dict, auth_uid: str, top_k: int = 15
+    task_id: str, user_entry_dict: dict, auth_uid: str, top_k: int = 20
 ):
     """
-    Tâche Celery pour générer un support de cours et envoyer une notification FCM.
+    Tâche Celery pour générer un support de cours avec CourseMaterialGeneratorV2 et envoyer une notification FCM.
+
+    Cette version utilise le nouveau générateur V2 qui:
+    - Crée d'abord un JSON pédagogique enrichi avec explications complètes
+    - Utilise TemplateStructureGenerator pour mapper vers des templates de manière cohérente
+    - Produit une structure globale cohérente
 
     Args:
         task_id: Identifiant unique de la tâche
         user_entry_dict: Dictionnaire UserEntryDto contenant le contexte, le contenu et les médias
         auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
-        top_k: Nombre de templates à utiliser
+        top_k: Nombre de templates à utiliser (défaut: 20)
 
     Returns:
-        Dict contenant les supports de cours générés
+        Dict contenant le support de cours généré
     """
     redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
-    print(f"📥 Starting course material generation for task {task_id}")
+    print(f"📥 Starting course material generation V2 for task {task_id}")
 
     # Create database session
     db = SessionLocal()
@@ -172,48 +178,36 @@ def generate_course_material_task(
         user_entry = UserEntryDto(**user_entry_dict)
         print(f"📥 UserEntryDto reconstructed: {user_entry}")
 
-        # Create course material generator
-        generator = CourseMaterialGenerator(
-            db_session=db, llm=openai_llm, embedding_model=embedding_model
+        # Create course material generator V2
+        generator = CourseMaterialGeneratorV2(
+            db_session=db,
+            embedding_model=embedding_model
         )
 
         # Generate course material
-        # result = generator.generate_course_material(
-        #     user_entry=user_entry,
-        #     top_k=top_k
-        # )
+        result_v2 = generator.generate_course_material(
+            user_entry=user_entry,
+            top_k=top_k,
+            category_quotas={"layouts/": 5, "conceptual/": 10, "text/": 5}
+        )
 
-        #MOCK DATA for debugging FCM
+        # Construire le prompt complet
+        full_prompt = (
+            f"=== ÉTAPE 1: GÉNÉRATION DU JSON PÉDAGOGIQUE ===\n"
+            f"{result_v2['prompts']['step1_pedagogical_json']}\n\n"
+            f"=== ÉTAPE 2: MAPPING VERS TEMPLATES ===\n"
+            f"{result_v2['prompts']['step2_template_structure']}"
+        )
+
+        # Adapter le format de retour pour compatibilité avec le système existant
         result = {
             "success": True,
-            "supports": [
-                {
-                    "support": shit_test,
-                    "version": "1.0.0",
-                },
-                {
-                    "support": {
-                        "template_name": "conceptual/theorie",
-                        "icon": "🔬",
-                        "label": "THÉORIE",
-                        "title": "Photosynthèse",
-                        "description": [
-                            "La photosynthèse est le processus par lequel les plantes, les algues et certaines bactéries convertissent l'énergie lumineuse en énergie chimique stockée, principalement sous forme de glucides. Ce processus a lieu essentiellement dans les chloroplastes des cellules végétales et comprend des réactions photochimiques localisées dans les thylakoïdes (phase lumineuse) et des réactions biochimiques dans le stroma (phase sombre ou cycle de Calvin).",
-                            {
-                                "template_name": "text/detail_technique",
-                                "icon": "🖼️",
-                                "text": "Image illustrative — schéma détaillé d'un chloroplaste montrant les thylakoïdes et le stroma. URL: https://example.com/images/chloroplaste.png",
-                            },
-                        ],
-                    },
-                    "version": "1.0.0",
-                },
-            ],
-            "templates_used": 15,
-            "prompt": "TO DO: long prompt here...",
+            "supports": [result_v2],  # Encapsuler dans une liste
+            "templates_used": top_k,
+            "prompt": full_prompt,
         }
 
-        print(f"📥 Course material generation completed for task {task_id}")
+        print(f"📥 Course material generation V2 completed for task {task_id}")
 
         # Publish result to Redis (keep for backward compatibility)
         redis.publish(

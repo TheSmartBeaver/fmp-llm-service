@@ -17,12 +17,12 @@ class TemplateStructureGenerator:
     1. Reçoit un JSON de données source (ex: course_sections avec tables de conjugaison)
     2. Utilise fetch_similar_templates pour récupérer les templates pertinents
     3. Demande au LLM de mapper les données vers une structure de templates
-    4. Retourne un JSON qui utilise la notation {{chemin->vers->donnée}} pour référencer les données
+    4. Retourne un JSON qui utilise la notation chemin->vers->donnée pour référencer les données
 
     Notation des chemins :
     - `->` pour naviguer dans les objets (ex: `tip->memory`)
     - `[]` pour parcourir les tableaux (ex: `course_sections[]`)
-    - Combinaison : `{{course_sections[]tables[]infinitive_translation}}`
+    - Combinaison : `course_sections[]tables[]infinitive_translation`
     """
 
     def __init__(
@@ -129,12 +129,23 @@ class TemplateStructureGenerator:
         templates: List[Dict[str, Any]],
         context_description: str
     ):
-        test1 = self._extract_all_json_paths(source_json)
-        test2 = self._format_templates_for_prompt(templates)
-        test3 = self._extract_all_json_paths(source_json, include_indices=True)
+        # Extraire les chemins source avec variables [x], [y], [z]
+        json_paths_with_variables = self._extract_all_json_paths(source_json, use_variables=True)
+
+        # Générer les mappings source → destination avec le LLM
+        destination_mappings = self._generate_destination_paths_with_llm(
+            source_paths=json_paths_with_variables,
+            templates=templates,
+            context_description=context_description
+        )
+
+        json_paths_with_indices = self._extract_all_json_paths(source_json, include_indices=True)
+
+        # TODO: Utiliser destination_mappings pour construire le JSON final
+
         raise NotImplementedError("Méthode _generate_structure_with_llm non implémentée")
 
-    def _extract_all_json_paths(self, data: Any, include_indices: bool = False) -> str:
+    def _extract_all_json_paths(self, data: Any, include_indices: bool = False, use_variables: bool = False) -> str:
         """
         Extrait récursivement tous les chemins disponibles dans un JSON.
 
@@ -144,9 +155,11 @@ class TemplateStructureGenerator:
         Args:
             data: Le JSON à analyser
             include_indices: Si True, retourne tous les chemins avec les index réels des tableaux
-                           (ex: {{course_sections[0]description}}, {{course_sections[1]description}})
-                           Si False (défaut), utilise la notation compactée []
-                           (ex: {{course_sections[]description}})
+                           (ex: course_sections[0]description, course_sections[1]description)
+                           Si False (défaut), utilise la notation compactée [] ou [x], [y], [z]
+                           (ex: course_sections[]description ou course_sections[x]description)
+            use_variables: Si True et include_indices=False, utilise [x], [y], [z] pour les tableaux
+                          (ex: course_sections[x]lessons[y]title)
 
         Returns:
             String formaté avec tous les chemins disponibles
@@ -157,21 +170,25 @@ class TemplateStructureGenerator:
         else:
             # Mode compact: utiliser extract_json_structure pour fusionner
             structure = extract_json_structure(data)
-            return self._extract_paths_compact(structure)
+            return self._extract_paths_compact(structure, use_variables=use_variables)
 
-    def _extract_paths_compact(self, structure: Any) -> str:
+    def _extract_paths_compact(self, structure: Any, use_variables: bool = False) -> str:
         """
-        Extrait les chemins en notation compactée avec [].
+        Extrait les chemins en notation compactée avec [] ou avec des variables [x], [y], [z].
 
         Args:
             structure: La structure JSON fusionnée
+            use_variables: Si True, utilise [x], [y], [z] pour les tableaux imbriqués.
+                          Si False, utilise [] (défaut)
 
         Returns:
             String formaté avec tous les chemins compactés
         """
         paths = []
+        # Variables pour les niveaux d'imbrication de tableaux
+        array_vars = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's', 'r', 'q']
 
-        def extract_paths(obj: Any, path: str = ""):
+        def extract_paths(obj: Any, path: str = "", array_depth: int = 0):
             if isinstance(obj, dict):
                 # Parcourir les clés de l'objet
                 for key, value in obj.items():
@@ -184,32 +201,38 @@ class TemplateStructureGenerator:
                         new_path = key
 
                     # Ajouter ce chemin à la liste
-                    paths.append(f"{{{{{new_path}}}}}")
+                    paths.append(new_path)
 
                     # Continuer la récursion
-                    extract_paths(value, new_path)
+                    extract_paths(value, new_path, array_depth)
 
             elif isinstance(obj, list):
                 if len(obj) > 0:
-                    # Pour les tableaux, on utilise la notation []
+                    # Pour les tableaux, on utilise la notation [] ou [x], [y], etc.
                     sample = obj[0]
+
+                    # Déterminer la notation d'index
+                    if use_variables and array_depth < len(array_vars):
+                        index_notation = f"[{array_vars[array_depth]}]"
+                    else:
+                        index_notation = "[]"
 
                     if isinstance(sample, dict):
                         # Tableau d'objets
                         for key, value in sample.items():
-                            # Créer le chemin avec []
-                            array_path = f"{path}[]"
+                            # Créer le chemin avec [] ou [x]
+                            array_path = f"{path}{index_notation}"
                             new_path = f"{array_path}{key}"
 
                             # Ajouter ce chemin
-                            paths.append(f"{{{{{new_path}}}}}")
+                            paths.append(new_path)
 
-                            # Récursion pour les valeurs imbriquées
-                            extract_paths(value, new_path)
+                            # Récursion pour les valeurs imbriquées avec profondeur incrémentée
+                            extract_paths(value, new_path, array_depth + 1)
                     else:
                         # Tableau de primitives
-                        array_path = f"{path}[]"
-                        paths.append(f"{{{{{array_path}}}}}")
+                        array_path = f"{path}{index_notation}"
+                        paths.append(array_path)
 
         extract_paths(structure)
 
@@ -245,7 +268,7 @@ class TemplateStructureGenerator:
                         new_path = key
 
                     # Ajouter ce chemin à la liste
-                    paths.append(f"{{{{{new_path}}}}}")
+                    paths.append(new_path)
 
                     # Continuer la récursion
                     extract_paths(value, new_path)
@@ -259,13 +282,13 @@ class TemplateStructureGenerator:
                         # Tableau d'objets
                         for key, value in item.items():
                             new_path = f"{array_path}{key}"
-                            paths.append(f"{{{{{new_path}}}}}")
+                            paths.append(new_path)
 
                             # Récursion pour les valeurs imbriquées
                             extract_paths(value, new_path)
                     else:
                         # Tableau de primitives
-                        paths.append(f"{{{{{array_path}}}}}")
+                        paths.append(array_path)
 
         extract_paths(data)
 
@@ -296,3 +319,93 @@ Template {i}:
 """
             )
         return "\n".join(formatted)
+
+    def _generate_destination_paths_with_llm(
+        self,
+        source_paths: List[str],
+        templates: List[Dict[str, Any]],
+        context_description: str = ""
+    ) -> Dict[str, str]:
+        """
+        Génère les chemins de destination pour chaque chemin source en utilisant le LLM.
+
+        Cette fonction demande au LLM de créer des chemins de destination qui:
+        - Imbriquent plusieurs templates de manière sémantiquement cohérente
+        - Respectent les règles d'indices (variables vs fixes)
+        - Mappent les données source vers les champs appropriés des templates
+
+        Args:
+            source_paths: Liste des chemins source avec variables (ex: ['learning_objective', 'course_sections[x]section_id'])
+            templates: Liste des templates disponibles avec leurs métadonnées
+            context_description: Description du contexte pour aider le LLM
+
+        Returns:
+            Dict mappant chaque chemin source vers son chemin de destination
+            Ex: {
+                "learning_objective": "layouts/vertical_column/container[\"items\"][0]layouts/vertical_column/item[\"title\"]conceptual/concept[\"description\"]",
+                "course_sections[x]section_id": "layouts/vertical_column/container[\"items\"][0]layouts/vertical_column/container[\"items\"][x]layouts/vertical_column/item[\"title\"]conceptual/concept[\"title\"]"
+            }
+        """
+        templates_formatted = self._format_templates_for_prompt(templates)
+
+        # Construire le prompt
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", """Tu es un expert en construction de structures de données pédagogiques.
+Ta tâche est de mapper des chemins de données source vers des chemins de destination qui utilisent des templates HTML/pédagogiques imbriqués.
+
+RÈGLES CRITIQUES POUR LES INDICES:
+
+1. **Chemins source SANS variable** (ex: learning_objective):
+   - Utilise des indices FIXES dans le chemin de destination: [0], [1], [2], etc.
+   - Chaque chemin source sans variable doit avoir son propre indice fixe unique
+   - Exemple: si tu as 3 chemins sans variable, utilise [0] pour le premier, [1] pour le deuxième, [2] pour le troisième
+
+2. **Chemins source AVEC variable** (ex: course_sections[x]section_id):
+   - Utilise la MÊME variable dans le chemin de destination
+   - La variable [x] dans le source doit apparaître comme [x] dans la destination
+   - La variable [y] dans le source doit apparaître comme [y] dans la destination
+   - Exemple: course_sections[x]lessons[y]title → ...["items"][x]...["items"][y]...
+
+3. **Imbrication des templates**:
+   - Tu peux (et dois) imbriquer plusieurs templates pour créer une structure cohérente
+   - Exemple: layouts/vertical_column/container["items"][0]layouts/vertical_column/item["title"]conceptual/concept["description"]
+   - Cela signifie: un container qui contient un item dont le titre contient un concept
+
+4. **Format des chemins de destination**:
+   - Commence par le template_name du premier template (ex: layouts/vertical_column/container)
+   - Ajoute ["nom_du_champ"] pour accéder à un champ
+   - Ajoute [index] pour les tableaux (index fixe ou variable selon la règle 1 et 2)
+   - Enchaîne avec le template_name suivant, etc.
+   - Exemple complet: layouts/vertical_column/container["items"][0]layouts/vertical_column/item["title"]conceptual/concept["description"]
+
+RETOURNE un JSON avec le format exact suivant:
+{{
+  "chemin_source_1": "chemin_destination_1",
+  "chemin_source_2": "chemin_destination_2"
+}}"""),
+            ("user", """Contexte: {context}
+
+Templates disponibles:
+{templates}
+
+Chemins source à mapper:
+{source_paths}
+
+Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
+        ])
+
+        # Préparer les données pour le prompt
+        source_paths_formatted = "\n".join([f"  - {path}" for path in source_paths])
+
+        # Créer la chaîne LLM avec parser JSON
+        parser = JsonOutputParser()
+        chain = prompt | self.llm | parser
+
+        # Appeler le LLM
+        result = chain.invoke({
+            "context": context_description or "Aucun contexte spécifique fourni",
+            "templates": templates_formatted,
+            "source_paths": source_paths_formatted
+        })
+
+        return result

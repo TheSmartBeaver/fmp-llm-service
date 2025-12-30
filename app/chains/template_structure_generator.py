@@ -71,68 +71,68 @@ class TemplateStructureGenerator:
         )
 
         # Étape 3: Générer la structure via le LLM
-        # template_structure, prompt = self._generate_structure_with_llm(
-        #     source_json, templates, context_description
-        # )
+        template_structure, prompt = self._generate_structure_with_llm(
+            source_json, templates, context_description
+        )
 
-        return {
-            "template_structure": {
-                "template_name": "layouts/vertical_column/container",
-                "items": [
-                    {
-                        "template_name": "text/explication",
-                        "text": "Comprendre en profondeur les cinq principes SOLID et savoir comment ils se complètent pour améliorer la lisibilité, la maintenabilité et l'évolutivité du code. L'objectif est d'apprendre non seulement la définition de chaque principe, mais aussi leur justification pratique, les situations où les appliquer, les modèles de conception qui facilitent leur mise en œuvre, ainsi que les compromis et limites possibles afin de pouvoir concevoir des systèmes équilibrés et faciles à faire évoluer. À la fin, l'apprenant devra être capable d'identifier les violations des principes SOLID dans un code existant et de proposer des refactorings appropriés qui conservent le comportement tout en améliorant la structure et le couplage du logiciel.",
-                    },
-                    {
-                        "template_name": "layouts/tree_left_right/container",
-                        "items": [
-                            {
-                                "template_name": "layouts/tree_left_right/item",
-                                "content": {
-                                    "template_name": "text/explication",
-                                    "text": "Les principes SOLID regroupent cinq règles de conception orientée objet qui visent à rendre le code plus propre, modulable et durable dans le temps. Ils ne sont pas des lois strictes à appliquer à la lettre dans tous les cas, mais des guides conceptuels qui aident à réduire le couplage, augmenter la cohésion et faciliter les tests et l'évolution du logiciel. Cette section présente le contexte historique et pratique des principes, pourquoi ils sont utiles dans des projets de taille moyenne à grande, et comment les appliquer progressivement lors de l'architecture ou du refactoring.",
-                                },
-                                "title": "Introduction aux principes SOLID",
-                            }
-                        ],
-                    },
-                    {
-                        "template_name": "layouts/horizontal_line/container",
-                        "items": [
-                            {
-                                "template_name": "layouts/grid/item",
-                                "title": {
-                                    "template_name": "conceptual/concept",
-                                    "title": "Single Responsibility Principle (SRP) - Principe de responsabilité unique",
-                                },
-                                "content": {
-                                    "template_name": "text/liste_exemples",
-                                    "items": [
-                                        "Une classe UserService qui gère à la fois la logique métier des utilisateurs et la persistance en base devrait être scindée en UserService (logique métier) et UserRepository (accès aux données). Cette séparation permet de modifier la stratégie de stockage sans toucher à la logique métier.",
-                                        "Une classe ReportGenerator qui compile des données, formate un document et l'envoie par email enfreint SRP. On la refactorise en DataCollector, ReportFormatter et EmailSender pour isoler les raisons de changement et faciliter le test unitaire de chaque responsabilité.",
-                                    ],
-                                    "text": "Le principe de responsabilité unique stipule qu'une classe ou un module ne doit avoir qu'une seule raison de changer, c'est-à-dire une et une seule responsabilité métier. L'idée est de séparer les préoccupations pour limiter l'impact des modifications : si une classe a plusieurs responsabilités, une modification liée à l'une d'elles peut provoquer des régressions dans les autres. En pratique, appliquer SRP conduit à des classes plus petites et plus cohésives, plus simples à tester et à comprendre. SRP facilite également l'adhésion aux autres principes SOLID, par exemple en rendant plus simple l'extension sans modification (OCP) et en limitant les interfaces superficielles.",
-                                },
-                            }
-                        ],
-                    },
-                    {
-                        "template_name": "layouts/tree_left_right/container",
-                        "items": [
-                            {
-                                "template_name": "layouts/tree_left_right/item",
-                                "content": {
-                                    "template_name": "text/explication",
-                                    "text": "Les principes SOLID sont complémentaires mais parfois couteux à appliquer de manière trop stricte : trop de petites classes ou d'abstractions peuvent conduire à une complexité excessive (sur-ingénierie). Il est donc conseillé d'appliquer ces principes de manière pragmatique et itérative, en commençant par identifier les points de fragilité du code puis en refactorant par petites étapes. De plus, certains concepts se renforcent mutuellement : par exemple SRP facilite OCP en isolant les responsabilités, et DIP facilite OCP en permettant d'ajouter des implémentations sans modifier les dépendants. Enfin, l'utilisation conjointe de tests automatisés, de revues de code et de patterns de conception aidants (Factory, Strategy, Decorator, Adapter) accélère la mise en œuvre efficace des principes SOLID dans des projets réels.",
-                                },
-                            }
-                        ],
-                    },
-                ],
-                "version": "1.0.0",
-            },
-            "prompt": "FAKE PROMPT",
-        }
+        # return {
+        #     "template_structure": {
+        #         "template_name": "layouts/vertical_column/container",
+        #         "items": [
+        #             {
+        #                 "template_name": "text/explication",
+        #                 "text": "Comprendre en profondeur les cinq principes SOLID et savoir comment ils se complètent pour améliorer la lisibilité, la maintenabilité et l'évolutivité du code. L'objectif est d'apprendre non seulement la définition de chaque principe, mais aussi leur justification pratique, les situations où les appliquer, les modèles de conception qui facilitent leur mise en œuvre, ainsi que les compromis et limites possibles afin de pouvoir concevoir des systèmes équilibrés et faciles à faire évoluer. À la fin, l'apprenant devra être capable d'identifier les violations des principes SOLID dans un code existant et de proposer des refactorings appropriés qui conservent le comportement tout en améliorant la structure et le couplage du logiciel.",
+        #             },
+        #             {
+        #                 "template_name": "layouts/tree_left_right/container",
+        #                 "items": [
+        #                     {
+        #                         "template_name": "layouts/tree_left_right/item",
+        #                         "content": {
+        #                             "template_name": "text/explication",
+        #                             "text": "Les principes SOLID regroupent cinq règles de conception orientée objet qui visent à rendre le code plus propre, modulable et durable dans le temps. Ils ne sont pas des lois strictes à appliquer à la lettre dans tous les cas, mais des guides conceptuels qui aident à réduire le couplage, augmenter la cohésion et faciliter les tests et l'évolution du logiciel. Cette section présente le contexte historique et pratique des principes, pourquoi ils sont utiles dans des projets de taille moyenne à grande, et comment les appliquer progressivement lors de l'architecture ou du refactoring.",
+        #                         },
+        #                         "title": "Introduction aux principes SOLID",
+        #                     }
+        #                 ],
+        #             },
+        #             {
+        #                 "template_name": "layouts/horizontal_line/container",
+        #                 "items": [
+        #                     {
+        #                         "template_name": "layouts/grid/item",
+        #                         "title": {
+        #                             "template_name": "conceptual/concept",
+        #                             "title": "Single Responsibility Principle (SRP) - Principe de responsabilité unique",
+        #                         },
+        #                         "content": {
+        #                             "template_name": "text/liste_exemples",
+        #                             "items": [
+        #                                 "Une classe UserService qui gère à la fois la logique métier des utilisateurs et la persistance en base devrait être scindée en UserService (logique métier) et UserRepository (accès aux données). Cette séparation permet de modifier la stratégie de stockage sans toucher à la logique métier.",
+        #                                 "Une classe ReportGenerator qui compile des données, formate un document et l'envoie par email enfreint SRP. On la refactorise en DataCollector, ReportFormatter et EmailSender pour isoler les raisons de changement et faciliter le test unitaire de chaque responsabilité.",
+        #                             ],
+        #                             "text": "Le principe de responsabilité unique stipule qu'une classe ou un module ne doit avoir qu'une seule raison de changer, c'est-à-dire une et une seule responsabilité métier. L'idée est de séparer les préoccupations pour limiter l'impact des modifications : si une classe a plusieurs responsabilités, une modification liée à l'une d'elles peut provoquer des régressions dans les autres. En pratique, appliquer SRP conduit à des classes plus petites et plus cohésives, plus simples à tester et à comprendre. SRP facilite également l'adhésion aux autres principes SOLID, par exemple en rendant plus simple l'extension sans modification (OCP) et en limitant les interfaces superficielles.",
+        #                         },
+        #                     }
+        #                 ],
+        #             },
+        #             {
+        #                 "template_name": "layouts/tree_left_right/container",
+        #                 "items": [
+        #                     {
+        #                         "template_name": "layouts/tree_left_right/item",
+        #                         "content": {
+        #                             "template_name": "text/explication",
+        #                             "text": "Les principes SOLID sont complémentaires mais parfois couteux à appliquer de manière trop stricte : trop de petites classes ou d'abstractions peuvent conduire à une complexité excessive (sur-ingénierie). Il est donc conseillé d'appliquer ces principes de manière pragmatique et itérative, en commençant par identifier les points de fragilité du code puis en refactorant par petites étapes. De plus, certains concepts se renforcent mutuellement : par exemple SRP facilite OCP en isolant les responsabilités, et DIP facilite OCP en permettant d'ajouter des implémentations sans modifier les dépendants. Enfin, l'utilisation conjointe de tests automatisés, de revues de code et de patterns de conception aidants (Factory, Strategy, Decorator, Adapter) accélère la mise en œuvre efficace des principes SOLID dans des projets réels.",
+        #                         },
+        #                     }
+        #                 ],
+        #             },
+        #         ],
+        #         "version": "1.0.0",
+        #     },
+        #     "prompt": "FAKE PROMPT",
+        # }
 
         return {"template_structure": template_structure, "prompt": prompt}
 

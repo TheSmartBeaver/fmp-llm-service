@@ -5,7 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
 from app.utils.template_search import fetch_similar_templates
-from app.utils.structure_process import extract_json_structure
+from app.utils.structure_process import extract_json_structure, create_embedding_packets
 from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
 
 
@@ -43,16 +43,18 @@ class TemplateStructureGenerator:
         self,
         source_json: Dict[str, Any],
         context_description: str = "",
-        top_k: int = 20,
+        top_k_per_packet: int = 12,
         category_quotas: Dict[str, int] = None,
     ) -> Dict[str, Any]:
         """
         Génère une structure de templates à partir d'un JSON source.
 
+        Utilise plusieurs embeddings ciblés (macro et micro) pour trouver des templates pertinents.
+
         Args:
             source_json: Le JSON contenant les données à structurer
             context_description: Description optionnelle du contexte (ex: "cours d'espagnol sur les verbes")
-            top_k: Nombre de templates similaires à récupérer (défaut: 20)
+            top_k_per_packet: Nombre de templates similaires à récupérer par paquet d'embedding (défaut: 10)
             category_quotas: Dictionnaire {catégorie: quota} pour limiter par catégorie
                            Ex: {"layouts/": 5, "conceptual/": 3}
 
@@ -61,14 +63,37 @@ class TemplateStructureGenerator:
             - template_structure: Le JSON structuré avec les template_name et références
             - prompt: Le prompt complet envoyé au LLM
         """
-        # Étape 1: Créer un embedding à partir du JSON source et du contexte
-        search_text = self._create_search_text(source_json, context_description)
-        embedding = self._generate_embedding(search_text)
+        # Étape 1: Créer les paquets d'embedding à partir du JSON source
+        packets = create_embedding_packets(source_json)
 
-        # Étape 2: Récupérer les templates pertinents
-        templates = fetch_similar_templates(
-            self.db, embedding, top_k, category_quotas, include_full_data=False
-        )
+        # Étape 2: Pour chaque paquet, faire une recherche et collecter les templates
+        all_templates = {}  # Dict pour dédupliquer: {template_name: template_data}
+
+        for packet in packets:
+            # Créer le texte de recherche en combinant le contexte et les clés du paquet
+            search_text = self._create_search_text_from_packet(
+                packet, context_description
+            )
+
+            # Générer l'embedding
+            embedding = self._generate_embedding(search_text)
+
+            # Rechercher les templates
+            templates = fetch_similar_templates(
+                self.db,
+                embedding,
+                top_k_per_packet,
+                category_quotas,
+                include_full_data=False,
+            )
+
+            # Ajouter à la collection (déduplique automatiquement par template_name)
+            for tmpl in templates:
+                if tmpl["template_name"] not in all_templates:
+                    all_templates[tmpl["template_name"]] = tmpl
+
+        # Convertir en liste
+        templates = list(all_templates.values())
 
         # Étape 3: Générer la structure via le LLM
         template_structure, prompt = self._generate_structure_with_llm(
@@ -136,11 +161,46 @@ class TemplateStructureGenerator:
 
         return {"template_structure": template_structure, "prompt": prompt}
 
+    def _create_search_text_from_packet(
+        self, packet: Dict[str, Any], context_description: str
+    ) -> str:
+        """
+        Crée un texte de recherche à partir d'un paquet d'embedding.
+
+        Args:
+            packet: Paquet contenant type, keys, text, context
+            context_description: Description du contexte général
+
+        Returns:
+            String pour la recherche de templates
+        """
+        search_parts = []
+
+        # Ajouter le contexte général s'il existe
+        if context_description:
+            search_parts.append(context_description)
+
+        # Ajouter le contexte du paquet (chemin dans la structure)
+        if packet["context"]:
+            search_parts.append(f"Contexte: {packet['context']}")
+
+        # Ajouter le type de paquet
+        if packet["type"] == "macro":
+            search_parts.append("Structure globale:")
+        else:
+            search_parts.append("Détails de contenu:")
+
+        # Ajouter le texte du paquet (les clés)
+        search_parts.append(packet["text"])
+
+        return " ".join(search_parts)
+
     def _create_search_text(
         self, source_json: Dict[str, Any], context_description: str
     ) -> str:
         """
         Crée un texte de recherche pour trouver des templates pertinents.
+        (Ancienne méthode conservée pour compatibilité)
 
         Args:
             source_json: Le JSON source

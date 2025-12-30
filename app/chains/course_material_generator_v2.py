@@ -84,13 +84,12 @@ class CourseMaterialGeneratorV2:
 
         if category_quotas is None:
             # Par défaut: peu de layouts, plus de contenu conceptuel
-            category_quotas = {"layouts/": 5, "text/": 5}
+            category_quotas = {"layouts/": 4, "text/": 4}
 
         structure_result = (
             self.template_structure_generator.generate_template_structure(
                 source_json=pedagogical_json,
                 context_description=context_description,
-                top_k=top_k,
                 category_quotas=category_quotas,
             )
         )

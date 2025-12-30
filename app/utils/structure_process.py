@@ -120,6 +120,172 @@ def merge_structures(struct1, struct2):
     return merged
 
 
+def create_embedding_packets(data):
+    """
+    Crée des paquets de texte pour générer plusieurs embeddings ciblés.
+
+    Stratégie:
+    - Paquet 1: Toutes les clés de niveau racine et niveau 1 (structure macro)
+    - Paquets 2+: Groupes de champs terminaux (feuilles) regroupés par leur parent (structure micro)
+
+    Args:
+        data: Le JSON source
+
+    Returns:
+        Liste de paquets, chacun contenant:
+        - type: "macro" ou "micro"
+        - keys: liste des clés/chemins
+        - text: texte formaté pour l'embedding
+        - context: chemin parent (pour paquets micro)
+
+    Example:
+        >>> json_data = {
+        ...     "structure": {
+        ...         "sujet_principal": "string",
+        ...         "archeologie_moleculaire": {
+        ...             "etude_de_cas_chine": {
+        ...                 "chercheur": "string",
+        ...                 "objet_etude": "string"
+        ...             }
+        ...         },
+        ...         "chronologie_historique": [
+        ...             {
+        ...                 "periode": "string",
+        ...                 "evenement": "string"
+        ...             }
+        ...         ]
+        ...     }
+        ... }
+        >>> packets = create_embedding_packets(json_data)
+        >>> packets[0]["type"]
+        'macro'
+        >>> "sujet_principal" in packets[0]["keys"]
+        True
+    """
+    structure = extract_json_structure(data)
+    packets = []
+
+    # PAQUET 1: Clés macro (niveau racine + niveau 1)
+    macro_keys = _extract_macro_keys(structure, max_depth=2)
+    if macro_keys:
+        packets.append({
+            "type": "macro",
+            "keys": macro_keys,
+            "text": " ".join(macro_keys),
+            "context": ""
+        })
+
+    # PAQUETS 2+: Groupes de champs feuilles par parent
+    micro_packets = _extract_micro_packets(structure)
+    packets.extend(micro_packets)
+
+    return packets
+
+
+def _extract_macro_keys(obj, current_depth=0, max_depth=2):
+    """
+    Extrait les clés de haut niveau jusqu'à une profondeur maximale.
+
+    Args:
+        obj: L'objet JSON structuré
+        current_depth: Profondeur actuelle
+        max_depth: Profondeur maximale à explorer
+
+    Returns:
+        Liste des clés de haut niveau
+    """
+    keys = []
+
+    if current_depth >= max_depth:
+        return keys
+
+    if isinstance(obj, dict):
+        for key in obj.keys():
+            keys.append(key)
+            # Récursion pour aller plus profond
+            sub_keys = _extract_macro_keys(obj[key], current_depth + 1, max_depth)
+            keys.extend(sub_keys)
+
+    elif isinstance(obj, list) and len(obj) > 0:
+        # Pour les tableaux, explorer le premier élément
+        sub_keys = _extract_macro_keys(obj[0], current_depth, max_depth)
+        keys.extend(sub_keys)
+
+    return keys
+
+
+def _extract_micro_packets(obj, path="", packets=None):
+    """
+    Extrait les paquets de champs feuilles regroupés par leur parent.
+
+    Un "parent groupant" est:
+    - Un objet contenant principalement des valeurs primitives
+    - Le premier élément d'un tableau d'objets
+
+    Args:
+        obj: L'objet JSON structuré
+        path: Chemin actuel
+        packets: Liste accumulée des paquets
+
+    Returns:
+        Liste des paquets micro
+    """
+    if packets is None:
+        packets = []
+
+    if isinstance(obj, dict):
+        # Vérifier si cet objet contient principalement des feuilles (primitives)
+        leaf_keys = []
+        complex_children = []
+
+        for key, value in obj.items():
+            if isinstance(value, str):  # C'est un type ("string", "number", etc.)
+                leaf_keys.append(key)
+            else:
+                complex_children.append((key, value))
+
+        # Si on a des feuilles ET que c'est un groupe significatif (2+ champs)
+        if len(leaf_keys) >= 2:
+            # Créer un paquet pour ces feuilles
+            packets.append({
+                "type": "micro",
+                "keys": leaf_keys,
+                "text": " ".join(leaf_keys),
+                "context": path
+            })
+
+        # Continuer la récursion pour les enfants complexes
+        for key, value in complex_children:
+            new_path = f"{path}->{key}" if path else key
+            _extract_micro_packets(value, new_path, packets)
+
+    elif isinstance(obj, list) and len(obj) > 0:
+        # Pour les tableaux, analyser le premier élément (structure fusionnée)
+        item = obj[0]
+
+        if isinstance(item, dict):
+            # Extraire les clés feuilles du premier élément
+            leaf_keys = [k for k, v in item.items() if isinstance(v, str)]
+
+            if len(leaf_keys) >= 2:
+                # Créer un paquet pour les champs du tableau
+                array_path = f"{path}[]" if path else "[]"
+                packets.append({
+                    "type": "micro",
+                    "keys": leaf_keys,
+                    "text": " ".join(leaf_keys),
+                    "context": array_path
+                })
+
+            # Récursion pour les champs complexes dans le tableau
+            for key, value in item.items():
+                if not isinstance(value, str):
+                    new_path = f"{path}[]{key}" if path else f"[]{key}"
+                    _extract_micro_packets(value, new_path, packets)
+
+    return packets
+
+
 # Exemple d'utilisation
 if __name__ == "__main__":
     import json

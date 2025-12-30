@@ -188,7 +188,7 @@ def generate_course_material_task(
         result_v2 = generator.generate_course_material(
             user_entry=user_entry,
             top_k=top_k,
-            category_quotas={"layouts/": 5, "conceptual/": 10, "text/": 5}
+            category_quotas=None
         )
 
         # Construire le prompt complet

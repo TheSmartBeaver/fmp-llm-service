@@ -43,6 +43,7 @@ class CourseMaterialResponse(BaseModel):
     templates_used: int
     prompt: str
     pedagogical_json: dict = None
+    destination_mappings: dict = None
 
     class Config:
         json_schema_extra = {
@@ -51,7 +52,8 @@ class CourseMaterialResponse(BaseModel):
                 "supports": [],
                 "templates_used": 15,
                 "prompt": "Génère des supports de cours...",
-                "pedagogical_json": {}
+                "pedagogical_json": {},
+                "destination_mappings": {}
             }
         }
 
@@ -289,7 +291,8 @@ async def generate_course_material_v2(
         supports=[{"support": result["support"]}],  # Encapsuler dans une liste pour compatibilité
         templates_used=top_k,
         prompt=full_prompt,
-        pedagogical_json=result.get("pedagogical_json")
+        pedagogical_json=result.get("pedagogical_json"),
+        destination_mappings=result.get("destination_mappings")
     )
 
 

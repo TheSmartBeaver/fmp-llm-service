@@ -96,7 +96,7 @@ class TemplateStructureGenerator:
         templates = list(all_templates.values())
 
         # Étape 3: Générer la structure via le LLM
-        template_structure, prompt = self._generate_structure_with_llm(
+        template_structure, prompt, destination_mappings = self._generate_structure_with_llm(
             source_json, templates, context_description
         )
 
@@ -159,7 +159,11 @@ class TemplateStructureGenerator:
         #     "prompt": "FAKE PROMPT",
         # }
 
-        return {"template_structure": template_structure, "prompt": prompt}
+        return {
+            "template_structure": template_structure,
+            "prompt": prompt,
+            "destination_mappings": destination_mappings,
+        }
 
     def _create_search_text_from_packet(
         self, packet: Dict[str, Any], context_description: str
@@ -263,7 +267,7 @@ class TemplateStructureGenerator:
             json_paths_with_indices=json_paths_with_indices,
         )
 
-        return final_json, "TODO: prompt"
+        return final_json, "TODO: prompt", destination_mappings
 
     def _extract_all_json_paths(
         self, data: Any, include_indices: bool = False, use_variables: bool = False

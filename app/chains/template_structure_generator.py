@@ -44,7 +44,7 @@ class TemplateStructureGenerator:
         source_json: Dict[str, Any],
         context_description: str = "",
         top_k: int = 20,
-        category_quotas: Dict[str, int] = None
+        category_quotas: Dict[str, int] = None,
     ) -> Dict[str, Any]:
         """
         Génère une structure de templates à partir d'un JSON source.
@@ -67,27 +67,77 @@ class TemplateStructureGenerator:
 
         # Étape 2: Récupérer les templates pertinents
         templates = fetch_similar_templates(
-            self.db,
-            embedding,
-            top_k,
-            category_quotas,
-            include_full_data=False
+            self.db, embedding, top_k, category_quotas, include_full_data=False
         )
 
         # Étape 3: Générer la structure via le LLM
-        template_structure, prompt = self._generate_structure_with_llm(
-            source_json, templates, context_description
-        )
+        # template_structure, prompt = self._generate_structure_with_llm(
+        #     source_json, templates, context_description
+        # )
 
         return {
-            "template_structure": template_structure,
-            "prompt": prompt
+            "template_structure": {
+                "template_name": "layouts/vertical_column/container",
+                "items": [
+                    {
+                        "template_name": "text/explication",
+                        "text": "Comprendre en profondeur les cinq principes SOLID et savoir comment ils se complètent pour améliorer la lisibilité, la maintenabilité et l'évolutivité du code. L'objectif est d'apprendre non seulement la définition de chaque principe, mais aussi leur justification pratique, les situations où les appliquer, les modèles de conception qui facilitent leur mise en œuvre, ainsi que les compromis et limites possibles afin de pouvoir concevoir des systèmes équilibrés et faciles à faire évoluer. À la fin, l'apprenant devra être capable d'identifier les violations des principes SOLID dans un code existant et de proposer des refactorings appropriés qui conservent le comportement tout en améliorant la structure et le couplage du logiciel.",
+                    },
+                    {
+                        "template_name": "layouts/tree_left_right/container",
+                        "items": [
+                            {
+                                "template_name": "layouts/tree_left_right/item",
+                                "content": {
+                                    "template_name": "text/explication",
+                                    "text": "Les principes SOLID regroupent cinq règles de conception orientée objet qui visent à rendre le code plus propre, modulable et durable dans le temps. Ils ne sont pas des lois strictes à appliquer à la lettre dans tous les cas, mais des guides conceptuels qui aident à réduire le couplage, augmenter la cohésion et faciliter les tests et l'évolution du logiciel. Cette section présente le contexte historique et pratique des principes, pourquoi ils sont utiles dans des projets de taille moyenne à grande, et comment les appliquer progressivement lors de l'architecture ou du refactoring.",
+                                },
+                                "title": "Introduction aux principes SOLID",
+                            }
+                        ],
+                    },
+                    {
+                        "template_name": "layouts/horizontal_line/container",
+                        "items": [
+                            {
+                                "template_name": "layouts/grid/item",
+                                "title": {
+                                    "template_name": "conceptual/concept",
+                                    "title": "Single Responsibility Principle (SRP) - Principe de responsabilité unique",
+                                },
+                                "content": {
+                                    "template_name": "text/liste_exemples",
+                                    "items": [
+                                        "Une classe UserService qui gère à la fois la logique métier des utilisateurs et la persistance en base devrait être scindée en UserService (logique métier) et UserRepository (accès aux données). Cette séparation permet de modifier la stratégie de stockage sans toucher à la logique métier.",
+                                        "Une classe ReportGenerator qui compile des données, formate un document et l'envoie par email enfreint SRP. On la refactorise en DataCollector, ReportFormatter et EmailSender pour isoler les raisons de changement et faciliter le test unitaire de chaque responsabilité.",
+                                    ],
+                                    "text": "Le principe de responsabilité unique stipule qu'une classe ou un module ne doit avoir qu'une seule raison de changer, c'est-à-dire une et une seule responsabilité métier. L'idée est de séparer les préoccupations pour limiter l'impact des modifications : si une classe a plusieurs responsabilités, une modification liée à l'une d'elles peut provoquer des régressions dans les autres. En pratique, appliquer SRP conduit à des classes plus petites et plus cohésives, plus simples à tester et à comprendre. SRP facilite également l'adhésion aux autres principes SOLID, par exemple en rendant plus simple l'extension sans modification (OCP) et en limitant les interfaces superficielles.",
+                                },
+                            }
+                        ],
+                    },
+                    {
+                        "template_name": "layouts/tree_left_right/container",
+                        "items": [
+                            {
+                                "template_name": "layouts/tree_left_right/item",
+                                "content": {
+                                    "template_name": "text/explication",
+                                    "text": "Les principes SOLID sont complémentaires mais parfois couteux à appliquer de manière trop stricte : trop de petites classes ou d'abstractions peuvent conduire à une complexité excessive (sur-ingénierie). Il est donc conseillé d'appliquer ces principes de manière pragmatique et itérative, en commençant par identifier les points de fragilité du code puis en refactorant par petites étapes. De plus, certains concepts se renforcent mutuellement : par exemple SRP facilite OCP en isolant les responsabilités, et DIP facilite OCP en permettant d'ajouter des implémentations sans modifier les dépendants. Enfin, l'utilisation conjointe de tests automatisés, de revues de code et de patterns de conception aidants (Factory, Strategy, Decorator, Adapter) accélère la mise en œuvre efficace des principes SOLID dans des projets réels.",
+                                },
+                            }
+                        ],
+                    },
+                ],
+                "version": "1.0.0",
+            },
+            "prompt": "FAKE PROMPT",
         }
 
+        return {"template_structure": template_structure, "prompt": prompt}
+
     def _create_search_text(
-        self,
-        source_json: Dict[str, Any],
-        context_description: str
+        self, source_json: Dict[str, Any], context_description: str
     ) -> str:
         """
         Crée un texte de recherche pour trouver des templates pertinents.
@@ -101,6 +151,7 @@ class TemplateStructureGenerator:
         """
         # Extraire les clés principales du JSON pour la recherche
         import json
+
         json_summary = json.dumps(source_json, ensure_ascii=False, indent=2)[:500]
 
         search_parts = []
@@ -127,30 +178,36 @@ class TemplateStructureGenerator:
         self,
         source_json: Dict[str, Any],
         templates: List[Dict[str, Any]],
-        context_description: str
+        context_description: str,
     ):
         # Extraire les chemins source avec variables [x], [y], [z]
-        json_paths_with_variables = self._extract_all_json_paths(source_json, use_variables=True)
+        json_paths_with_variables = self._extract_all_json_paths(
+            source_json, use_variables=True
+        )
 
         # Générer les mappings source → destination avec le LLM
         destination_mappings = self._generate_destination_paths_with_llm(
             source_paths=json_paths_with_variables,
             templates=templates,
-            context_description=context_description
+            context_description=context_description,
         )
 
-        json_paths_with_indices = self._extract_all_json_paths(source_json, include_indices=True)
+        json_paths_with_indices = self._extract_all_json_paths(
+            source_json, include_indices=True
+        )
 
         # Construire le JSON final
         final_json = self._build_final_json(
             source_json=source_json,
             destination_mappings=destination_mappings,
-            json_paths_with_indices=json_paths_with_indices
+            json_paths_with_indices=json_paths_with_indices,
         )
 
         return final_json, "TODO: prompt"
 
-    def _extract_all_json_paths(self, data: Any, include_indices: bool = False, use_variables: bool = False) -> str:
+    def _extract_all_json_paths(
+        self, data: Any, include_indices: bool = False, use_variables: bool = False
+    ) -> str:
         """
         Extrait récursivement tous les chemins disponibles dans un JSON.
 
@@ -177,7 +234,9 @@ class TemplateStructureGenerator:
             structure = extract_json_structure(data)
             return self._extract_paths_compact(structure, use_variables=use_variables)
 
-    def _extract_paths_compact(self, structure: Any, use_variables: bool = False) -> str:
+    def _extract_paths_compact(
+        self, structure: Any, use_variables: bool = False
+    ) -> str:
         """
         Extrait les chemins en notation compactée avec [] ou avec des variables [x], [y], [z].
 
@@ -191,7 +250,7 @@ class TemplateStructureGenerator:
         """
         paths = []
         # Variables pour les niveaux d'imbrication de tableaux
-        array_vars = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's', 'r', 'q']
+        array_vars = ["x", "y", "z", "w", "v", "u", "t", "s", "r", "q"]
 
         def is_simple_value(val: Any) -> bool:
             """Vérifie si une valeur est simple (primitive, tableau de primitives, ou objet plat)"""
@@ -199,10 +258,16 @@ class TemplateStructureGenerator:
                 return True
             if isinstance(val, list):
                 # Tableau de primitives
-                return all(isinstance(item, (str, int, float, bool, type(None))) for item in val)
+                return all(
+                    isinstance(item, (str, int, float, bool, type(None)))
+                    for item in val
+                )
             if isinstance(val, dict):
                 # Objet plat (toutes les valeurs sont des primitives)
-                return all(isinstance(v, (str, int, float, bool, type(None))) for v in val.values())
+                return all(
+                    isinstance(v, (str, int, float, bool, type(None)))
+                    for v in val.values()
+                )
             return False
 
         def extract_paths(obj: Any, path: str = "", array_depth: int = 0):
@@ -248,7 +313,9 @@ class TemplateStructureGenerator:
                                 paths.append(new_path)
 
                             # Récursion pour les valeurs imbriquées avec profondeur incrémentée
-                            if isinstance(value, (dict, list)) and not is_simple_value(value):
+                            if isinstance(value, (dict, list)) and not is_simple_value(
+                                value
+                            ):
                                 extract_paths(value, new_path, array_depth + 1)
                     else:
                         # Tableau de primitives
@@ -261,7 +328,7 @@ class TemplateStructureGenerator:
         unique_paths = sorted(set(paths))
 
         # Formater la liste des chemins
-        #formatted_paths = "\n".join([f"  - {path}" for path in unique_paths])
+        # formatted_paths = "\n".join([f"  - {path}" for path in unique_paths])
         return unique_paths
 
     def _extract_paths_with_indices(self, data: Any) -> str:
@@ -282,10 +349,16 @@ class TemplateStructureGenerator:
                 return True
             if isinstance(val, list):
                 # Tableau de primitives
-                return all(isinstance(item, (str, int, float, bool, type(None))) for item in val)
+                return all(
+                    isinstance(item, (str, int, float, bool, type(None)))
+                    for item in val
+                )
             if isinstance(val, dict):
                 # Objet plat (toutes les valeurs sont des primitives)
-                return all(isinstance(v, (str, int, float, bool, type(None))) for v in val.values())
+                return all(
+                    isinstance(v, (str, int, float, bool, type(None)))
+                    for v in val.values()
+                )
             return False
 
         def extract_paths(obj: Any, path: str = ""):
@@ -323,7 +396,9 @@ class TemplateStructureGenerator:
                                 paths.append(new_path)
 
                             # Récursion pour les valeurs imbriquées
-                            if isinstance(value, (dict, list)) and not is_simple_value(value):
+                            if isinstance(value, (dict, list)) and not is_simple_value(
+                                value
+                            ):
                                 extract_paths(value, new_path)
                     else:
                         # Tableau de primitives
@@ -363,7 +438,7 @@ Template {i}:
         self,
         source_paths: List[str],
         templates: List[Dict[str, Any]],
-        context_description: str = ""
+        context_description: str = "",
     ) -> Dict[str, str]:
         """
         Génère les chemins de destination pour chaque chemin source en utilisant le LLM.
@@ -388,8 +463,11 @@ Template {i}:
         templates_formatted = self._format_templates_for_prompt(templates)
 
         # Construire le prompt
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """Tu es un expert en construction de structures de données pédagogiques.
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """Tu es un expert en construction de structures de données pédagogiques.
 Ta tâche est de mapper des chemins de données source vers des chemins de destination qui utilisent des templates HTML/pédagogiques imbriqués.
 
 RÈGLES CRITIQUES POUR LES INDICES:
@@ -421,8 +499,11 @@ RETOURNE un JSON avec le format exact suivant:
 {{
   "chemin_source_1": "chemin_destination_1",
   "chemin_source_2": "chemin_destination_2"
-}}"""),
-            ("user", """Contexte: {context}
+}}""",
+                ),
+                (
+                    "user",
+                    """Contexte: {context}
 
 Templates disponibles:
 {templates}
@@ -430,8 +511,10 @@ Templates disponibles:
 Chemins source à mapper:
 {source_paths}
 
-Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
-        ])
+Génère les mappings en respectant STRICTEMENT les règles d'indices.""",
+                ),
+            ]
+        )
 
         # Préparer les données pour le prompt
         source_paths_formatted = "\n".join([f"  - {path}" for path in source_paths])
@@ -441,15 +524,19 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
         chain = prompt | self.llm | parser
 
         # Appeler le LLM
-        result = chain.invoke({
-            "context": context_description or "Aucun contexte spécifique fourni",
-            "templates": templates_formatted,
-            "source_paths": source_paths_formatted
-        })
+        result = chain.invoke(
+            {
+                "context": context_description or "Aucun contexte spécifique fourni",
+                "templates": templates_formatted,
+                "source_paths": source_paths_formatted,
+            }
+        )
 
         return result
 
-    def _convert_indices_to_variables(self, path_with_indices: str) -> tuple[str, dict[str, int]]:
+    def _convert_indices_to_variables(
+        self, path_with_indices: str
+    ) -> tuple[str, dict[str, int]]:
         """
         Convertit un chemin avec indices réels en chemin avec variables et retourne le mapping.
 
@@ -463,11 +550,11 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
         import re
 
         # Variables pour les niveaux d'imbrication
-        array_vars = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's', 'r', 'q']
+        array_vars = ["x", "y", "z", "w", "v", "u", "t", "s", "r", "q"]
 
         # Extraire tous les indices avec leur position
         indices = []
-        pattern = r'\[(\d+)\]'
+        pattern = r"\[(\d+)\]"
         for match in re.finditer(pattern, path_with_indices):
             indices.append(int(match.group(1)))
 
@@ -479,13 +566,15 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
 
         # Remplacer les indices par des variables dans le chemin
         path_with_vars = path_with_indices
-        for i, var in enumerate(array_vars[:len(indices)]):
+        for i, var in enumerate(array_vars[: len(indices)]):
             # Remplacer le premier [nombre] trouvé par [variable]
-            path_with_vars = re.sub(r'\[\d+\]', f'[{var}]', path_with_vars, count=1)
+            path_with_vars = re.sub(r"\[\d+\]", f"[{var}]", path_with_vars, count=1)
 
         return path_with_vars, var_mapping
 
-    def _substitute_variables_in_destination(self, destination_path: str, var_mapping: dict[str, int]) -> str:
+    def _substitute_variables_in_destination(
+        self, destination_path: str, var_mapping: dict[str, int]
+    ) -> str:
         """
         Substitue les variables dans un chemin de destination par leurs valeurs réelles.
 
@@ -501,7 +590,7 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
         result = destination_path
         for var, idx in var_mapping.items():
             # Remplacer [variable] par [indice]
-            result = re.sub(rf'\[{var}\]', f'[{idx}]', result)
+            result = re.sub(rf"\[{var}\]", f"[{idx}]", result)
 
         return result
 
@@ -520,12 +609,12 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
 
         # Séparer le chemin en segments
         # Ex: "course_sections[0]lessons[1]title" → ["course_sections", "[0]", "lessons", "[1]", "title"]
-        segments = re.split(r'(->|\[\d+\])', path)
-        segments = [s for s in segments if s and s != '->']
+        segments = re.split(r"(->|\[\d+\])", path)
+        segments = [s for s in segments if s and s != "->"]
 
         current = data
         for segment in segments:
-            if segment.startswith('[') and segment.endswith(']'):
+            if segment.startswith("[") and segment.endswith("]"):
                 # C'est un index de tableau
                 idx = int(segment[1:-1])
                 current = current[idx]
@@ -565,21 +654,25 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
         i = 0
         while i < len(destination_path):
             # Vérifier si on a un field access ["..."]
-            if destination_path[i:i+2] == '["':
+            if destination_path[i : i + 2] == '["':
                 # Trouver la fin du field name
                 end_quote = destination_path.find('"]', i + 2)
                 if end_quote != -1:
-                    field_name = destination_path[i+2:end_quote]
+                    field_name = destination_path[i + 2 : end_quote]
                     segments.append({"type": "field", "value": field_name})
                     i = end_quote + 2
                     continue
 
             # Vérifier si on a un array index [nombre]
-            if destination_path[i] == '[' and i + 1 < len(destination_path) and destination_path[i+1].isdigit():
+            if (
+                destination_path[i] == "["
+                and i + 1 < len(destination_path)
+                and destination_path[i + 1].isdigit()
+            ):
                 # Trouver la fin de l'index
-                end_bracket = destination_path.find(']', i + 1)
+                end_bracket = destination_path.find("]", i + 1)
                 if end_bracket != -1:
-                    index_str = destination_path[i+1:end_bracket]
+                    index_str = destination_path[i + 1 : end_bracket]
                     segments.append({"type": "index", "value": int(index_str)})
                     i = end_bracket + 1
                     continue
@@ -588,7 +681,7 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
             # Trouver la fin du template name (jusqu'au prochain [ ou fin)
             template_name = ""
             start = i
-            while i < len(destination_path) and destination_path[i] != '[':
+            while i < len(destination_path) and destination_path[i] != "[":
                 i += 1
 
             template_name = destination_path[start:i]
@@ -601,7 +694,7 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
         self,
         source_json: Dict[str, Any],
         destination_mappings: Dict[str, str],
-        json_paths_with_indices: List[str]
+        json_paths_with_indices: List[str],
     ) -> Dict[str, Any]:
         """
         Construit le JSON final en utilisant les mappings de destination.
@@ -618,7 +711,9 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
 
         for path_source in json_paths_with_indices:
             # 1. Convertir le chemin avec indices en chemin avec variables
-            path_with_vars, var_mapping = self._convert_indices_to_variables(path_source)
+            path_with_vars, var_mapping = self._convert_indices_to_variables(
+                path_source
+            )
 
             # 2. Trouver le chemin de destination correspondant
             if path_with_vars not in destination_mappings:
@@ -629,8 +724,7 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
 
             # 3. Substituer les variables dans le chemin de destination
             final_destination = self._substitute_variables_in_destination(
-                destination_path,
-                var_mapping
+                destination_path, var_mapping
             )
 
             # 4. Récupérer la valeur source
@@ -651,10 +745,7 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
         return result
 
     def _insert_value_in_structure(
-        self,
-        root: Dict[str, Any],
-        segments: List[Dict[str, Any]],
-        value: Any
+        self, root: Dict[str, Any], segments: List[Dict[str, Any]], value: Any
     ):
         """
         Insère une valeur dans la structure JSON en suivant les segments du chemin.
@@ -673,7 +764,7 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
             seg_value = segment["value"]
 
             # Déterminer si c'est le dernier segment
-            is_last = (i == len(segments) - 1)
+            is_last = i == len(segments) - 1
 
             if seg_type == "template":
                 # Un template doit être ajouté comme template_name
@@ -711,7 +802,9 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
 
                 # Vérifier que current est bien un dict
                 if not isinstance(current, dict):
-                    raise ValueError(f"Cannot access field '{field_name}' on non-dict type {type(current).__name__}")
+                    raise ValueError(
+                        f"Cannot access field '{field_name}' on non-dict type {type(current).__name__}"
+                    )
 
                 # Créer le champ s'il n'existe pas
                 if field_name not in current:
@@ -734,12 +827,20 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
                     next_seg = segments[i + 1]
 
                     # Si le prochain segment est un index, on s'attend à une liste
-                    if next_seg["type"] == "index" and not isinstance(existing_value, list):
-                        raise ValueError(f"Field '{field_name}' exists but is not a list (found {type(existing_value).__name__})")
+                    if next_seg["type"] == "index" and not isinstance(
+                        existing_value, list
+                    ):
+                        raise ValueError(
+                            f"Field '{field_name}' exists but is not a list (found {type(existing_value).__name__})"
+                        )
 
                     # Si le prochain segment est un field ou template, on s'attend à un dict
-                    if next_seg["type"] in ("field", "template") and not isinstance(existing_value, dict):
-                        raise ValueError(f"Field '{field_name}' exists but is not a dict (found {type(existing_value).__name__})")
+                    if next_seg["type"] in ("field", "template") and not isinstance(
+                        existing_value, dict
+                    ):
+                        raise ValueError(
+                            f"Field '{field_name}' exists but is not a dict (found {type(existing_value).__name__})"
+                        )
 
                 # Naviguer vers ce champ
                 current = current[field_name]
@@ -750,7 +851,9 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""")
 
                 # S'assurer que current est un tableau
                 if not isinstance(current, list):
-                    raise ValueError(f"Expected list but got {type(current)} for index {idx}")
+                    raise ValueError(
+                        f"Expected list but got {type(current)} for index {idx}"
+                    )
 
                 # Étendre le tableau si nécessaire
                 while len(current) <= idx:

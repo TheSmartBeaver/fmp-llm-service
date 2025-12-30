@@ -66,10 +66,10 @@ class CourseMaterialGeneratorV2:
             - prompts: Dict avec les prompts de chaque étape
         """
         # Étape 1: Générer le JSON pédagogique enrichi
-        pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
+        #pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
 
-        pedagogical_json_string = json.dumps(pedagogical_json, indent=0, ensure_ascii=False)
-        print(f" pedagogical_json = {pedagogical_json_string}")
+        #pedagogical_json_string = json.dumps(pedagogical_json, indent=0, ensure_ascii=False)
+        #print(f" pedagogical_json = {pedagogical_json_string}")
 
         # Étape 2: Générer la structure de templates
         context_description = self._create_context_description(user_entry)
@@ -79,7 +79,7 @@ class CourseMaterialGeneratorV2:
             category_quotas = {"layouts/": 5, "conceptual/": 10, "text/": 5}
 
         structure_result = self.template_structure_generator.generate_template_structure(
-            source_json=pedagogical_json,
+            source_json="shit",
             context_description=context_description,
             top_k=top_k,
             category_quotas=category_quotas

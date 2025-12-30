@@ -41,15 +41,14 @@ class CourseMaterialGeneratorV2:
         self.embedding_model = embedding_model
         self.llm = OpenAiGPT5MiniLlm().get_llm()
         self.template_structure_generator = TemplateStructureGenerator(
-            db_session=db_session,
-            embedding_model=embedding_model
+            db_session=db_session, embedding_model=embedding_model
         )
 
     def generate_course_material(
         self,
         user_entry: UserEntryDto,
         top_k: int = 20,
-        category_quotas: Dict[str, int] = None
+        category_quotas: Dict[str, int] = None,
     ) -> Dict[str, Any]:
         """
         Génère des supports de cours à partir d'un UserEntryDto.
@@ -66,10 +65,18 @@ class CourseMaterialGeneratorV2:
             - prompts: Dict avec les prompts de chaque étape
         """
         # Étape 1: Générer le JSON pédagogique enrichi
-        #pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
+        # pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
+        pedagogical_json = {
+            "context_entry": {
+                "course": "string",
+                "topic_path": "string",
+                "fc_to_modify": "string",
+            }
+        }
+        pedagogical_prompt = "string"
 
-        #pedagogical_json_string = json.dumps(pedagogical_json, indent=0, ensure_ascii=False)
-        #print(f" pedagogical_json = {pedagogical_json_string}")
+        # pedagogical_json_string = json.dumps(pedagogical_json, indent=0, ensure_ascii=False)
+        # print(f" pedagogical_json = {pedagogical_json_string}")
 
         # Étape 2: Générer la structure de templates
         context_description = self._create_context_description(user_entry)
@@ -78,11 +85,13 @@ class CourseMaterialGeneratorV2:
             # Par défaut: peu de layouts, plus de contenu conceptuel
             category_quotas = {"layouts/": 5, "conceptual/": 10, "text/": 5}
 
-        structure_result = self.template_structure_generator.generate_template_structure(
-            source_json="shit",
-            context_description=context_description,
-            top_k=top_k,
-            category_quotas=category_quotas
+        structure_result = (
+            self.template_structure_generator.generate_template_structure(
+                source_json=pedagogical_json,
+                context_description=context_description,
+                top_k=top_k,
+                category_quotas=category_quotas,
+            )
         )
 
         template_structure = structure_result["template_structure"]
@@ -94,7 +103,9 @@ class CourseMaterialGeneratorV2:
         # Étape 4: Validation
         validated_support = self._validate_support(template_structure)
 
-        validated_support_string = json.dumps(validated_support, indent=0, ensure_ascii=False)
+        validated_support_string = json.dumps(
+            validated_support, indent=0, ensure_ascii=False
+        )
         print(f" validated_support = {validated_support_string}")
 
         return {
@@ -102,8 +113,8 @@ class CourseMaterialGeneratorV2:
             "pedagogical_json": pedagogical_json,
             "prompts": {
                 "step1_pedagogical_json": pedagogical_prompt,
-                "step2_template_structure": structure_prompt
-            }
+                "step2_template_structure": structure_prompt,
+            },
         }
 
     def _aggregate_content(self, user_entry: UserEntryDto) -> Dict[str, Any]:
@@ -223,8 +234,7 @@ class CourseMaterialGeneratorV2:
 
         # Formater les médias pour le prompt
         media_description = self._format_media_for_prompt(
-            aggregated_content["images"],
-            aggregated_content["videos"]
+            aggregated_content["images"], aggregated_content["videos"]
         )
 
         # Créer le prompt système
@@ -302,16 +312,18 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
             course=aggregated_content["context"]["course"],
             topic_path=aggregated_content["context"]["topic_path"],
             media_description=media_description,
-            text=aggregated_content["text"]
+            text=aggregated_content["text"],
         )
 
         # Exécuter la chaîne
-        result = chain.invoke({
-            "course": aggregated_content["context"]["course"],
-            "topic_path": aggregated_content["context"]["topic_path"],
-            "media_description": media_description,
-            "text": aggregated_content["text"]
-        })
+        result = chain.invoke(
+            {
+                "course": aggregated_content["context"]["course"],
+                "topic_path": aggregated_content["context"]["topic_path"],
+                "media_description": media_description,
+                "text": aggregated_content["text"],
+            }
+        )
 
         return result, full_prompt
 

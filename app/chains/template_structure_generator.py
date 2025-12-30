@@ -96,8 +96,10 @@ class TemplateStructureGenerator:
         templates = list(all_templates.values())
 
         # Étape 3: Générer la structure via le LLM
-        template_structure, prompt, destination_mappings = self._generate_structure_with_llm(
-            source_json, templates, context_description
+        template_structure, prompt, destination_mappings = (
+            self._generate_structure_with_llm(
+                source_json, templates, context_description
+            )
         )
 
         # return {
@@ -250,11 +252,29 @@ class TemplateStructureGenerator:
         )
 
         # Générer les mappings source → destination avec le LLM
-        destination_mappings = self._generate_destination_paths_with_llm(
-            source_paths=json_paths_with_variables,
-            templates=templates,
-            context_description=context_description,
-        )
+        # destination_mappings = self._generate_destination_paths_with_llm(
+        #     source_paths=json_paths_with_variables,
+        #     templates=templates,
+        #     context_description=context_description,
+        # )
+
+        destination_mappings = {
+            "learning_objective": 'layouts/vertical_column/container["items"][0]text/description_longue["text"]',
+            "course_sections[x]section_title": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["title"]text/titre_secondaire["text"]',
+            "course_sections[x]section_description": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]text/description_longue["text"]',
+            "course_sections[x]key_concepts[y]concept_name": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]conceptual/concept["title"]',
+            "course_sections[x]key_concepts[y]explanation": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]conceptual/concept["description"]',
+            "course_sections[x]key_concepts[y]examples": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]text/liste_exemples["items"]',
+            "course_sections[x]key_concepts[y]related_media": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]text/detail_technique["text"]',
+            "course_sections[x]additional_notes": 'layouts/vertical_column/container["items"][2]text/contexte["text"]',
+        }
+
+        # Valider les destination_mappings
+        validation_errors = self._validate_destination_mappings(destination_mappings)
+        if validation_errors:
+            import warnings
+            for error in validation_errors:
+                warnings.warn(f"\n⚠️  VALIDATION ERROR in destination_mappings:\n{error}\n")
 
         json_paths_with_indices = self._extract_all_json_paths(
             source_json, include_indices=True
@@ -498,6 +518,99 @@ Template {i}:
             )
         return "\n".join(formatted)
 
+    def _validate_destination_mappings(
+        self, destination_mappings: Dict[str, str]
+    ) -> List[str]:
+        """
+        Valide les destination mappings pour détecter les chevauchements interdits.
+
+        Un chevauchement se produit quand deux chemins sources différents pointent vers
+        le même index mais avec des templates différents.
+
+        Exemple de chevauchement INTERDIT:
+            "course_sections[x]key_concepts[y]concept_name": "...["items"][y]conceptual/concept["title"]"
+            "course_sections[x]key_concepts[y]examples": "...["items"][y]text/liste_exemples["items"]"
+
+        Ces deux chemins vont vers le même index [y] mais avec des templates différents
+        (conceptual/concept vs text/liste_exemples), ce qui cause un écrasement.
+
+        Args:
+            destination_mappings: Les mappings source -> destination à valider
+
+        Returns:
+            Liste des erreurs détectées (vide si tout est OK)
+        """
+        import re
+        errors = []
+
+        # Regrouper les chemins par leur "préfixe de conteneur"
+        # Ex: "...["items"][y]conceptual/concept["title"]" -> préfixe = '...["items"][y]'
+        container_groups = {}
+
+        for source_path, dest_path in destination_mappings.items():
+            # Extraire tous les segments du chemin de destination
+            segments = self._parse_destination_path(dest_path)
+
+            # Trouver les positions où on a: field -> index -> template
+            # C'est là qu'on crée des objets dans un tableau
+            for i in range(len(segments) - 2):
+                if (
+                    segments[i]["type"] == "field"
+                    and segments[i + 1]["type"] == "index"
+                    and segments[i + 2]["type"] == "template"
+                ):
+                    # Reconstruire le préfixe jusqu'à (et incluant) l'index
+                    prefix_parts = []
+                    for j in range(i + 2):
+                        seg = segments[j]
+                        if seg["type"] == "template":
+                            prefix_parts.append(seg["value"])
+                        elif seg["type"] == "field":
+                            prefix_parts.append(f'["{seg["value"]}"]')
+                        elif seg["type"] == "index":
+                            # Garder l'index tel quel (nombre ou variable)
+                            idx = seg["value"]
+                            prefix_parts.append(f"[{idx}]")
+
+                    prefix = "".join(prefix_parts)
+                    template_name = segments[i + 2]["value"]
+
+                    # Enregistrer ce préfixe + template
+                    if prefix not in container_groups:
+                        container_groups[prefix] = []
+                    container_groups[prefix].append(
+                        {
+                            "source_path": source_path,
+                            "dest_path": dest_path,
+                            "template": template_name,
+                        }
+                    )
+
+        # Vérifier les conflits: même préfixe mais templates différents
+        for prefix, items in container_groups.items():
+            templates_at_prefix = {}
+            for item in items:
+                template = item["template"]
+                if template not in templates_at_prefix:
+                    templates_at_prefix[template] = []
+                templates_at_prefix[template].append(item["source_path"])
+
+            # Si on a plusieurs templates différents au même préfixe, c'est un conflit
+            if len(templates_at_prefix) > 1:
+                template_list = ", ".join(
+                    [f'"{t}"' for t in templates_at_prefix.keys()]
+                )
+                source_paths = [item["source_path"] for item in items]
+                errors.append(
+                    f"Chevauchement détecté au préfixe '{prefix}':\n"
+                    f"  Templates en conflit: {template_list}\n"
+                    f"  Chemins sources concernés: {', '.join(source_paths)}\n"
+                    f"  ⚠️  Ces chemins sources pointent vers le même index mais avec des templates différents,\n"
+                    f"      ce qui causera un écrasement. Utilisez des index différents ou imbriquez les templates."
+                )
+
+        return errors
+
     def _generate_destination_paths_with_llm(
         self,
         source_paths: List[str],
@@ -559,6 +672,29 @@ RÈGLES CRITIQUES POUR LES INDICES:
    - Enchaîne avec le template_name suivant, etc.
    - Exemple complet: layouts/vertical_column/container["items"][0]layouts/vertical_column/item["title"]conceptual/concept["description"]
 
+5. **⚠️ RÈGLE ANTI-CHEVAUCHEMENT (TRÈS IMPORTANT)**:
+   - INTERDICTION STRICTE: Deux chemins sources différents NE PEUVENT PAS pointer vers le même index avec des templates différents
+   - ❌ EXEMPLE INTERDIT:
+     "course_sections[x]key_concepts[y]concept_name": '...["items"][y]conceptual/concept["title"]'
+     "course_sections[x]key_concepts[y]examples": '...["items"][y]text/liste_exemples["items"]'
+     (même index [y] mais templates différents: conceptual/concept vs text/liste_exemples → CONFLIT!)
+
+   - ✅ SOLUTIONS ACCEPTÉES:
+
+     Option A - Tout dans le même template (RECOMMANDÉ):
+     "course_sections[x]key_concepts[y]concept_name": '...["items"][y]conceptual/concept["title"]'
+     "course_sections[x]key_concepts[y]examples": '...["items"][y]conceptual/concept["examples"]'
+     (même index [y], même template conceptual/concept, champs différents → OK)
+
+     Option B - Templates imbriqués (un DANS l'autre):
+     "course_sections[x]key_concepts[y]concept_name": '...["items"][y]conceptual/concept["title"]'
+     "course_sections[x]key_concepts[y]examples": '...["items"][y]conceptual/concept["content"]text/liste_exemples["items"]'
+     (text/liste_exemples est IMBRIQUÉ dans conceptual/concept via le champ "content" → OK)
+
+   - RÈGLE: Si plusieurs chemins sources partagent la même variable (ex: tous ont [y]), ils doivent SOIT:
+     * Tous utiliser le même template au niveau de cette variable
+     * OU être imbriqués via des champs intermédiaires
+
 RETOURNE un JSON avec le format exact suivant:
 {{
   "chemin_source_1": "chemin_destination_1",
@@ -595,6 +731,16 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""",
                 "source_paths": source_paths_formatted,
             }
         )
+
+        # Valider les mappings générés par le LLM
+        validation_errors = self._validate_destination_mappings(result)
+        if validation_errors:
+            import warnings
+            error_msg = "\n".join(validation_errors)
+            warnings.warn(
+                f"\n⚠️  Le LLM a généré des destination_mappings INVALIDES:\n{error_msg}\n"
+                f"Les mappings seront utilisés mais peuvent causer des écrasements de données.\n"
+            )
 
         return result
 
@@ -727,17 +873,22 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""",
                     i = end_quote + 2
                     continue
 
-            # Vérifier si on a un array index [nombre]
+            # Vérifier si on a un array index [nombre] ou [variable]
             if (
                 destination_path[i] == "["
                 and i + 1 < len(destination_path)
-                and destination_path[i + 1].isdigit()
+                and (destination_path[i + 1].isdigit() or destination_path[i + 1].isalpha())
             ):
                 # Trouver la fin de l'index
                 end_bracket = destination_path.find("]", i + 1)
                 if end_bracket != -1:
                     index_str = destination_path[i + 1 : end_bracket]
-                    segments.append({"type": "index", "value": int(index_str)})
+                    # Si c'est un nombre, convertir en int, sinon garder comme string (variable)
+                    if index_str.isdigit():
+                        segments.append({"type": "index", "value": int(index_str)})
+                    else:
+                        # C'est une variable (x, y, z, etc.)
+                        segments.append({"type": "index", "value": index_str})
                     i = end_bracket + 1
                     continue
 
@@ -852,6 +1003,17 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""",
                         # Si current n'a pas encore de template_name, on l'ajoute
                         if "template_name" not in current:
                             current["template_name"] = seg_value
+                        elif current["template_name"] != seg_value:
+                            # AVERTISSEMENT: on essaie d'insérer un template différent au même endroit
+                            import warnings
+                            warnings.warn(
+                                f"\n⚠️  TEMPLATE CONFLICT lors de l'insertion:\n"
+                                f"  Template existant: '{current['template_name']}'\n"
+                                f"  Template à insérer: '{seg_value}'\n"
+                                f"  Segment actuel: {i}/{len(segments)-1}\n"
+                                f"  Ceci causera un écrasement de données!\n"
+                                f"  Vérifiez les destination_mappings pour éviter les chevauchements.\n"
+                            )
                         # On continue, le prochain segment gérera le field
 
                     elif next_seg["type"] == "template":
@@ -859,6 +1021,15 @@ Génère les mappings en respectant STRICTEMENT les règles d'indices.""",
                         # On ne fait rien, le prochain segment gérera
                         if "template_name" not in current:
                             current["template_name"] = seg_value
+                        elif current["template_name"] != seg_value:
+                            import warnings
+                            warnings.warn(
+                                f"\n⚠️  TEMPLATE CONFLICT lors de l'insertion:\n"
+                                f"  Template existant: '{current['template_name']}'\n"
+                                f"  Template à insérer: '{seg_value}'\n"
+                                f"  Segment actuel: {i}/{len(segments)-1}\n"
+                                f"  Ceci causera un écrasement de données!\n"
+                            )
 
             elif seg_type == "field":
                 # Accès à un champ

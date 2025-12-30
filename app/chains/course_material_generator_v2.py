@@ -8,6 +8,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.template_structure_generator import TemplateStructureGenerator
+from app.utils.test import shit_test2
 
 
 class CourseMaterialGeneratorV2:
@@ -65,16 +66,11 @@ class CourseMaterialGeneratorV2:
             - prompts: Dict avec les prompts de chaque étape
         """
         # Étape 1: Générer le JSON pédagogique enrichi
-        pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
+        # pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
         
-        # pedagogical_json = {
-        #     "context_entry": {
-        #         "course": "string",
-        #         "topic_path": "string",
-        #         "fc_to_modify": "string",
-        #     }
-        # }
-        # pedagogical_prompt = "string"
+        pedagogical_json = shit_test2
+
+        pedagogical_prompt = "string"
 
         pedagogical_json_string = json.dumps(pedagogical_json, indent=0, ensure_ascii=False)
         print(f" pedagogical_json = {pedagogical_json_string}")

@@ -1,3 +1,4 @@
+import json
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
@@ -67,6 +68,9 @@ class CourseMaterialGeneratorV2:
         # Étape 1: Générer le JSON pédagogique enrichi
         pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
 
+        pedagogical_json_string = json.dumps(pedagogical_json, indent=0, ensure_ascii=False)
+        print(f" pedagogical_json = {pedagogical_json_string}")
+
         # Étape 2: Générer la structure de templates
         context_description = self._create_context_description(user_entry)
 
@@ -90,8 +94,12 @@ class CourseMaterialGeneratorV2:
         # Étape 4: Validation
         validated_support = self._validate_support(template_structure)
 
+        validated_support_string = json.dumps(validated_support, indent=0, ensure_ascii=False)
+        print(f" validated_support = {validated_support_string}")
+
         return {
             "support": validated_support,
+            "pedagogical_json": pedagogical_json,
             "prompts": {
                 "step1_pedagogical_json": pedagogical_prompt,
                 "step2_template_structure": structure_prompt

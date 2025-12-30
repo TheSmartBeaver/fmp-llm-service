@@ -205,6 +205,7 @@ def generate_course_material_task(
             "supports": [{"support" : result_v2["support"]}],  # Encapsuler dans une liste
             "templates_used": top_k,
             "prompt": full_prompt,
+            "pedagogical_json": result_v2.get("pedagogical_json"),
         }
 
         print(f"📥 Course material generation V2 completed for task {task_id}")

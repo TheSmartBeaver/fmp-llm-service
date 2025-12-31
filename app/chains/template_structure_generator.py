@@ -7,6 +7,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from app.utils.template_search import fetch_similar_templates
 from app.utils.structure_process import extract_json_structure, create_embedding_packets
 from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
+from app.chains.llm.open_ai_o3_mini_llm import OpenAiO3MiniLlm
 
 
 class TemplateStructureGenerator:
@@ -38,6 +39,8 @@ class TemplateStructureGenerator:
         self.db = db_session
         self.embedding_model = embedding_model
         self.llm = ClaudeHaiku45Llm().get_llm()
+        # Utiliser un modèle plus puissant (O3-mini avec raisonnement) pour les corrections
+        self.correction_llm = OpenAiO3MiniLlm().get_llm()
 
     def generate_template_structure(
         self,
@@ -806,15 +809,160 @@ Génère maintenant les mappings.""",
 
         # Valider les mappings générés par le LLM
         validation_errors = self._validate_destination_mappings(result)
+
+        # Si des erreurs sont détectées, essayer de les corriger avec un appel LLM de correction
+        max_correction_attempts = 2
+        attempt = 0
+
+        while validation_errors and attempt < max_correction_attempts:
+            attempt += 1
+            import warnings
+            warnings.warn(
+                f"\n⚠️  Tentative de correction automatique ({attempt}/{max_correction_attempts})...\n"
+            )
+
+            # Appeler le LLM pour corriger les erreurs
+            result = self._correct_destination_mappings_with_llm(
+                result, validation_errors, templates_formatted, source_paths_formatted, context_description
+            )
+
+            # Revalider
+            validation_errors = self._validate_destination_mappings(result)
+
+        # Si des erreurs subsistent après les tentatives de correction
         if validation_errors:
             import warnings
             error_msg = "\n".join(validation_errors)
             warnings.warn(
-                f"\n⚠️  Le LLM a généré des destination_mappings INVALIDES:\n{error_msg}\n"
+                f"\n⚠️  ERREURS PERSISTANTES après {max_correction_attempts} tentatives:\n{error_msg}\n"
                 f"Les mappings seront utilisés mais peuvent causer des écrasements de données.\n"
             )
 
         return result
+
+    def _correct_destination_mappings_with_llm(
+        self,
+        invalid_mappings: Dict[str, str],
+        validation_errors: List[str],
+        templates_formatted: str,
+        source_paths_formatted: str,
+        context_description: str,
+    ) -> Dict[str, str]:
+        """
+        Demande au LLM de corriger les mappings invalides en pointant du doigt les erreurs spécifiques.
+
+        Args:
+            invalid_mappings: Les mappings générés qui contiennent des erreurs
+            validation_errors: Liste des erreurs de validation détectées
+            templates_formatted: Les templates disponibles (formatés)
+            source_paths_formatted: Les chemins sources (formatés)
+            context_description: Description du contexte
+
+        Returns:
+            Mappings corrigés
+        """
+        # Formater les erreurs pour le prompt
+        errors_formatted = "\n".join([f"  ❌ {err}" for err in validation_errors])
+
+        # Formater les mappings invalides pour le prompt
+        import json
+        invalid_mappings_formatted = json.dumps(invalid_mappings, indent=2, ensure_ascii=False)
+
+        # Construire le prompt de correction
+        correction_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """Tu es un expert en correction de structures de données.
+Tu as généré des mappings qui contiennent des ERREURS DE CHEVAUCHEMENT.
+
+RAPPEL DE LA RÈGLE CRITIQUE:
+Un même emplacement (champ ou index) NE PEUT recevoir qu'UN SEUL template.
+Si deux chemins partagent le même index variable (ex: [y]), ils DOIVENT utiliser le même template.""",
+                ),
+                (
+                    "user",
+                    """Voici les mappings INVALIDES que tu as générés:
+
+{invalid_mappings}
+
+ERREURS DÉTECTÉES:
+{errors}
+
+Templates disponibles:
+{templates}
+
+Chemins source à mapper:
+{source_paths}
+
+Contexte: {context}
+
+COMMENT CORRIGER (ÉTAPE PAR ÉTAPE):
+
+Étape 1: Identifie les groupes de chemins en conflit dans les erreurs ci-dessus
+
+Étape 2: Pour CHAQUE groupe identifié dans les erreurs:
+   a) Tous les chemins "key_concepts[y]*" DOIVENT avoir le même template à ["items"][y]
+   b) Tous les chemins "course_sections[x]*" (sans key_concepts) DOIVENT utiliser des champs SÉPARÉS
+
+Étape 3: Applique ces corrections:
+
+   EXEMPLE DE CORRECTION 1:
+   ❌ AVANT (INVALIDE - conflit sur ["content"]):
+   {{
+     "course_sections[x]section_description": '...item["content"]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": '...item["content"]layouts/container["items"][y]concept["title"]'
+   }}
+
+   ✅ APRÈS (CORRIGÉ):
+   {{
+     "course_sections[x]section_description": '...item["description"]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": '...item["concepts"]["items"][y]conceptual/concept["title"]'
+   }}
+
+   Explication: "section_description" va dans ["description"], "key_concepts" va dans ["concepts"]
+
+   EXEMPLE DE CORRECTION 2:
+   ❌ AVANT (INVALIDE - templates différents au même [y]):
+   {{
+     "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]',
+     "key_concepts[y]examples": '...["items"][y]text/liste["items"]',
+     "key_concepts[y]media": '...["items"][y]text/detail["text"]'
+   }}
+
+   ✅ APRÈS (CORRIGÉ):
+   {{
+     "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]',
+     "key_concepts[y]examples": '...["items"][y]conceptual/concept["examples"]',
+     "key_concepts[y]media": '...["items"][y]conceptual/concept["media"]'
+   }}
+
+   Explication: TOUS utilisent le même template "conceptual/concept" à ["items"][y]
+
+Étape 4: Génère le JSON CORRIGÉ complet
+
+RETOURNE UNIQUEMENT le JSON, sans explication:""",
+                ),
+            ]
+        )
+
+        # Créer la chaîne LLM avec parser JSON
+        # Utiliser le correction_llm (O3-mini) au lieu de llm (Haiku) pour plus de puissance de raisonnement
+        parser = JsonOutputParser()
+        chain = correction_prompt | self.correction_llm | parser
+
+        # Appeler le LLM
+        corrected_result = chain.invoke(
+            {
+                "invalid_mappings": invalid_mappings_formatted,
+                "errors": errors_formatted,
+                "templates": templates_formatted,
+                "source_paths": source_paths_formatted,
+                "context": context_description or "Aucun contexte spécifique fourni",
+            }
+        )
+
+        return corrected_result
 
     def _convert_indices_to_variables(
         self, path_with_indices: str

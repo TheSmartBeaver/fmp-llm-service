@@ -694,47 +694,33 @@ RÈGLES CRITIQUES POUR LES INDICES:
    - Enchaîne avec le template_name suivant, etc.
    - Exemple complet: layouts/vertical_column/container["items"][0]layouts/vertical_column/item["title"]conceptual/concept["description"]
 
-5. **⚠️ RÈGLE ANTI-CHEVAUCHEMENT (TRÈS IMPORTANT - CRITIQUE POUR LA VALIDITÉ)**:
+5. **⚠️ RÈGLE ANTI-CHEVAUCHEMENT (CRITIQUE)**:
 
-   INTERDICTION ABSOLUE: Deux chemins sources NE PEUVENT JAMAIS assigner des templates différents au même emplacement.
+   INTERDICTION: Un même emplacement (champ ou index) NE PEUT recevoir qu'UN SEUL template.
 
-   Deux types de conflits à éviter:
+   RÈGLE: Avant de mettre un template à un emplacement, vérifie qu'aucun autre chemin n'a déjà mis un template différent au même endroit.
 
-   A) CONFLIT DANS UN TABLEAU (field -> index -> template):
-      ❌ INTERDIT:
-      "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
-      "key_concepts[y]examples": '...["items"][y]text/liste_exemples["items"]'
-      → PROBLÈME: Même index [y], templates différents (conceptual/concept vs text/liste_exemples)
+   ❌ EXEMPLE D'ERREUR - Conflit sur le champ ["content"]:
+   "section_description": '...item["content"]text/description["text"]'
+   "key_concepts[y]name": '...item["content"]layouts/container["items"][y]...'
+   → Le champ ["content"] reçoit 2 templates différents = INTERDIT
 
-      ✅ SOLUTION 1 - Même template, champs différents:
-      "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
-      "key_concepts[y]examples": '...["items"][y]conceptual/concept["examples"]'
-      → OK: Même index [y], même template, champs différents
+   ❌ EXEMPLE D'ERREUR - Conflit sur l'index [y]:
+   "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
+   "key_concepts[y]examples": '...["items"][y]text/liste_exemples["items"]'
+   → L'index [y] reçoit 2 templates différents = INTERDIT
 
-      ✅ SOLUTION 2 - Templates imbriqués:
-      "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
-      "key_concepts[y]examples": '...["items"][y]conceptual/concept["content"]text/liste_exemples["items"]'
-      → OK: text/liste_exemples est DANS conceptual/concept["content"]
+   ✅ SOLUTION 1 - Utilise des champs séparés:
+   "section_description": '...item["description"]text/description["text"]'
+   "key_concepts[y]name": '...item["concepts"]["items"][y]conceptual/concept["title"]'
 
-   B) CONFLIT DANS UN CHAMP (field -> template):
-      ❌ INTERDIT:
-      "section_description": '...item["content"]text/description["text"]'
-      "key_concepts[y]name": '...item["content"]layouts/container["items"][y]concept["title"]'
-      → PROBLÈME: Même champ ["content"], templates différents (text/description vs layouts/container)
+   ✅ SOLUTION 2 - Même template, champs différents:
+   "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
+   "key_concepts[y]examples": '...["items"][y]conceptual/concept["examples"]'
 
-      ✅ SOLUTION 1 - Champs différents:
-      "section_description": '...item["description"]text/description["text"]'
-      "key_concepts[y]name": '...item["content"]layouts/container["items"][y]concept["title"]'
-      → OK: Champs différents (["description"] vs ["content"])
-
-      ✅ SOLUTION 2 - Index différents au niveau supérieur:
-      "section_description": '...["items"][x]item["content"]text/description["text"]'
-      "key_concepts[y]name": '...["items"][x]item["concepts"]layouts/container["items"][y]concept["title"]'
-      → OK: Même item mais champs différents (["content"] vs ["concepts"])
-
-   RÈGLE D'OR: Avant d'assigner un template à un emplacement (champ ou index), vérifie que:
-   - AUCUN autre chemin source n'a déjà assigné un template DIFFÉRENT à cet emplacement
-   - Si conflit détecté: soit utilise le même template, soit imbrique via un champ intermédiaire
+   ✅ SOLUTION 3 - Imbrique dans un champ du template:
+   "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
+   "key_concepts[y]examples": '...["items"][y]conceptual/concept["content"]text/liste["items"]'
 
 6. **PROCESSUS DE GÉNÉRATION ÉTAPE PAR ÉTAPE**:
 
@@ -784,27 +770,20 @@ Templates disponibles:
 Chemins source à mapper:
 {source_paths}
 
-INSTRUCTIONS CRITIQUES:
+INSTRUCTIONS:
 
-1. Analyse d'abord les chemins sources qui partagent les mêmes préfixes (ex: tous les chemins qui commencent par "course_sections[x]key_concepts[y]")
+1. Pour chaque chemin source, choisis une destination
 
-2. Pour chaque groupe de chemins partageant le même préfixe:
-   - Identifie le template principal qui contiendra ces données
-   - Assure-toi que TOUS ces chemins utilisent le même template au même niveau
-   - Utilise des CHAMPS DIFFÉRENTS de ce template pour les différentes données
-   - Si une donnée nécessite un template spécifique, imbrique-le via un champ intermédiaire
+2. AVANT de confirmer cette destination, vérifie:
+   - Y a-t-il un autre chemin qui met déjà un template différent à cet emplacement?
+   - Si OUI: change de champ OU imbrique ton template dans un champ du template existant
+   - Si NON: OK, tu peux utiliser cet emplacement
 
-3. Vérifie systématiquement qu'AUCUN conflit n'existe:
-   - Deux chemins différents ne doivent JAMAIS assigner des templates différents au même emplacement
-   - Ceci s'applique AUSSI aux champs (pas seulement aux index de tableaux)
+3. Cas particulier - chemins avec même préfixe (ex: "key_concepts[y]*"):
+   - Utilise le MÊME template pour tous au même index [y]
+   - Différencie avec des champs: ["title"], ["description"], ["examples"]
 
-4. EXEMPLE DE VÉRIFICATION pour "key_concepts[y]":
-   Si tu as: "key_concepts[y]name", "key_concepts[y]explanation", "key_concepts[y]examples"
-   → Tous doivent aller dans '...["items"][y]conceptual/concept' (même template)
-   → Puis utiliser des champs différents: ["title"], ["description"], ["examples"]
-   → OU imbriquer: ["title"], ["description"], ["content"]text/liste_exemples["items"]
-
-Génère maintenant les mappings en respectant STRICTEMENT toutes les règles.""",
+Génère maintenant les mappings.""",
                 ),
             ]
         )

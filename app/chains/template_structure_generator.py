@@ -252,22 +252,22 @@ class TemplateStructureGenerator:
         )
 
         # Générer les mappings source → destination avec le LLM
-        # destination_mappings = self._generate_destination_paths_with_llm(
-        #     source_paths=json_paths_with_variables,
-        #     templates=templates,
-        #     context_description=context_description,
-        # )
+        destination_mappings = self._generate_destination_paths_with_llm(
+            source_paths=json_paths_with_variables,
+            templates=templates,
+            context_description=context_description,
+        )
 
-        destination_mappings = {
-            "learning_objective": 'layouts/vertical_column/container["items"][0]text/description_longue["text"]',
-            "course_sections[x]section_title": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["title"]text/titre_secondaire["text"]',
-            "course_sections[x]section_description": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]text/description_longue["text"]',
-            "course_sections[x]key_concepts[y]concept_name": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]conceptual/concept["title"]',
-            "course_sections[x]key_concepts[y]explanation": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]conceptual/concept["description"]',
-            "course_sections[x]key_concepts[y]examples": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]text/liste_exemples["items"]',
-            "course_sections[x]key_concepts[y]related_media": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]text/detail_technique["text"]',
-            "course_sections[x]additional_notes": 'layouts/vertical_column/container["items"][2]text/contexte["text"]',
-        }
+        # destination_mappings = {
+        #     "learning_objective": 'layouts/vertical_column/container["items"][0]text/description_longue["text"]',
+        #     "course_sections[x]section_title": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["title"]text/titre_secondaire["text"]',
+        #     "course_sections[x]section_description": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]text/description_longue["text"]',
+        #     "course_sections[x]key_concepts[y]concept_name": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]conceptual/concept["title"]',
+        #     "course_sections[x]key_concepts[y]explanation": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]conceptual/concept["description"]',
+        #     "course_sections[x]key_concepts[y]examples": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]text/liste_exemples["items"]',
+        #     "course_sections[x]key_concepts[y]related_media": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]text/detail_technique["text"]',
+        #     "course_sections[x]additional_notes": 'layouts/vertical_column/container["items"][2]text/contexte["text"]',
+        # }
 
         # Valider les destination_mappings
         validation_errors = self._validate_destination_mappings(destination_mappings)
@@ -524,15 +524,18 @@ Template {i}:
         """
         Valide les destination mappings pour détecter les chevauchements interdits.
 
-        Un chevauchement se produit quand deux chemins sources différents pointent vers
-        le même index mais avec des templates différents.
+        Un chevauchement se produit quand deux chemins sources différents assignent
+        des templates différents au même emplacement. Deux cas sont détectés:
 
-        Exemple de chevauchement INTERDIT:
+        Cas 1 - Conflit dans un tableau (field -> index -> template):
             "course_sections[x]key_concepts[y]concept_name": "...["items"][y]conceptual/concept["title"]"
             "course_sections[x]key_concepts[y]examples": "...["items"][y]text/liste_exemples["items"]"
+            Ces deux chemins vont vers le même index [y] mais avec des templates différents.
 
-        Ces deux chemins vont vers le même index [y] mais avec des templates différents
-        (conceptual/concept vs text/liste_exemples), ce qui cause un écrasement.
+        Cas 2 - Conflit dans un champ (field -> template):
+            "course_sections[x]section_description": '...["content"]text/description_longue["text"]'
+            "course_sections[x]key_concepts[y]concept_name": '...["content"]layouts/container["items"][y]...'
+            Le champ ["content"] reçoit deux templates différents (text/description_longue vs layouts/container).
 
         Args:
             destination_mappings: Les mappings source -> destination à valider
@@ -551,17 +554,36 @@ Template {i}:
             # Extraire tous les segments du chemin de destination
             segments = self._parse_destination_path(dest_path)
 
-            # Trouver les positions où on a: field -> index -> template
-            # C'est là qu'on crée des objets dans un tableau
-            for i in range(len(segments) - 2):
+            # Trouver les positions où on a un conflit potentiel:
+            # 1. field -> index -> template (objets dans un tableau)
+            # 2. field -> template (objet directement dans un champ)
+            for i in range(len(segments) - 1):
+                template_index = -1
+                prefix_end = -1
+
+                # Cas 1: field -> index -> template
                 if (
-                    segments[i]["type"] == "field"
+                    i < len(segments) - 2
+                    and segments[i]["type"] == "field"
                     and segments[i + 1]["type"] == "index"
                     and segments[i + 2]["type"] == "template"
                 ):
-                    # Reconstruire le préfixe jusqu'à (et incluant) l'index
+                    template_index = i + 2
+                    prefix_end = i + 2  # Inclure jusqu'à l'index
+
+                # Cas 2: field -> template (sans index)
+                elif (
+                    segments[i]["type"] == "field"
+                    and segments[i + 1]["type"] == "template"
+                ):
+                    template_index = i + 1
+                    prefix_end = i + 1  # Inclure jusqu'au field
+
+                # Si on a trouvé un pattern à valider
+                if template_index > 0:
+                    # Reconstruire le préfixe jusqu'au point de conflit
                     prefix_parts = []
-                    for j in range(i + 2):
+                    for j in range(prefix_end):
                         seg = segments[j]
                         if seg["type"] == "template":
                             prefix_parts.append(seg["value"])
@@ -573,7 +595,7 @@ Template {i}:
                             prefix_parts.append(f"[{idx}]")
 
                     prefix = "".join(prefix_parts)
-                    template_name = segments[i + 2]["value"]
+                    template_name = segments[template_index]["value"]
 
                     # Enregistrer ce préfixe + template
                     if prefix not in container_groups:
@@ -672,30 +694,81 @@ RÈGLES CRITIQUES POUR LES INDICES:
    - Enchaîne avec le template_name suivant, etc.
    - Exemple complet: layouts/vertical_column/container["items"][0]layouts/vertical_column/item["title"]conceptual/concept["description"]
 
-5. **⚠️ RÈGLE ANTI-CHEVAUCHEMENT (TRÈS IMPORTANT)**:
-   - INTERDICTION STRICTE: Deux chemins sources différents NE PEUVENT PAS pointer vers le même index avec des templates différents
-   - ❌ EXEMPLE INTERDIT:
-     "course_sections[x]key_concepts[y]concept_name": '...["items"][y]conceptual/concept["title"]'
-     "course_sections[x]key_concepts[y]examples": '...["items"][y]text/liste_exemples["items"]'
-     (même index [y] mais templates différents: conceptual/concept vs text/liste_exemples → CONFLIT!)
+5. **⚠️ RÈGLE ANTI-CHEVAUCHEMENT (TRÈS IMPORTANT - CRITIQUE POUR LA VALIDITÉ)**:
 
-   - ✅ SOLUTIONS ACCEPTÉES:
+   INTERDICTION ABSOLUE: Deux chemins sources NE PEUVENT JAMAIS assigner des templates différents au même emplacement.
 
-     Option A - Tout dans le même template (RECOMMANDÉ):
-     "course_sections[x]key_concepts[y]concept_name": '...["items"][y]conceptual/concept["title"]'
-     "course_sections[x]key_concepts[y]examples": '...["items"][y]conceptual/concept["examples"]'
-     (même index [y], même template conceptual/concept, champs différents → OK)
+   Deux types de conflits à éviter:
 
-     Option B - Templates imbriqués (un DANS l'autre):
-     "course_sections[x]key_concepts[y]concept_name": '...["items"][y]conceptual/concept["title"]'
-     "course_sections[x]key_concepts[y]examples": '...["items"][y]conceptual/concept["content"]text/liste_exemples["items"]'
-     (text/liste_exemples est IMBRIQUÉ dans conceptual/concept via le champ "content" → OK)
+   A) CONFLIT DANS UN TABLEAU (field -> index -> template):
+      ❌ INTERDIT:
+      "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
+      "key_concepts[y]examples": '...["items"][y]text/liste_exemples["items"]'
+      → PROBLÈME: Même index [y], templates différents (conceptual/concept vs text/liste_exemples)
 
-   - RÈGLE: Si plusieurs chemins sources partagent la même variable (ex: tous ont [y]), ils doivent SOIT:
-     * Tous utiliser le même template au niveau de cette variable
-     * OU être imbriqués via des champs intermédiaires
+      ✅ SOLUTION 1 - Même template, champs différents:
+      "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
+      "key_concepts[y]examples": '...["items"][y]conceptual/concept["examples"]'
+      → OK: Même index [y], même template, champs différents
 
-RETOURNE un JSON avec le format exact suivant:
+      ✅ SOLUTION 2 - Templates imbriqués:
+      "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
+      "key_concepts[y]examples": '...["items"][y]conceptual/concept["content"]text/liste_exemples["items"]'
+      → OK: text/liste_exemples est DANS conceptual/concept["content"]
+
+   B) CONFLIT DANS UN CHAMP (field -> template):
+      ❌ INTERDIT:
+      "section_description": '...item["content"]text/description["text"]'
+      "key_concepts[y]name": '...item["content"]layouts/container["items"][y]concept["title"]'
+      → PROBLÈME: Même champ ["content"], templates différents (text/description vs layouts/container)
+
+      ✅ SOLUTION 1 - Champs différents:
+      "section_description": '...item["description"]text/description["text"]'
+      "key_concepts[y]name": '...item["content"]layouts/container["items"][y]concept["title"]'
+      → OK: Champs différents (["description"] vs ["content"])
+
+      ✅ SOLUTION 2 - Index différents au niveau supérieur:
+      "section_description": '...["items"][x]item["content"]text/description["text"]'
+      "key_concepts[y]name": '...["items"][x]item["concepts"]layouts/container["items"][y]concept["title"]'
+      → OK: Même item mais champs différents (["content"] vs ["concepts"])
+
+   RÈGLE D'OR: Avant d'assigner un template à un emplacement (champ ou index), vérifie que:
+   - AUCUN autre chemin source n'a déjà assigné un template DIFFÉRENT à cet emplacement
+   - Si conflit détecté: soit utilise le même template, soit imbrique via un champ intermédiaire
+
+6. **PROCESSUS DE GÉNÉRATION ÉTAPE PAR ÉTAPE**:
+
+   Pour chaque chemin source:
+   a) Identifie le préfixe (ex: "course_sections[x]key_concepts[y]")
+   b) Vérifie les autres chemins avec le même préfixe
+   c) Choisis UN template commun pour ce préfixe
+   d) Assigne des chemins de destination en utilisant ce template commun
+   e) Double-vérifie qu'aucun conflit n'existe avec les chemins déjà générés
+
+7. **EXEMPLE COMPLET DE MAPPING VALIDE**:
+
+   Chemins sources:
+   - "learning_objective"
+   - "course_sections[x]title"
+   - "course_sections[x]key_concepts[y]name"
+   - "course_sections[x]key_concepts[y]explanation"
+   - "course_sections[x]key_concepts[y]examples"
+
+   Mapping CORRECT:
+   {{
+     "learning_objective": 'container["items"][0]text/description["text"]',
+     "course_sections[x]title": 'container["items"][1]layouts/section["items"][x]text/titre["text"]',
+     "course_sections[x]key_concepts[y]name": 'container["items"][1]layouts/section["items"][x]layouts/concepts["items"][y]conceptual/concept["title"]',
+     "course_sections[x]key_concepts[y]explanation": 'container["items"][1]layouts/section["items"][x]layouts/concepts["items"][y]conceptual/concept["description"]',
+     "course_sections[x]key_concepts[y]examples": 'container["items"][1]layouts/section["items"][x]layouts/concepts["items"][y]conceptual/concept["examples"]'
+   }}
+
+   Analyse de pourquoi c'est CORRECT:
+   - Tous les chemins "course_sections[x]key_concepts[y]*" utilisent le MÊME template "conceptual/concept" à ["items"][y]
+   - Chaque donnée utilise un CHAMP DIFFÉRENT du même template: ["title"], ["description"], ["examples"]
+   - AUCUN conflit de template au même emplacement
+
+RETOURNE un JSON avec le format exact suivant (UNIQUEMENT le JSON, sans explication):
 {{
   "chemin_source_1": "chemin_destination_1",
   "chemin_source_2": "chemin_destination_2"
@@ -711,7 +784,27 @@ Templates disponibles:
 Chemins source à mapper:
 {source_paths}
 
-Génère les mappings en respectant STRICTEMENT les règles d'indices.""",
+INSTRUCTIONS CRITIQUES:
+
+1. Analyse d'abord les chemins sources qui partagent les mêmes préfixes (ex: tous les chemins qui commencent par "course_sections[x]key_concepts[y]")
+
+2. Pour chaque groupe de chemins partageant le même préfixe:
+   - Identifie le template principal qui contiendra ces données
+   - Assure-toi que TOUS ces chemins utilisent le même template au même niveau
+   - Utilise des CHAMPS DIFFÉRENTS de ce template pour les différentes données
+   - Si une donnée nécessite un template spécifique, imbrique-le via un champ intermédiaire
+
+3. Vérifie systématiquement qu'AUCUN conflit n'existe:
+   - Deux chemins différents ne doivent JAMAIS assigner des templates différents au même emplacement
+   - Ceci s'applique AUSSI aux champs (pas seulement aux index de tableaux)
+
+4. EXEMPLE DE VÉRIFICATION pour "key_concepts[y]":
+   Si tu as: "key_concepts[y]name", "key_concepts[y]explanation", "key_concepts[y]examples"
+   → Tous doivent aller dans '...["items"][y]conceptual/concept' (même template)
+   → Puis utiliser des champs différents: ["title"], ["description"], ["examples"]
+   → OU imbriquer: ["title"], ["description"], ["content"]text/liste_exemples["items"]
+
+Génère maintenant les mappings en respectant STRICTEMENT toutes les règles.""",
                 ),
             ]
         )

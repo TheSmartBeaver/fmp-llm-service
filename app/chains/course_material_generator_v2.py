@@ -66,9 +66,9 @@ class CourseMaterialGeneratorV2:
             - prompts: Dict avec les prompts de chaque étape
         """
         # Étape 1: Générer le JSON pédagogique enrichi
-        # pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
+        pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
         
-        pedagogical_json = shit_test2
+        # pedagogical_json = shit_test2
 
         pedagogical_prompt = "string"
 

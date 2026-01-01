@@ -257,6 +257,12 @@ RÈGLES CRITIQUES:
 7. ✅ Intègre les références aux médias disponibles de manière sémantique
 8. 🚫 INTERDICTION ABSOLUE: NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
 9. ✅ Utilise un langage clair et pédagogique, adapté à l'apprentissage
+10. ⚠️ RÈGLE STRUCTURELLE CRITIQUE: Les clés (noms de propriétés) du JSON ne doivent JAMAIS représenter des valeurs ou du contenu réel
+    - ❌ INTERDIT: {{"Principe de responsabilité unique": "explication..."}}
+    - ❌ INTERDIT: {{"SRP": "définition...", "OCP": "définition..."}}
+    - ✅ CORRECT: {{"concepts": [{{"name": "Principe de responsabilité unique", "explanation": "..."}}]}}
+    - ✅ CORRECT: {{"principles": [{{"acronym": "SRP", "definition": "..."}}]}}
+    - Les clés doivent être des CATÉGORIES ou des RÔLES génériques, jamais des valeurs spécifiques
 """
 
         user_prompt = """Voici les notes de cours brutes à transformer en JSON pédagogique optimal:

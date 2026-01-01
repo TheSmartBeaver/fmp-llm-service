@@ -672,6 +672,12 @@ Template {i}:
                     """Tu es un expert en construction de structures de données pédagogiques.
 Ta tâche est de mapper des chemins de données source vers des chemins de destination qui utilisent des templates HTML/pédagogiques imbriqués.
 
+⚠️ RÈGLE CRITIQUE - CHAMPS AUTORISÉS:
+Tu NE PEUX utiliser que les champs (fields) explicitement définis dans "Usage des champs" de chaque template.
+- ✅ AUTORISÉ: Si "Usage des champs" mentionne "title", tu peux utiliser ["title"]
+- ❌ INTERDIT: Inventer des champs qui n'existent pas dans le template (ex: ["header1"], ["row1_col1"] si non mentionnés)
+- ❌ INTERDIT: Utiliser des champs génériques comme ["content"], ["items"] s'ils ne sont pas dans "Usage des champs"
+
 RÈGLES CRITIQUES POUR LES INDICES:
 
 1. **Chemins source SANS variable** (ex: learning_objective):
@@ -692,10 +698,11 @@ RÈGLES CRITIQUES POUR LES INDICES:
 
 4. **Format des chemins de destination**:
    - Commence par le template_name du premier template (ex: layouts/XXXX/container)
-   - Ajoute ["nom_du_champ"] pour accéder à un champ
+   - Ajoute ["nom_du_champ"] pour accéder à un champ (UNIQUEMENT les champs listés dans "Usage des champs" du template!)
    - Ajoute [index] pour les tableaux (index fixe ou variable selon la règle 1 et 2)
    - Enchaîne avec le template_name suivant, etc.
    - Exemple complet: layouts/XXXX/container["items"][0]layouts/XXXX/item["title"]conceptual/concept["description"]
+   - ⚠️ VÉRIFIE que chaque ["champ"] existe bien dans "Usage des champs" du template avant de l'utiliser!
 
 5. **⚠️ STRATÉGIE ANTI-CHEVAUCHEMENT (CRITIQUE)**:
 
@@ -728,8 +735,9 @@ RÈGLES CRITIQUES POUR LES INDICES:
    a) Identifie le préfixe (ex: "course_sections[x]key_concepts[y]")
    b) Vérifie les autres chemins avec le même préfixe
    c) Choisis UN template commun pour ce préfixe
-   d) Assigne des chemins de destination en utilisant ce template commun
-   e) Double-vérifie qu'aucun conflit n'existe avec les chemins déjà générés
+   d) VÉRIFIE que le template possède bien les champs dont tu as besoin dans "Usage des champs"
+   e) Assigne des chemins de destination en utilisant UNIQUEMENT les champs autorisés du template
+   f) Double-vérifie qu'aucun conflit n'existe avec les chemins déjà générés
 
 7. **EXEMPLE COMPLET DE MAPPING VALIDE**:
 
@@ -755,6 +763,12 @@ RÈGLES CRITIQUES POUR LES INDICES:
    - Niveau 3: key_concepts utilise layouts/XXXX/container["items"][y]
    - additional_notes n'utilise pas de conteneur car il n'a pas besoin d'indices fixes
    - AUCUN conflit: chaque groupe a son propre indice fixe
+
+⚠️ VALIDATION FINALE AVANT DE RETOURNER:
+Pour chaque chemin de destination généré:
+1. Extraire tous les ["champs"] utilisés
+2. Vérifier que chaque champ existe dans "Usage des champs" du template correspondant
+3. Si un champ n'existe pas, CHANGER de template ou CORRIGER le chemin
 
 RETOURNE un JSON avec le format exact suivant (UNIQUEMENT le JSON, sans explication):
 {{
@@ -1195,9 +1209,15 @@ Génère maintenant les mappings.""",
                     """Tu es un expert en correction de structures de données.
 Tu as généré des mappings qui contiennent des ERREURS DE CHEVAUCHEMENT.
 
-RAPPEL DE LA RÈGLE CRITIQUE:
-Un même emplacement (champ ou index) NE PEUT recevoir qu'UN SEUL template.
-Si deux chemins partagent le même index variable (ex: [y]), ils DOIVENT utiliser le même template.""",
+RAPPEL DES RÈGLES CRITIQUES:
+1. Un même emplacement (champ ou index) NE PEUT recevoir qu'UN SEUL template.
+   Si deux chemins partagent le même index variable (ex: [y]), ils DOIVENT utiliser le même template.
+
+2. ⚠️ CHAMPS AUTORISÉS:
+   Tu NE PEUX utiliser que les champs (fields) explicitement définis dans "Usage des champs" de chaque template.
+   - ✅ AUTORISÉ: Si "Usage des champs" mentionne "title", tu peux utiliser ["title"]
+   - ❌ INTERDIT: Inventer des champs qui n'existent pas (ex: ["header1"], ["row1_col1"] si non mentionnés)
+   - ❌ INTERDIT: Utiliser ["content"], ["items"] s'ils ne sont pas dans "Usage des champs" du template""",
                 ),
                 (
                     "user",
@@ -1249,7 +1269,9 @@ COMMENT CORRIGER (ÉTAPE PAR ÉTAPE):
 
    Explication: TOUS utilisent le même template "conceptual/concept" à ["items"][y]
 
-Étape 4: Génère le JSON CORRIGÉ complet
+Étape 4: VALIDE que tous les ["champs"] utilisés existent dans "Usage des champs" des templates
+
+Étape 5: Génère le JSON CORRIGÉ complet
 
 RETOURNE UNIQUEMENT le JSON, sans explication:""",
                 ),

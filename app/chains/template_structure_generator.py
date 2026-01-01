@@ -697,33 +697,30 @@ RÈGLES CRITIQUES POUR LES INDICES:
    - Enchaîne avec le template_name suivant, etc.
    - Exemple complet: layouts/vertical_column/container["items"][0]layouts/vertical_column/item["title"]conceptual/concept["description"]
 
-5. **⚠️ RÈGLE ANTI-CHEVAUCHEMENT (CRITIQUE)**:
+5. **⚠️ STRATÉGIE ANTI-CHEVAUCHEMENT (CRITIQUE)**:
 
-   INTERDICTION: Un même emplacement (champ ou index) NE PEUT recevoir qu'UN SEUL template.
+   RÈGLE D'OR: Utilise `layouts/vertical_column/container["items"]` avec des indices FIXES pour séparer les groupes de données.
 
-   RÈGLE: Avant de mettre un template à un emplacement, vérifie qu'aucun autre chemin n'a déjà mis un template différent au même endroit.
+   **STRATÉGIE RECOMMANDÉE**: Structure à 3 niveaux avec indices fixes
 
-   ❌ EXEMPLE D'ERREUR - Conflit sur le champ ["content"]:
-   "section_description": '...item["content"]text/description["text"]'
-   "key_concepts[y]name": '...item["content"]layouts/container["items"][y]...'
-   → Le champ ["content"] reçoit 2 templates différents = INTERDIT
+   ❌ ERREUR TYPIQUE - Partager le même champ/index:
+   {{
+     "course_sections[x]section_description": 'container["items"][x]layouts/item["content"]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/item["content"]layouts/container["items"][y]...'
+   }}
+   → Conflit sur ["content"] qui reçoit 2 templates différents
 
-   ❌ EXEMPLE D'ERREUR - Conflit sur l'index [y]:
-   "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
-   "key_concepts[y]examples": '...["items"][y]text/liste_exemples["items"]'
-   → L'index [y] reçoit 2 templates différents = INTERDIT
+   ✅ SOLUTION - Utilise layouts/vertical_column/container avec indices fixes:
+   {{
+     "course_sections[x]section_description": 'container["items"][x]layouts/vertical_column/container["items"][0]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][y]conceptual/concept["title"]'
+   }}
+   → Pas de conflit : section_description à [0], key_concepts à [1]
 
-   ✅ SOLUTION 1 - Utilise des champs séparés:
-   "section_description": '...item["description"]text/description["text"]'
-   "key_concepts[y]name": '...item["concepts"]["items"][y]conceptual/concept["title"]'
-
-   ✅ SOLUTION 2 - Même template, champs différents:
-   "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
-   "key_concepts[y]examples": '...["items"][y]conceptual/concept["examples"]'
-
-   ✅ SOLUTION 3 - Imbrique dans un champ du template:
-   "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
-   "key_concepts[y]examples": '...["items"][y]conceptual/concept["content"]text/liste["items"]'
+   **Structure hiérarchique**:
+   - Niveau 1: layouts/vertical_column/container["items"][0 ou 1] → sépare learning_objective vs course_sections
+   - Niveau 2: ...["items"][x]layouts/vertical_column/container["items"][0, 1, 2, ...] → sépare title, description, key_concepts, notes
+   - Niveau 3: ...["items"][y] → itère sur les key_concepts
 
 6. **PROCESSUS DE GÉNÉRATION ÉTAPE PAR ÉTAPE**:
 
@@ -738,24 +735,26 @@ RÈGLES CRITIQUES POUR LES INDICES:
 
    Chemins sources:
    - "learning_objective"
-   - "course_sections[x]title"
-   - "course_sections[x]key_concepts[y]name"
-   - "course_sections[x]key_concepts[y]explanation"
-   - "course_sections[x]key_concepts[y]examples"
+   - "course_sections[x]section_title"
+   - "course_sections[x]section_description"
+   - "course_sections[x]key_concepts[y]concept_name"
+   - "course_sections[x]additional_notes"
 
-   Mapping CORRECT:
+   Mapping CORRECT (avec stratégie d'indices fixes):
    {{
-     "learning_objective": 'container["items"][0]text/description["text"]',
-     "course_sections[x]title": 'container["items"][1]layouts/section["items"][x]text/titre["text"]',
-     "course_sections[x]key_concepts[y]name": 'container["items"][1]layouts/section["items"][x]layouts/concepts["items"][y]conceptual/concept["title"]',
-     "course_sections[x]key_concepts[y]explanation": 'container["items"][1]layouts/section["items"][x]layouts/concepts["items"][y]conceptual/concept["description"]',
-     "course_sections[x]key_concepts[y]examples": 'container["items"][1]layouts/section["items"][x]layouts/concepts["items"][y]conceptual/concept["examples"]'
+     "learning_objective": 'layouts/vertical_column/container["items"][0]text/description["text"]',
+     "course_sections[x]section_title": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][x]layouts/vertical_column/container["items"][0]text/titre["text"]',
+     "course_sections[x]section_description": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][x]layouts/vertical_column/container["items"][1]text/description["text"]',
+     "course_sections[x]key_concepts[y]concept_name": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][x]layouts/vertical_column/container["items"][2]layouts/vertical_column/container["items"][y]conceptual/concept["title"]',
+     "course_sections[x]additional_notes": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][x]text/notes["text"]'
    }}
 
-   Analyse de pourquoi c'est CORRECT:
-   - Tous les chemins "course_sections[x]key_concepts[y]*" utilisent le MÊME template "conceptual/concept" à ["items"][y]
-   - Chaque donnée utilise un CHAMP DIFFÉRENT du même template: ["title"], ["description"], ["examples"]
-   - AUCUN conflit de template au même emplacement
+   Pourquoi c'est CORRECT:
+   - Niveau 1: learning_objective à [0], course_sections à [1]
+   - Niveau 2 (dans chaque course_section [x]): title à [0], description à [1], key_concepts à [2]
+   - Niveau 3: key_concepts utilise layouts/vertical_column/container["items"][y]
+   - additional_notes n'utilise pas de conteneur car il n'a pas besoin d'indices fixes
+   - AUCUN conflit: chaque groupe a son propre indice fixe
 
 RETOURNE un JSON avec le format exact suivant (UNIQUEMENT le JSON, sans explication):
 {{
@@ -773,18 +772,29 @@ Templates disponibles:
 Chemins source à mapper:
 {source_paths}
 
-INSTRUCTIONS:
+INSTRUCTIONS (STRATÉGIE ANTI-CHEVAUCHEMENT):
 
-1. Pour chaque chemin source, choisis une destination
+1. **Regroupe les chemins** par niveaux de variables:
+   - Groupe A: chemins sans variable (ex: "learning_objective")
+   - Groupe B: chemins avec [x] seulement (ex: "course_sections[x]section_title")
+   - Groupe C: chemins avec [x][y] (ex: "course_sections[x]key_concepts[y]*")
 
-2. AVANT de confirmer cette destination, vérifie:
-   - Y a-t-il un autre chemin qui met déjà un template différent à cet emplacement?
-   - Si OUI: change de champ OU imbrique ton template dans un champ du template existant
-   - Si NON: OK, tu peux utiliser cet emplacement
+2. **Applique la structure à 3 niveaux**:
 
-3. Cas particulier - chemins avec même préfixe (ex: "key_concepts[y]*"):
-   - Utilise le MÊME template pour tous au même index [y]
-   - Différencie avec des champs: ["title"], ["description"], ["examples"]
+   Niveau 1 - Racine: layouts/vertical_column/container["items"][indice_fixe]
+   - [0] = learning_objective
+   - [1] = conteneur pour course_sections
+
+   Niveau 2 - Dans course_sections [x]: ...["items"][x]layouts/vertical_column/container["items"][indice_fixe]
+   - [0] = section_title
+   - [1] = section_description
+   - [2] = conteneur pour key_concepts
+   - [3] = additional_notes (si applicable)
+
+   Niveau 3 - Dans key_concepts [y]: ...["items"][2]layouts/vertical_column/container["items"][y]conceptual/concept
+   - Utilise le même template pour tous les chemins key_concepts[y]*
+
+3. **Génère les mappings** en suivant cette structure hiérarchique
 
 Génère maintenant les mappings.""",
                 ),
@@ -810,35 +820,344 @@ Génère maintenant les mappings.""",
         # Valider les mappings générés par le LLM
         validation_errors = self._validate_destination_mappings(result)
 
-        # Si des erreurs sont détectées, essayer de les corriger avec un appel LLM de correction
-        max_correction_attempts = 2
-        attempt = 0
-
-        while validation_errors and attempt < max_correction_attempts:
-            attempt += 1
-            import warnings
-            warnings.warn(
-                f"\n⚠️  Tentative de correction automatique ({attempt}/{max_correction_attempts})...\n"
-            )
-
-            # Appeler le LLM pour corriger les erreurs
-            result = self._correct_destination_mappings_with_llm(
-                result, validation_errors, templates_formatted, source_paths_formatted, context_description
-            )
-
-            # Revalider
-            validation_errors = self._validate_destination_mappings(result)
-
-        # Si des erreurs subsistent après les tentatives de correction
+        # Si des erreurs sont détectées, essayer de les corriger automatiquement avec Python
         if validation_errors:
             import warnings
-            error_msg = "\n".join(validation_errors)
             warnings.warn(
-                f"\n⚠️  ERREURS PERSISTANTES après {max_correction_attempts} tentatives:\n{error_msg}\n"
-                f"Les mappings seront utilisés mais peuvent causer des écrasements de données.\n"
+                f"\n⚠️  Erreurs de chevauchement détectées. Tentative de correction automatique...\n"
             )
 
+            # Essayer d'abord la correction automatique Python
+            result = self._auto_fix_overlaps(result, source_paths)
+
+            # Revalider après correction automatique
+            validation_errors = self._validate_destination_mappings(result)
+
+            if not validation_errors:
+                warnings.warn(
+                    f"\n✅  Correction automatique réussie ! Tous les chevauchements ont été résolus.\n"
+                )
+            else:
+                # Si la correction automatique échoue, fallback sur LLM
+                warnings.warn(
+                    f"\n⚠️  Correction automatique partielle. Tentative de correction avec LLM O3-mini...\n"
+                )
+
+                max_llm_attempts = 1
+                for attempt in range(max_llm_attempts):
+                    result = self._correct_destination_mappings_with_llm(
+                        result, validation_errors, templates_formatted, source_paths_formatted, context_description
+                    )
+
+                    validation_errors = self._validate_destination_mappings(result)
+                    if not validation_errors:
+                        break
+
+                if validation_errors:
+                    error_msg = "\n".join(validation_errors)
+                    warnings.warn(
+                        f"\n⚠️  ERREURS PERSISTANTES:\n{error_msg}\n"
+                        f"Les mappings seront utilisés mais peuvent causer des écrasements de données.\n"
+                    )
+
         return result
+
+    def _auto_fix_overlaps(
+        self, mappings: Dict[str, str], source_paths: List[str]
+    ) -> Dict[str, str]:
+        """
+        Corrige automatiquement les chevauchements en appliquant la stratégie des indices fixes.
+
+        Args:
+            mappings: Les mappings générés avec des conflits potentiels
+            source_paths: Liste des chemins sources
+
+        Returns:
+            Mappings corrigés sans chevauchements
+        """
+        import re
+
+        fixed_mappings = dict(mappings)  # Copie pour modification
+
+        # Itérer jusqu'à ce qu'il n'y ait plus de conflits
+        # (maximum 10 itérations pour éviter les boucles infinies)
+        max_iterations = 10
+        for iteration in range(max_iterations):
+            # 1. Détecter les conflits au niveau DESTINATION
+            conflicts = self._detect_destination_conflicts(fixed_mappings)
+
+            if not conflicts:
+                # Plus de conflits, on a terminé
+                import warnings
+                warnings.warn(f"Correction terminée après {iteration} itération(s)")
+                break
+
+            # 2. Pour chaque groupe de chemins en conflit, appliquer la correction
+            for conflict_prefix, conflicting_sources in conflicts.items():
+                # Extraire les mappings concernés
+                dest_paths = {src: fixed_mappings[src] for src in conflicting_sources}
+
+                # Appliquer la stratégie des indices fixes
+                fixed_group = self._apply_fixed_index_strategy(dest_paths, conflict_prefix)
+
+                # Mettre à jour les mappings corrigés
+                fixed_mappings.update(fixed_group)
+        else:
+            # Si on sort de la boucle sans break, c'est qu'on a atteint max_iterations
+            import warnings
+            warnings.warn(f"⚠️ Correction arrêtée après {max_iterations} itérations (max atteint)")
+
+        return fixed_mappings
+
+    def _detect_destination_conflicts(
+        self, destination_mappings: Dict[str, str]
+    ) -> Dict[str, List[str]]:
+        """
+        Détecte les conflits au niveau des chemins de destination.
+
+        Returns:
+            Dict {préfixe_en_conflit: [liste des source_paths concernés]}
+        """
+        import re
+
+        # Regrouper les chemins par leur "préfixe de conteneur"
+        container_groups = {}
+
+        for source_path, dest_path in destination_mappings.items():
+            segments = self._parse_destination_path(dest_path)
+
+            # Trouver les positions où on a un conflit potentiel
+            for i in range(len(segments) - 1):
+                template_index = -1
+                prefix_end = -1
+
+                # Cas 1: field -> index -> template
+                if (
+                    i < len(segments) - 2
+                    and segments[i]["type"] == "field"
+                    and segments[i + 1]["type"] == "index"
+                    and segments[i + 2]["type"] == "template"
+                ):
+                    template_index = i + 2
+                    prefix_end = i + 2
+
+                # Cas 2: field -> template (sans index)
+                elif (
+                    segments[i]["type"] == "field"
+                    and segments[i + 1]["type"] == "template"
+                ):
+                    template_index = i + 1
+                    prefix_end = i + 1
+
+                if template_index > 0:
+                    # Reconstruire le préfixe jusqu'au point de conflit
+                    prefix_parts = []
+                    for j in range(prefix_end):
+                        seg = segments[j]
+                        if seg["type"] == "template":
+                            prefix_parts.append(seg["value"])
+                        elif seg["type"] == "field":
+                            prefix_parts.append(f'["{seg["value"]}"]')
+                        elif seg["type"] == "index":
+                            idx = seg["value"]
+                            prefix_parts.append(f"[{idx}]")
+
+                    prefix = "".join(prefix_parts)
+                    template_name = segments[template_index]["value"]
+
+                    if prefix not in container_groups:
+                        container_groups[prefix] = []
+                    container_groups[prefix].append(
+                        {
+                            "source_path": source_path,
+                            "template": template_name,
+                        }
+                    )
+
+        # Identifier les conflits: même préfixe mais templates différents
+        conflicts = {}
+
+        for prefix, items in container_groups.items():
+            templates_at_prefix = set(item["template"] for item in items)
+
+            # Si on a plusieurs templates différents au même préfixe, c'est un conflit
+            if len(templates_at_prefix) > 1:
+                source_paths = [item["source_path"] for item in items]
+                conflicts[prefix] = source_paths
+
+        return conflicts
+
+    def _group_source_paths_by_prefix(self, source_paths: List[str]) -> Dict[str, List[str]]:
+        """
+        Regroupe les chemins sources par préfixe commun.
+
+        Ex: "course_sections[x]section_title" et "course_sections[x]section_description"
+            → groupe "course_sections[x]"
+
+        Returns:
+            Dict {préfixe: [liste de chemins]}
+        """
+        import re
+
+        groups = {}
+
+        for path in source_paths:
+            # Extraire le préfixe jusqu'à la dernière variable ou jusqu'au dernier champ
+            # Ex: "course_sections[x]key_concepts[y]name" → préfixe = "course_sections[x]key_concepts[y]"
+            #     "course_sections[x]section_title" → préfixe = "course_sections[x]"
+
+            # Trouver toutes les variables
+            vars_matches = list(re.finditer(r'\[([x-z])\]', path))
+
+            if vars_matches:
+                # Prendre jusqu'après la dernière variable
+                last_var_end = vars_matches[-1].end()
+                prefix = path[:last_var_end]
+            else:
+                # Pas de variable, c'est un chemin simple
+                prefix = "_no_vars_"
+
+            if prefix not in groups:
+                groups[prefix] = []
+            groups[prefix].append(path)
+
+        return groups
+
+    def _group_has_overlap(self, dest_paths: Dict[str, str]) -> bool:
+        """
+        Vérifie si un groupe de chemins de destination a des chevauchements.
+
+        Returns:
+            True si des chevauchements sont détectés
+        """
+        # Extraire les préfixes de destination (jusqu'au dernier template avant le champ final)
+        dest_prefixes = {}
+
+        for src_path, dest_path in dest_paths.items():
+            # Parser le chemin de destination
+            segments = self._parse_destination_path(dest_path)
+
+            # Trouver le dernier template
+            template_positions = [
+                i for i, seg in enumerate(segments) if seg["type"] == "template"
+            ]
+
+            if template_positions:
+                last_template_idx = template_positions[-1]
+                # Construire le préfixe jusqu'au dernier template
+                prefix_segments = segments[:last_template_idx + 1]
+
+                prefix_str = self._reconstruct_path_from_segments(prefix_segments)
+
+                if prefix_str not in dest_prefixes:
+                    dest_prefixes[prefix_str] = []
+                dest_prefixes[prefix_str].append(segments[last_template_idx]["value"])
+
+        # Vérifier s'il y a des templates différents au même préfixe
+        for prefix, templates in dest_prefixes.items():
+            if len(set(templates)) > 1:
+                return True
+
+        return False
+
+    def _reconstruct_path_from_segments(self, segments: List[Dict[str, Any]]) -> str:
+        """Reconstruit un chemin de destination à partir de segments."""
+        parts = []
+        for seg in segments:
+            if seg["type"] == "template":
+                parts.append(seg["value"])
+            elif seg["type"] == "field":
+                parts.append(f'["{seg["value"]}"]')
+            elif seg["type"] == "index":
+                idx = seg["value"]
+                if isinstance(idx, int):
+                    parts.append(f"[{idx}]")
+                else:
+                    parts.append(f"[{idx}]")
+        return "".join(parts)
+
+    def _apply_fixed_index_strategy(
+        self, dest_paths: Dict[str, str], conflict_prefix: str
+    ) -> Dict[str, str]:
+        """
+        Applique la stratégie des indices fixes pour résoudre les conflits.
+
+        Stratégie: Insérer layouts/vertical_column/container["items"][idx] après le préfixe de conflit.
+
+        Args:
+            dest_paths: Mappings source → destination pour ce groupe en conflit
+            conflict_prefix: Le préfixe de destination où se trouve le conflit
+
+        Returns:
+            Mappings corrigés avec indices fixes
+        """
+        import re
+
+        fixed_mappings = {}
+
+        # Parser le préfixe de conflit pour savoir où couper
+        conflict_segments = self._parse_destination_path(conflict_prefix)
+        conflict_len = len(conflict_segments)
+
+        # Trier les chemins sources pour avoir un ordre déterministe
+        sorted_sources = sorted(dest_paths.keys())
+
+        # Pour chaque chemin source, reconstruire le chemin de destination
+        for idx, src_path in enumerate(sorted_sources):
+            dest_path = dest_paths[src_path]
+            segments = self._parse_destination_path(dest_path)
+
+            # Stratégie :
+            # - Préfixe de conflit (garder tel quel)
+            # - Insérer layouts/vertical_column/container["items"][idx]
+            # - Reste après le préfixe (ce qui vient après le conflit)
+
+            new_segments = []
+
+            # 1. Garder le préfixe de conflit tel quel
+            new_segments.extend(conflict_segments)
+
+            # 2. Insérer le conteneur avec indice fixe
+            new_segments.append({"type": "template", "value": "layouts/vertical_column/container"})
+            new_segments.append({"type": "field", "value": "items"})
+            new_segments.append({"type": "index", "value": idx})
+
+            # 3. Ajouter les segments après le préfixe de conflit
+            new_segments.extend(segments[conflict_len:])
+
+            # Reconstruire le chemin
+            fixed_dest = self._reconstruct_path_from_segments(new_segments)
+            fixed_mappings[src_path] = fixed_dest
+
+        return fixed_mappings
+
+    def _find_common_prefix_length(self, segments_list: List[List[Dict[str, Any]]]) -> int:
+        """
+        Trouve la longueur du préfixe commun entre plusieurs listes de segments.
+
+        Returns:
+            Nombre de segments communs au début
+        """
+        if not segments_list or len(segments_list) < 2:
+            return 0
+
+        min_len = min(len(segs) for segs in segments_list)
+
+        common_len = 0
+        for i in range(min_len):
+            # Vérifier si tous les segments à la position i sont identiques
+            first_seg = segments_list[0][i]
+            all_same = all(
+                segs[i]["type"] == first_seg["type"] and segs[i]["value"] == first_seg["value"]
+                for segs in segments_list[1:]
+            )
+
+            if all_same:
+                common_len += 1
+            else:
+                break
+
+        return common_len
 
     def _correct_destination_mappings_with_llm(
         self,
@@ -889,13 +1208,8 @@ Si deux chemins partagent le même index variable (ex: [y]), ils DOIVENT utilise
 ERREURS DÉTECTÉES:
 {errors}
 
-Templates disponibles:
-{templates}
-
 Chemins source à mapper:
 {source_paths}
-
-Contexte: {context}
 
 COMMENT CORRIGER (ÉTAPE PAR ÉTAPE):
 
@@ -910,31 +1224,27 @@ COMMENT CORRIGER (ÉTAPE PAR ÉTAPE):
    EXEMPLE DE CORRECTION 1:
    ❌ AVANT (INVALIDE - conflit sur ["content"]):
    {{
-     "course_sections[x]section_description": '...item["content"]text/description["text"]',
-     "course_sections[x]key_concepts[y]name": '...item["content"]layouts/container["items"][y]concept["title"]'
+     "course_sections[x]section_description": 'container["items"][x]layouts/item["content"]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/item["content"]layouts/container["items"][y]concept["title"]'
    }}
 
-   ✅ APRÈS (CORRIGÉ):
+   ✅ APRÈS (CORRIGÉ avec indices fixes):
    {{
-     "course_sections[x]section_description": '...item["description"]text/description["text"]',
-     "course_sections[x]key_concepts[y]name": '...item["concepts"]["items"][y]conceptual/concept["title"]'
+     "course_sections[x]section_description": 'container["items"][x]layouts/vertical_column/container["items"][0]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][y]conceptual/concept["title"]'
    }}
 
-   Explication: "section_description" va dans ["description"], "key_concepts" va dans ["concepts"]
+   Explication: Utilise layouts/vertical_column/container["items"] avec indices fixes: [0] pour description, [1] pour key_concepts
 
    EXEMPLE DE CORRECTION 2:
    ❌ AVANT (INVALIDE - templates différents au même [y]):
    {{
      "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]',
-     "key_concepts[y]examples": '...["items"][y]text/liste["items"]',
-     "key_concepts[y]media": '...["items"][y]text/detail["text"]'
    }}
 
    ✅ APRÈS (CORRIGÉ):
    {{
-     "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]',
-     "key_concepts[y]examples": '...["items"][y]conceptual/concept["examples"]',
-     "key_concepts[y]media": '...["items"][y]conceptual/concept["media"]'
+     "key_concepts[y]name": '...["items"][y]conceptual/concept["title"]'
    }}
 
    Explication: TOUS utilisent le même template "conceptual/concept" à ["items"][y]

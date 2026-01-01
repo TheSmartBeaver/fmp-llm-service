@@ -636,6 +636,37 @@ Template {i}:
 
         return errors
 
+    def _validate_no_double_indices(self, destination_mappings: Dict[str, str]):
+        """
+        Valide qu'aucun chemin de destination ne contient des indices consécutifs.
+
+        Des indices consécutifs comme ["items"][1][4] sont invalides et causent
+        des erreurs lors de l'insertion de valeurs.
+
+        Args:
+            destination_mappings: Les mappings à valider
+
+        Raises:
+            ValueError: Si des indices doubles sont détectés
+        """
+        import warnings
+
+        for source_path, dest_path in destination_mappings.items():
+            segments = self._parse_destination_path(dest_path)
+
+            # Chercher des indices consécutifs
+            for i in range(len(segments) - 1):
+                if segments[i]["type"] == "index" and segments[i+1]["type"] == "index":
+                    error_msg = (
+                        f"Double index détecté dans le mapping:\n"
+                        f"  Source: '{source_path}'\n"
+                        f"  Destination: '{dest_path}'\n"
+                        f"  Indices consécutifs aux positions {i} et {i+1}: "
+                        f"{segments[i]} -> {segments[i+1]}\n"
+                        f"  Ceci est invalide. Les indices doivent être séparés par un template ou un champ."
+                    )
+                    warnings.warn(f"\n⚠️  {error_msg}\n")
+
     def _generate_destination_paths_with_llm(
         self,
         source_paths: List[str],
@@ -678,13 +709,15 @@ Tu NE PEUX utiliser que les champs (fields) explicitement définis dans "Usage d
 - ❌ INTERDIT: Inventer des champs qui n'existent pas dans le template (ex: ["header1"], ["row1_col1"] si non mentionnés)
 - ❌ INTERDIT: Utiliser des champs génériques comme ["content"], ["items"] s'ils ne sont pas dans "Usage des champs"
 
-⚠️ RÈGLE CRITIQUE 2 - TEMPLATES "ITEM":
-Les champs de type "item" (layouts/XXXX/item, layouts/vertical_column/item, etc.) doivent TOUJOURS contenir un objet avec template_name, JAMAIS une valeur primitive directe.
+⚠️ RÈGLE CRITIQUE 2 - STRUCTURE DES CHEMINS:
+TOUS les champs (sauf le dernier champ de valeur primitive) doivent TOUJOURS contenir un objet avec template_name, JAMAIS une valeur primitive directe.
 - ❌ INTERDIT: layouts/horizontal_line/container["items"][0]layouts/horizontal_line/item["title"] → "Mon titre"
 - ✅ CORRECT: layouts/horizontal_line/container["items"][0]layouts/horizontal_line/item["title"]text/titre["text"] → "Mon titre"
 - ❌ INTERDIT: layouts/vertical_column/item["content"] → "Contenu direct"
 - ✅ CORRECT: layouts/vertical_column/item["content"]text/explication["text"] → "Contenu direct"
-- RÈGLE: Un chemin de destination doit TOUJOURS se terminer par un template NON-ITEM suivi d'un champ de valeur finale
+- ❌ INTERDIT: tableaux/ligne_cle_valeur["value"] → "Ma valeur"
+- ✅ CORRECT: tableaux/ligne_cle_valeur["value"]text/titre["text"] → "Ma valeur"
+- RÈGLE GÉNÉRALE: Un chemin de destination doit TOUJOURS se terminer par un template de contenu final (text/*, conceptual/*, temporal/*, procedural/*, etc.) suivi d'un champ de valeur primitive (["text"], ["title"], ["description"], ["duration"], ["content"], etc.)
 
 RÈGLES CRITIQUES POUR LES INDICES:
 
@@ -745,8 +778,9 @@ RÈGLES CRITIQUES POUR LES INDICES:
    c) Choisis UN template commun pour ce préfixe
    d) VÉRIFIE que le template possède bien les champs dont tu as besoin dans "Usage des champs"
    e) Assigne des chemins de destination en utilisant UNIQUEMENT les champs autorisés du template
-   f) ASSURE-TOI que le chemin se termine par un template de contenu (text/*, conceptual/*, etc.) et non par un template "item"
-   g) Double-vérifie qu'aucun conflit n'existe avec les chemins déjà générés
+   f) ASSURE-TOI que le chemin se termine par un template de contenu final (text/*, conceptual/*, temporal/*, procedural/*, etc.) suivi d'un champ de valeur primitive
+   g) VÉRIFIE que le chemin ne se termine PAS simplement par un champ comme ["value"], ["title"], ["content"] sans template de contenu avant
+   h) Double-vérifie qu'aucun conflit n'existe avec les chemins déjà générés
 
 7. **EXEMPLE COMPLET DE MAPPING VALIDE**:
 
@@ -778,9 +812,13 @@ Pour chaque chemin de destination généré:
 1. Extraire tous les ["champs"] utilisés
 2. Vérifier que chaque champ existe dans "Usage des champs" du template correspondant
 3. Si un champ n'existe pas, CHANGER de template ou CORRIGER le chemin
-4. VÉRIFIER que le chemin ne se termine PAS par un template "item" (layouts/XXXX/item)
-   - Si c'est le cas, AJOUTER un template de contenu final (text/*, conceptual/*, tableaux/*, etc.)
-5. VÉRIFIER que le dernier template du chemin est bien un template de contenu, suivi d'un champ de valeur
+4. VÉRIFIER que le chemin ne se termine PAS par un simple champ sans template de contenu final
+   - ❌ INVALIDE: ...tableaux/ligne_cle_valeur["value"]
+   - ❌ INVALIDE: ...layouts/XXXX/item["title"]
+   - ✅ VALIDE: ...tableaux/ligne_cle_valeur["value"]text/titre["text"]
+   - ✅ VALIDE: ...layouts/XXXX/item["title"]conceptual/concept["title"]
+5. VÉRIFIER que le dernier template du chemin est bien un template de contenu (text/*, conceptual/*, temporal/*, procedural/*, tableaux/*, comparison/*, logical_relations/*), suivi d'un champ de valeur primitive
+6. Si le chemin se termine incorrectement, AJOUTER un template de contenu approprié avant le champ final
 
 RETOURNE un JSON avec le format exact suivant (UNIQUEMENT le JSON, sans explication):
 {{
@@ -859,6 +897,9 @@ Génère maintenant les mappings.""",
             # Revalider après correction automatique
             validation_errors = self._validate_destination_mappings(result)
 
+            # Vérifier qu'il n'y a pas de double indices après la correction
+            self._validate_no_double_indices(result)
+
             if not validation_errors:
                 warnings.warn(
                     f"\n✅  Correction automatique réussie ! Tous les chevauchements ont été résolus.\n"
@@ -886,7 +927,56 @@ Génère maintenant les mappings.""",
                         f"Les mappings seront utilisés mais peuvent causer des écrasements de données.\n"
                     )
 
+        # Validation finale des double indices (qu'il y ait eu correction ou non)
+        self._validate_no_double_indices(result)
+
         return result
+
+    def _remove_double_indices(self, mappings: Dict[str, str]) -> Dict[str, str]:
+        """
+        Supprime les indices doubles dans les chemins de destination.
+
+        Si un chemin contient des indices consécutifs comme ["items"][1][4],
+        cette fonction supprime le deuxième indice.
+
+        Args:
+            mappings: Les mappings potentiellement problématiques
+
+        Returns:
+            Mappings nettoyés sans indices doubles
+        """
+        cleaned_mappings = {}
+
+        for source_path, dest_path in mappings.items():
+            segments = self._parse_destination_path(dest_path)
+
+            # Filtrer les indices doubles en conservant le premier
+            cleaned_segments = []
+            i = 0
+            while i < len(segments):
+                segment = segments[i]
+                cleaned_segments.append(segment)
+
+                # Si c'est un index, vérifier le suivant
+                if segment["type"] == "index" and i + 1 < len(segments):
+                    next_seg = segments[i + 1]
+                    # Si le suivant est aussi un index, le sauter
+                    if next_seg["type"] == "index":
+                        import warnings
+                        warnings.warn(
+                            f"\n⚠️  Double index détecté et corrigé dans '{source_path}':\n"
+                            f"  Indices [{segment['value']}][{next_seg['value']}] -> [{segment['value']}]\n"
+                        )
+                        i += 2  # Sauter le double index
+                        continue
+
+                i += 1
+
+            # Reconstruire le chemin nettoyé
+            cleaned_path = self._reconstruct_path_from_segments(cleaned_segments)
+            cleaned_mappings[source_path] = cleaned_path
+
+        return cleaned_mappings
 
     def _auto_fix_overlaps(
         self, mappings: Dict[str, str], source_paths: List[str]
@@ -932,6 +1022,9 @@ Génère maintenant les mappings.""",
             # Si on sort de la boucle sans break, c'est qu'on a atteint max_iterations
             import warnings
             warnings.warn(f"⚠️ Correction arrêtée après {max_iterations} itérations (max atteint)")
+
+        # Nettoyage final: supprimer les éventuels indices doubles
+        fixed_mappings = self._remove_double_indices(fixed_mappings)
 
         return fixed_mappings
 
@@ -1149,7 +1242,15 @@ Génère maintenant les mappings.""",
             new_segments.append({"type": "index", "value": idx})
 
             # 3. Ajouter les segments après le préfixe de conflit
-            new_segments.extend(segments[conflict_len:])
+            remaining_segments = segments[conflict_len:]
+
+            # BUGFIX: Skip leading index if it would create a double-index pattern
+            # (e.g., ["items"][1][4] is invalid, should be ["items"][1]template["field"][4])
+            if remaining_segments and remaining_segments[0]["type"] == "index":
+                # Skip this index segment to avoid double-index pattern
+                remaining_segments = remaining_segments[1:]
+
+            new_segments.extend(remaining_segments)
 
             # Reconstruire le chemin
             fixed_dest = self._reconstruct_path_from_segments(new_segments)
@@ -1231,11 +1332,13 @@ RAPPEL DES RÈGLES CRITIQUES:
    - ❌ INTERDIT: Inventer des champs qui n'existent pas (ex: ["header1"], ["row1_col1"] si non mentionnés)
    - ❌ INTERDIT: Utiliser ["content"], ["items"] s'ils ne sont pas dans "Usage des champs" du template
 
-3. ⚠️ TEMPLATES "ITEM":
-   Les champs de templates "item" doivent TOUJOURS contenir un objet avec template_name, JAMAIS une valeur directe.
+3. ⚠️ STRUCTURE DES CHEMINS:
+   TOUS les champs (sauf le dernier champ de valeur primitive) doivent TOUJOURS contenir un objet avec template_name, JAMAIS une valeur directe.
    - ❌ INTERDIT: layouts/horizontal_line/item["title"] → "Mon titre"
    - ✅ CORRECT: layouts/horizontal_line/item["title"]text/titre["text"] → "Mon titre"
-   - Un chemin doit TOUJOURS se terminer par un template de contenu (text/*, conceptual/*, etc.) suivi d'un champ de valeur""",
+   - ❌ INTERDIT: tableaux/ligne_cle_valeur["value"] → "Ma valeur"
+   - ✅ CORRECT: tableaux/ligne_cle_valeur["value"]text/titre["text"] → "Ma valeur"
+   - Un chemin doit TOUJOURS se terminer par un template de contenu final (text/*, conceptual/*, temporal/*, procedural/*, tableaux/*, comparison/*, logical_relations/*) suivi d'un champ de valeur primitive""",
                 ),
                 (
                     "user",
@@ -1289,9 +1392,12 @@ COMMENT CORRIGER (ÉTAPE PAR ÉTAPE):
 
 Étape 4: VALIDE que tous les ["champs"] utilisés existent dans "Usage des champs" des templates
 
-Étape 5: VALIDE que les chemins ne se terminent PAS par un template "item"
-   - Si un chemin se termine par layouts/XXXX/item["champ"], AJOUTE un template de contenu final
-   - Exemple: layouts/horizontal_line/item["title"] → layouts/horizontal_line/item["title"]text/titre["text"]
+Étape 5: VALIDE que les chemins ne se terminent PAS par un simple champ sans template de contenu final
+   - Si un chemin se termine par ["champ"] sans template de contenu, AJOUTE un template approprié
+   - ❌ INVALIDE: tableaux/ligne_cle_valeur["value"]
+   - ✅ VALIDE: tableaux/ligne_cle_valeur["value"]text/titre["text"]
+   - ❌ INVALIDE: layouts/horizontal_line/item["title"]
+   - ✅ VALIDE: layouts/horizontal_line/item["title"]text/titre["text"]
 
 Étape 6: Génère le JSON CORRIGÉ complet
 

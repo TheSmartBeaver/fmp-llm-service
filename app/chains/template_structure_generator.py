@@ -687,19 +687,19 @@ RÈGLES CRITIQUES POUR LES INDICES:
 
 3. **Imbrication des templates**:
    - Tu peux (et dois) imbriquer plusieurs templates pour créer une structure cohérente
-   - Exemple: layouts/vertical_column/container["items"][0]layouts/vertical_column/item["title"]conceptual/concept["description"]
+   - Exemple: layouts/XXXX/container["items"][0]layouts/XXXX/item["title"]conceptual/concept["description"]
    - Cela signifie: un container qui contient un item dont le titre contient un concept
 
 4. **Format des chemins de destination**:
-   - Commence par le template_name du premier template (ex: layouts/vertical_column/container)
+   - Commence par le template_name du premier template (ex: layouts/XXXX/container)
    - Ajoute ["nom_du_champ"] pour accéder à un champ
    - Ajoute [index] pour les tableaux (index fixe ou variable selon la règle 1 et 2)
    - Enchaîne avec le template_name suivant, etc.
-   - Exemple complet: layouts/vertical_column/container["items"][0]layouts/vertical_column/item["title"]conceptual/concept["description"]
+   - Exemple complet: layouts/XXXX/container["items"][0]layouts/XXXX/item["title"]conceptual/concept["description"]
 
 5. **⚠️ STRATÉGIE ANTI-CHEVAUCHEMENT (CRITIQUE)**:
 
-   RÈGLE D'OR: Utilise `layouts/vertical_column/container["items"]` avec des indices FIXES pour séparer les groupes de données.
+   RÈGLE D'OR: Utilise `layouts/XXXX/container["items"]` avec des indices FIXES pour séparer les groupes de données.
 
    **STRATÉGIE RECOMMANDÉE**: Structure à 3 niveaux avec indices fixes
 
@@ -710,16 +710,16 @@ RÈGLES CRITIQUES POUR LES INDICES:
    }}
    → Conflit sur ["content"] qui reçoit 2 templates différents
 
-   ✅ SOLUTION - Utilise layouts/vertical_column/container avec indices fixes:
+   ✅ SOLUTION - Utilise layouts/XXXX/container avec indices fixes:
    {{
-     "course_sections[x]section_description": 'container["items"][x]layouts/vertical_column/container["items"][0]text/description["text"]',
-     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][y]conceptual/concept["title"]'
+     "course_sections[x]section_description": 'container["items"][x]layouts/XXXX/container["items"][0]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/XXXX/container["items"][1]layouts/XXXX/container["items"][y]conceptual/concept["title"]'
    }}
    → Pas de conflit : section_description à [0], key_concepts à [1]
 
    **Structure hiérarchique**:
-   - Niveau 1: layouts/vertical_column/container["items"][0 ou 1] → sépare learning_objective vs course_sections
-   - Niveau 2: ...["items"][x]layouts/vertical_column/container["items"][0, 1, 2, ...] → sépare title, description, key_concepts, notes
+   - Niveau 1: layouts/XXXX/container["items"][0 ou 1] → sépare learning_objective vs course_sections
+   - Niveau 2: ...["items"][x]layouts/XXXX/container["items"][0, 1, 2, ...] → sépare title, description, key_concepts, notes
    - Niveau 3: ...["items"][y] → itère sur les key_concepts
 
 6. **PROCESSUS DE GÉNÉRATION ÉTAPE PAR ÉTAPE**:
@@ -742,17 +742,17 @@ RÈGLES CRITIQUES POUR LES INDICES:
 
    Mapping CORRECT (avec stratégie d'indices fixes):
    {{
-     "learning_objective": 'layouts/vertical_column/container["items"][0]text/description["text"]',
-     "course_sections[x]section_title": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][x]layouts/vertical_column/container["items"][0]text/titre["text"]',
-     "course_sections[x]section_description": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][x]layouts/vertical_column/container["items"][1]text/description["text"]',
-     "course_sections[x]key_concepts[y]concept_name": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][x]layouts/vertical_column/container["items"][2]layouts/vertical_column/container["items"][y]conceptual/concept["title"]',
-     "course_sections[x]additional_notes": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][x]text/notes["text"]'
+     "learning_objective": 'layouts/XXXX/container["items"][0]text/description["text"]',
+     "course_sections[x]section_title": 'layouts/XXXX/container["items"][1]layouts/XXXX/container["items"][x]layouts/XXXX/container["items"][0]text/titre["text"]',
+     "course_sections[x]section_description": 'layouts/XXXX/container["items"][1]layouts/XXXX/container["items"][x]layouts/XXXX/container["items"][1]text/description["text"]',
+     "course_sections[x]key_concepts[y]concept_name": 'layouts/XXXX/container["items"][1]layouts/XXXX/container["items"][x]layouts/XXXX/container["items"][2]layouts/XXXX/container["items"][y]conceptual/concept["title"]',
+     "course_sections[x]additional_notes": 'layouts/XXXX/container["items"][1]layouts/XXXX/container["items"][x]text/notes["text"]'
    }}
 
    Pourquoi c'est CORRECT:
    - Niveau 1: learning_objective à [0], course_sections à [1]
    - Niveau 2 (dans chaque course_section [x]): title à [0], description à [1], key_concepts à [2]
-   - Niveau 3: key_concepts utilise layouts/vertical_column/container["items"][y]
+   - Niveau 3: key_concepts utilise layouts/XXXX/container["items"][y]
    - additional_notes n'utilise pas de conteneur car il n'a pas besoin d'indices fixes
    - AUCUN conflit: chaque groupe a son propre indice fixe
 
@@ -781,17 +781,17 @@ INSTRUCTIONS (STRATÉGIE ANTI-CHEVAUCHEMENT):
 
 2. **Applique la structure à 3 niveaux**:
 
-   Niveau 1 - Racine: layouts/vertical_column/container["items"][indice_fixe]
+   Niveau 1 - Racine: layouts/XXXX/container["items"][indice_fixe]
    - [0] = learning_objective
    - [1] = conteneur pour course_sections
 
-   Niveau 2 - Dans course_sections [x]: ...["items"][x]layouts/vertical_column/container["items"][indice_fixe]
+   Niveau 2 - Dans course_sections [x]: ...["items"][x]layouts/XXXX/container["items"][indice_fixe]
    - [0] = section_title
    - [1] = section_description
    - [2] = conteneur pour key_concepts
    - [3] = additional_notes (si applicable)
 
-   Niveau 3 - Dans key_concepts [y]: ...["items"][2]layouts/vertical_column/container["items"][y]conceptual/concept
+   Niveau 3 - Dans key_concepts [y]: ...["items"][2]layouts/XXXX/container["items"][y]conceptual/concept
    - Utilise le même template pour tous les chemins key_concepts[y]*
 
 3. **Génère les mappings** en suivant cette structure hiérarchique
@@ -1224,17 +1224,17 @@ COMMENT CORRIGER (ÉTAPE PAR ÉTAPE):
    EXEMPLE DE CORRECTION 1:
    ❌ AVANT (INVALIDE - conflit sur ["content"]):
    {{
-     "course_sections[x]section_description": 'container["items"][x]layouts/item["content"]text/description["text"]',
-     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/item["content"]layouts/container["items"][y]concept["title"]'
+     "course_sections[x]section_description": 'container["items"][x]layouts/XXXX/item["content"]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/XXXX/item["content"]layouts/XXXX/container["items"][y]conceptual/concept["title"]'
    }}
 
    ✅ APRÈS (CORRIGÉ avec indices fixes):
    {{
-     "course_sections[x]section_description": 'container["items"][x]layouts/vertical_column/container["items"][0]text/description["text"]',
-     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/vertical_column/container["items"][1]layouts/vertical_column/container["items"][y]conceptual/concept["title"]'
+     "course_sections[x]section_description": 'container["items"][x]layouts/XXXX/container["items"][0]text/description["text"]',
+     "course_sections[x]key_concepts[y]name": 'container["items"][x]layouts/XXXX/container["items"][1]layouts/XXXX/container["items"][y]conceptual/concept["title"]'
    }}
 
-   Explication: Utilise layouts/vertical_column/container["items"] avec indices fixes: [0] pour description, [1] pour key_concepts
+   Explication: Utilise layouts/XXXX/container["items"] avec indices fixes: [0] pour description, [1] pour key_concepts
 
    EXEMPLE DE CORRECTION 2:
    ❌ AVANT (INVALIDE - templates différents au même [y]):

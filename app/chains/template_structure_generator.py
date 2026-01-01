@@ -672,11 +672,19 @@ Template {i}:
                     """Tu es un expert en construction de structures de données pédagogiques.
 Ta tâche est de mapper des chemins de données source vers des chemins de destination qui utilisent des templates HTML/pédagogiques imbriqués.
 
-⚠️ RÈGLE CRITIQUE - CHAMPS AUTORISÉS:
+⚠️ RÈGLE CRITIQUE 1 - CHAMPS AUTORISÉS:
 Tu NE PEUX utiliser que les champs (fields) explicitement définis dans "Usage des champs" de chaque template.
 - ✅ AUTORISÉ: Si "Usage des champs" mentionne "title", tu peux utiliser ["title"]
 - ❌ INTERDIT: Inventer des champs qui n'existent pas dans le template (ex: ["header1"], ["row1_col1"] si non mentionnés)
 - ❌ INTERDIT: Utiliser des champs génériques comme ["content"], ["items"] s'ils ne sont pas dans "Usage des champs"
+
+⚠️ RÈGLE CRITIQUE 2 - TEMPLATES "ITEM":
+Les champs de type "item" (layouts/XXXX/item, layouts/vertical_column/item, etc.) doivent TOUJOURS contenir un objet avec template_name, JAMAIS une valeur primitive directe.
+- ❌ INTERDIT: layouts/horizontal_line/container["items"][0]layouts/horizontal_line/item["title"] → "Mon titre"
+- ✅ CORRECT: layouts/horizontal_line/container["items"][0]layouts/horizontal_line/item["title"]text/titre["text"] → "Mon titre"
+- ❌ INTERDIT: layouts/vertical_column/item["content"] → "Contenu direct"
+- ✅ CORRECT: layouts/vertical_column/item["content"]text/explication["text"] → "Contenu direct"
+- RÈGLE: Un chemin de destination doit TOUJOURS se terminer par un template NON-ITEM suivi d'un champ de valeur finale
 
 RÈGLES CRITIQUES POUR LES INDICES:
 
@@ -737,7 +745,8 @@ RÈGLES CRITIQUES POUR LES INDICES:
    c) Choisis UN template commun pour ce préfixe
    d) VÉRIFIE que le template possède bien les champs dont tu as besoin dans "Usage des champs"
    e) Assigne des chemins de destination en utilisant UNIQUEMENT les champs autorisés du template
-   f) Double-vérifie qu'aucun conflit n'existe avec les chemins déjà générés
+   f) ASSURE-TOI que le chemin se termine par un template de contenu (text/*, conceptual/*, etc.) et non par un template "item"
+   g) Double-vérifie qu'aucun conflit n'existe avec les chemins déjà générés
 
 7. **EXEMPLE COMPLET DE MAPPING VALIDE**:
 
@@ -769,6 +778,9 @@ Pour chaque chemin de destination généré:
 1. Extraire tous les ["champs"] utilisés
 2. Vérifier que chaque champ existe dans "Usage des champs" du template correspondant
 3. Si un champ n'existe pas, CHANGER de template ou CORRIGER le chemin
+4. VÉRIFIER que le chemin ne se termine PAS par un template "item" (layouts/XXXX/item)
+   - Si c'est le cas, AJOUTER un template de contenu final (text/*, conceptual/*, tableaux/*, etc.)
+5. VÉRIFIER que le dernier template du chemin est bien un template de contenu, suivi d'un champ de valeur
 
 RETOURNE un JSON avec le format exact suivant (UNIQUEMENT le JSON, sans explication):
 {{
@@ -1217,7 +1229,13 @@ RAPPEL DES RÈGLES CRITIQUES:
    Tu NE PEUX utiliser que les champs (fields) explicitement définis dans "Usage des champs" de chaque template.
    - ✅ AUTORISÉ: Si "Usage des champs" mentionne "title", tu peux utiliser ["title"]
    - ❌ INTERDIT: Inventer des champs qui n'existent pas (ex: ["header1"], ["row1_col1"] si non mentionnés)
-   - ❌ INTERDIT: Utiliser ["content"], ["items"] s'ils ne sont pas dans "Usage des champs" du template""",
+   - ❌ INTERDIT: Utiliser ["content"], ["items"] s'ils ne sont pas dans "Usage des champs" du template
+
+3. ⚠️ TEMPLATES "ITEM":
+   Les champs de templates "item" doivent TOUJOURS contenir un objet avec template_name, JAMAIS une valeur directe.
+   - ❌ INTERDIT: layouts/horizontal_line/item["title"] → "Mon titre"
+   - ✅ CORRECT: layouts/horizontal_line/item["title"]text/titre["text"] → "Mon titre"
+   - Un chemin doit TOUJOURS se terminer par un template de contenu (text/*, conceptual/*, etc.) suivi d'un champ de valeur""",
                 ),
                 (
                     "user",
@@ -1271,7 +1289,11 @@ COMMENT CORRIGER (ÉTAPE PAR ÉTAPE):
 
 Étape 4: VALIDE que tous les ["champs"] utilisés existent dans "Usage des champs" des templates
 
-Étape 5: Génère le JSON CORRIGÉ complet
+Étape 5: VALIDE que les chemins ne se terminent PAS par un template "item"
+   - Si un chemin se termine par layouts/XXXX/item["champ"], AJOUTE un template de contenu final
+   - Exemple: layouts/horizontal_line/item["title"] → layouts/horizontal_line/item["title"]text/titre["text"]
+
+Étape 6: Génère le JSON CORRIGÉ complet
 
 RETOURNE UNIQUEMENT le JSON, sans explication:""",
                 ),

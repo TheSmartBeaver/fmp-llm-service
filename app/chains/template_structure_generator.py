@@ -340,7 +340,7 @@ class TemplateStructureGenerator:
         array_vars = ["x", "y", "z", "w", "v", "u", "t", "s", "r", "q"]
 
         def is_simple_value(val: Any) -> bool:
-            """Vérifie si une valeur est simple (primitive, tableau de primitives, ou objet plat)"""
+            """Vérifie si une valeur est simple (primitive ou tableau de primitives)"""
             if isinstance(val, (str, int, float, bool, type(None))):
                 return True
             if isinstance(val, list):
@@ -349,12 +349,7 @@ class TemplateStructureGenerator:
                     isinstance(item, (str, int, float, bool, type(None)))
                     for item in val
                 )
-            if isinstance(val, dict):
-                # Objet plat (toutes les valeurs sont des primitives)
-                return all(
-                    isinstance(v, (str, int, float, bool, type(None)))
-                    for v in val.values()
-                )
+            # Les objets ne sont jamais considérés comme simples
             return False
 
         def extract_paths(obj: Any, path: str = "", array_depth: int = 0):
@@ -431,7 +426,7 @@ class TemplateStructureGenerator:
         paths = []
 
         def is_simple_value(val: Any) -> bool:
-            """Vérifie si une valeur est simple (primitive, tableau de primitives, ou objet plat)"""
+            """Vérifie si une valeur est simple (primitive ou tableau de primitives)"""
             if isinstance(val, (str, int, float, bool, type(None))):
                 return True
             if isinstance(val, list):
@@ -440,12 +435,7 @@ class TemplateStructureGenerator:
                     isinstance(item, (str, int, float, bool, type(None)))
                     for item in val
                 )
-            if isinstance(val, dict):
-                # Objet plat (toutes les valeurs sont des primitives)
-                return all(
-                    isinstance(v, (str, int, float, bool, type(None)))
-                    for v in val.values()
-                )
+            # Les objets ne sont jamais considérés comme simples
             return False
 
         def extract_paths(obj: Any, path: str = ""):
@@ -703,11 +693,15 @@ Template {i}:
                     """Tu es un expert en construction de structures de données pédagogiques.
 Ta tâche est de mapper des chemins de données source vers des chemins de destination qui utilisent des templates HTML/pédagogiques imbriqués.
 
-⚠️ RÈGLE CRITIQUE 1 - CHAMPS AUTORISÉS:
+⚠️ RÈGLE CRITIQUE 1 - CHAMPS AUTORISÉS ET OBLIGATOIRES:
 Tu NE PEUX utiliser que les champs (fields) explicitement définis dans "Usage des champs" de chaque template.
 - ✅ AUTORISÉ: Si "Usage des champs" mentionne "title", tu peux utiliser ["title"]
 - ❌ INTERDIT: Inventer des champs qui n'existent pas dans le template (ex: ["header1"], ["row1_col1"] si non mentionnés)
 - ❌ INTERDIT: Utiliser des champs génériques comme ["content"], ["items"] s'ils ne sont pas dans "Usage des champs"
+- ⚠️ OBLIGATION: Quand tu choisis d'utiliser un template, tu DOIS utiliser TOUS les champs (fields) listés dans "Usage des champs"
+  - Si un template a les champs ["title", "content", "footer"], tu DOIS mapper des données vers ces 3 champs
+  - Ne laisse AUCUN champ non utilisé - chaque champ doit recevoir une donnée du JSON source
+  - Si tu ne peux pas remplir tous les champs d'un template, choisis un AUTRE template plus adapté
 
 ⚠️ RÈGLE CRITIQUE 2 - STRUCTURE DES CHEMINS:
 TOUS les champs (sauf le dernier champ de valeur primitive) doivent TOUJOURS contenir un objet avec template_name, JAMAIS une valeur primitive directe.

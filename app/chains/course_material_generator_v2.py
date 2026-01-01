@@ -257,38 +257,7 @@ RÈGLES CRITIQUES:
 7. ✅ Intègre les références aux médias disponibles de manière sémantique
 8. 🚫 INTERDICTION ABSOLUE: NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
 9. ✅ Utilise un langage clair et pédagogique, adapté à l'apprentissage
-
-STRUCTURE JSON ATTENDUE:
-{{
-  "learning_objective": "Objectif d'apprentissage global détaillé (plusieurs phrases explicatives)",
-  "course_sections": [
-    {{
-      "section_title": "Titre clair de la section",
-      "section_description": "Description complète et contextualisée sur plusieurs phrases qui explique le sujet, son importance et son contexte",
-      "key_concepts": [
-        {{
-          "concept_name": "Nom du concept principal",
-          "explanation": "Explication détaillée et complète avec contexte, exemples et clarifications (plusieurs phrases bien développées)",
-          "examples": ["Exemple concret 1 avec contexte", "Exemple concret 2 avec contexte"],
-          "related_media": {{
-            "image_url": "URL de l'image si pertinent pour ce concept",
-            "image_description": "Description détaillée de ce que montre l'image",
-            "video_url": "URL de la vidéo si pertinent pour ce concept",
-            "video_description": "Description de ce que montre la vidéo",
-            "video_timestamp": "timestamp de début"
-          }}
-        }}
-      ],
-      "additional_notes": "Notes complémentaires contextualisées qui apportent des précisions, des nuances ou des informations utiles (plusieurs phrases)"
-    }}
-  ]
-}}
-
-EXEMPLE DE BON CONTENU (développé et contextualisé):
-❌ MAUVAIS: "Le verbe ser. Conjugaison: soy, eres, es."
-✅ BON: "Le verbe 'ser' est l'un des deux verbes signifiant 'être' en espagnol. Il s'utilise spécifiquement pour exprimer les caractéristiques permanentes d'une personne ou d'une chose, comme l'identité, la profession, l'origine géographique ou la nationalité. Sa conjugaison au présent de l'indicatif est irrégulière et doit être mémorisée: yo soy (je suis), tú eres (tu es), él/ella es (il/elle est), nosotros somos (nous sommes), vosotros sois (vous êtes), ellos/ellas son (ils/elles sont)."
-
-Réponds UNIQUEMENT avec le JSON valide, sans texte additionnel."""
+"""
 
         user_prompt = """Voici les notes de cours brutes à transformer en JSON pédagogique optimal:
 

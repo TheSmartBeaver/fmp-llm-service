@@ -8,6 +8,7 @@ from app.utils.template_search import fetch_similar_templates
 from app.utils.structure_process import extract_json_structure, create_embedding_packets
 from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
 from app.chains.llm.open_ai_o3_mini_llm import OpenAiO3MiniLlm
+from app.validation.path_group_validator import validate_path_groups
 
 
 class TemplateStructureGenerator:
@@ -243,10 +244,737 @@ class TemplateStructureGenerator:
         embedding = self.embedding_model.encode(text, normalize_embeddings=True)
         return embedding.tolist()
 
+    def _generate_json_from_group(
+        self,
+        group: Dict[str, Any],
+        templates: List[Dict[str, Any]],
+        source_json: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Génère le JSON structuré pour un groupe en utilisant les templates récupérés par embedding.
+
+        Args:
+            group: Un groupe de chemins avec format (output de _generate_path_groups_with_llm)
+            templates: Templates récupérés par embedding pour ce groupe
+            source_json: Le JSON source complet
+
+        Returns:
+            JSON structuré avec template_name et références {{chemin}}
+            Exemple:
+            {
+                "template_name": "XXXX",
+                "items": [
+                    {
+                        "template_name": "XXXX",
+                        "title": "XXXX",
+                        "content": "{{XXXX}}"
+                    }
+                ]
+            }
+        """
+        # Formater les templates pour le prompt
+        templates_formatted = self._format_templates_for_prompt(templates)
+
+        # Formater les chemins source
+        source_paths_formatted = "\n".join([f"  - {path}" for path in group["keys"]])
+
+        # Construire le prompt
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """Tu es un expert en construction de structures de données pédagogiques.
+Ta tâche est de créer un JSON structuré qui utilise des templates HTML/pédagogiques imbriqués
+pour représenter des données de cartes mentales.
+
+⚠️ FORMAT DE SORTIE:
+Tu DOIS retourner un JSON structuré avec:
+- Un champ "template_name" obligatoire pour chaque objet
+- Les champs définis dans "Usage des champs" du template
+- Des références aux données source au format {{chemin}} (ex: {{conjugation_patterns[x]group}})
+
+EXEMPLE DE SORTIE ATTENDUE:
+{{
+  "template_name": "XXXX",
+  "items": [
+    {{
+      "template_name": "XXXX",
+      "title": "XXXX",
+      "content": "{{XXXX[x]XXXX}}"
+    }},
+    {{
+      "template_name": "XXXX",
+      "title": "XXXX",
+      "content": {{
+        "template_name": "XXXX",
+        "title": "XXXX {{XXXX[x]XXXX}}",
+        "description": "{{XXXX[x]XXXX->XXXX}}"
+      }}
+    }}
+  ]
+}}
+
+⚠️ RÈGLES CRITIQUES:
+
+1. **Champs autorisés**:
+   - Tu NE PEUX utiliser QUE les champs définis dans "Usage des champs" du template
+
+2. **Structure des objets**:
+   - Chaque objet DOIT avoir un champ "template_name"
+   - Les champs peuvent contenir soit:
+     * Une référence {{chemin}} (pour les valeurs primitives)
+     * Un objet avec template_name (pour imbriquer des templates)
+     * Un tableau d'objets avec template_name
+     * Une string
+
+3. **Références aux données**:
+   - Utilise la notation {{chemin}} pour référencer les données source
+   - Conserve les variables [x], [y] dans les chemins si présentes
+   - Exemples:
+     * {{XXXX}} (sans variable)
+     * {{XXXX[x]XXXX}} (avec variable [x])
+     * {{XXXX[x]XXXX[y]}} (avec variables [x] et [y])
+
+4. **Imbrication des templates**:
+   - Tu DOIS imbriquer plusieurs templates de manière sémantiquement cohérente
+   - Exemple: un container contient des items, chaque item peut contenir un concept, etc.
+
+5. **Utilisation complète des champs**:
+   - Quand tu choisis un template, tu DOIS remplir TOUS ses champs obligatoires
+
+RETOURNE UNIQUEMENT le JSON structuré, sans explication.""",
+                ),
+                (
+                    "user",
+                    """Groupe à traiter: {group_name}
+Format attendu: {format_description}
+
+Templates disponibles (sélectionnés par embedding):
+{templates}
+
+Chemins source disponibles pour les références {{chemin}}:
+{source_paths}
+
+Génère maintenant le JSON structuré.""",
+                ),
+            ]
+        )
+
+        # Créer la chaîne LLM avec parser JSON
+        parser = JsonOutputParser()
+        chain = prompt | self.llm | parser
+
+        # Appeler le LLM
+        result = chain.invoke(
+            {
+                "group_name": group["group_name"],
+                "format_description": group["format"],
+                "templates": templates_formatted,
+                "source_paths": source_paths_formatted,
+            }
+        )
+
+        return result
+
+    def _add_nested_group_references(
+        self,
+        path_groups: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """
+        Ajoute des clés de référence pour les groupes imbriqués.
+
+        Détecte les relations parent-enfant entre les groupes et ajoute une clé de référence
+        dans le groupe parent pour pointer vers le groupe enfant.
+
+        Exemple:
+        - Groupe parent: "conjugation_patterns[x]group", "conjugation_patterns[x]model"
+        - Groupe enfant: "conjugation_patterns[x]forms[y]person", "conjugation_patterns[x]forms[y]spanish"
+        - Ajout dans parent: "conjugation_patterns[x]forms[y]" (référence vers le groupe enfant)
+
+        Args:
+            path_groups: Liste des groupes générés par le LLM
+
+        Returns:
+            Liste des groupes avec références ajoutées
+        """
+        import re
+
+        # Créer une copie des groupes pour modification
+        updated_groups = []
+
+        for group in path_groups:
+            # Copier le groupe
+            updated_group = dict(group)
+            updated_keys = list(group["keys"])
+
+            # Pour chaque autre groupe, vérifier s'il est un sous-groupe
+            for other_group in path_groups:
+                if other_group["group_name"] == group["group_name"]:
+                    continue
+
+                # Extraire le préfixe commun entre ce groupe et l'autre
+                # Ex: "conjugation_patterns[x]" est le préfixe de "conjugation_patterns[x]forms[y]"
+                common_prefix = self._find_common_array_prefix(
+                    group["keys"], other_group["keys"]
+                )
+
+                if common_prefix and self._is_child_group(group["keys"], other_group["keys"], common_prefix):
+                    # Trouver la clé de référence à ajouter
+                    # C'est le préfixe du groupe enfant jusqu'à sa dernière variable
+                    child_reference = self._extract_child_reference(other_group["keys"])
+
+                    if child_reference and child_reference not in updated_keys:
+                        updated_keys.append(child_reference)
+
+            updated_group["keys"] = updated_keys
+            updated_groups.append(updated_group)
+
+        return updated_groups
+
+    def _find_common_array_prefix(
+        self,
+        parent_keys: List[str],
+        child_keys: List[str],
+    ) -> str:
+        """
+        Trouve le préfixe commun avec variables entre deux ensembles de clés.
+
+        Args:
+            parent_keys: Clés du groupe parent potentiel
+            child_keys: Clés du groupe enfant potentiel
+
+        Returns:
+            Préfixe commun incluant les variables, ou chaîne vide si aucun
+        """
+        import re
+
+        if not parent_keys or not child_keys:
+            return ""
+
+        # Prendre la première clé de chaque groupe pour comparer
+        parent_key = parent_keys[0]
+        child_key = child_keys[0]
+
+        # Trouver toutes les positions des variables dans les deux clés
+        # Ex: "conjugation_patterns[x]group" → positions de [x]
+        #     "conjugation_patterns[x]forms[y]person" → positions de [x] et [y]
+
+        parent_vars = list(re.finditer(r'\[([x-z])\]', parent_key))
+        child_vars = list(re.finditer(r'\[([x-z])\]', child_key))
+
+        # Le groupe enfant doit avoir au moins autant de variables que le parent
+        if len(child_vars) <= len(parent_vars):
+            return ""
+
+        # Vérifier que les N premières variables du parent correspondent à celles de l'enfant
+        for i in range(len(parent_vars)):
+            if parent_vars[i].group(1) != child_vars[i].group(1):
+                return ""
+
+        # IMPORTANT: Vérifier que le texte AVANT la dernière variable du parent est identique
+        if parent_vars:
+            last_parent_var = parent_vars[-1]
+            prefix_end = last_parent_var.end()
+
+            # Extraire le texte avant la dernière variable du parent (inclusivement)
+            parent_prefix = parent_key[:prefix_end]
+            child_prefix = child_key[:prefix_end]
+
+            # Les préfixes doivent être identiques
+            if parent_prefix != child_prefix:
+                return ""
+
+            return parent_prefix
+
+        return ""
+
+    def _is_child_group(
+        self,
+        parent_keys: List[str],
+        child_keys: List[str],
+        common_prefix: str,
+    ) -> bool:
+        """
+        Vérifie si child_keys représente un sous-groupe de parent_keys.
+
+        Args:
+            parent_keys: Clés du groupe parent
+            child_keys: Clés du groupe enfant potentiel
+            common_prefix: Préfixe commun trouvé
+
+        Returns:
+            True si c'est un sous-groupe
+        """
+        if not common_prefix:
+            return False
+
+        # Vérifier que toutes les clés du groupe enfant commencent par le préfixe
+        for child_key in child_keys:
+            if not child_key.startswith(common_prefix):
+                return False
+
+        # Vérifier qu'aucune clé du parent ne commence par le préfixe suivi d'autre chose
+        # (sinon ce serait le même groupe, pas un parent-enfant)
+        for parent_key in parent_keys:
+            if parent_key.startswith(common_prefix):
+                # Si la clé parent continue après le préfixe avec autre chose qu'une variable,
+                # ce n'est pas une relation parent-enfant
+                remainder = parent_key[len(common_prefix):]
+                if remainder and not remainder.startswith('['):
+                    return False
+
+        return True
+
+    def _extract_child_reference(self, child_keys: List[str]) -> str:
+        """
+        Extrait la clé de référence à partir des clés d'un groupe enfant.
+
+        La clé de référence est le chemin jusqu'à la dernière variable du groupe enfant.
+
+        Args:
+            child_keys: Clés du groupe enfant
+
+        Returns:
+            Clé de référence (ex: "conjugation_patterns[x]forms[y]")
+        """
+        import re
+
+        if not child_keys:
+            return ""
+
+        # Prendre la première clé comme représentative
+        child_key = child_keys[0]
+
+        # Trouver toutes les variables
+        vars_matches = list(re.finditer(r'\[([x-z])\]', child_key))
+
+        if not vars_matches:
+            return ""
+
+        # Prendre jusqu'à la dernière variable (incluse)
+        last_var = vars_matches[-1]
+        reference = child_key[:last_var.end()]
+
+        return reference
+
+    def _resolve_group_references(
+        self,
+        group_jsons_map: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Résout les références de groupes imbriqués en remplaçant les placeholders.
+
+        Les références de type {{chemin[x]sous_chemin[y]}} (qui se terminent par une variable)
+        sont remplacées par le JSON du groupe correspondant.
+
+        Args:
+            group_jsons_map: Dictionnaire {clé_de_référence: json_du_groupe}
+
+        Returns:
+            Dictionnaire avec les références résolues
+        """
+        import re
+        import json
+
+        def is_group_reference(ref_string: str) -> bool:
+            """
+            Vérifie si une string de référence {{...}} pointe vers un groupe.
+            Un groupe se termine par une variable sans champ après: {{chemin[x]}} ou {{chemin[x]sous[y]}}
+            """
+            # Extraire le contenu entre {{ et }}
+            match = re.match(r'^\{\{(.+)\}\}$', ref_string.strip())
+            if not match:
+                return False
+
+            content = match.group(1)
+
+            # Vérifier si c'est une clé de groupe connue
+            return content in group_jsons_map
+
+        def resolve_in_value(value: Any) -> Any:
+            """Résout récursivement les références dans une valeur."""
+            if isinstance(value, str):
+                # Vérifier si c'est une référence de groupe
+                if is_group_reference(value):
+                    # Extraire le contenu entre {{ et }}
+                    content = re.match(r'^\{\{(.+)\}\}$', value.strip()).group(1)
+
+                    # Retourner directement le JSON du groupe
+                    if content in group_jsons_map:
+                        return group_jsons_map[content]
+
+                return value
+
+            elif isinstance(value, dict):
+                # Résoudre récursivement dans les dictionnaires
+                return {k: resolve_in_value(v) for k, v in value.items()}
+
+            elif isinstance(value, list):
+                # Résoudre récursivement dans les listes
+                return [resolve_in_value(item) for item in value]
+
+            else:
+                return value
+
+        # Résoudre les références dans tous les groupes
+        resolved_map = {}
+        for key, group_json in group_jsons_map.items():
+            resolved_map[key] = resolve_in_value(group_json)
+
+        return resolved_map
+
+    def _build_path_to_value_map(self, source_json: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Construit un dictionnaire qui mappe chaque chemin concret vers sa valeur.
+
+        Utilise la notation avec indices réels [0], [1], [2]... pour les tableaux.
+
+        Args:
+            source_json: Le JSON source avec les données réelles
+
+        Returns:
+            Dictionnaire {chemin_concret: valeur}
+
+        Exemple:
+            Input: {"metadata": {"course": "Espagnol"}, "items": [{"name": "A"}, {"name": "B"}]}
+            Output: {
+                "metadata->course": "Espagnol",
+                "items[0]->name": "A",
+                "items[1]->name": "B"
+            }
+        """
+        path_to_value_map = {}
+
+        def traverse(obj, current_path=""):
+            """Traverse récursivement l'objet pour construire le mapping."""
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    new_path = f"{current_path}->{key}" if current_path else key
+
+                    if isinstance(value, (dict, list)):
+                        # Continuer la traversée pour les structures complexes
+                        traverse(value, new_path)
+                    else:
+                        # Valeur primitive (string, number, bool, None)
+                        path_to_value_map[new_path] = value
+
+            elif isinstance(obj, list):
+                for idx, item in enumerate(obj):
+                    new_path = f"{current_path}[{idx}]"
+
+                    if isinstance(item, (dict, list)):
+                        # Continuer la traversée pour les structures complexes
+                        traverse(item, new_path)
+                    else:
+                        # Valeur primitive dans un tableau
+                        path_to_value_map[new_path] = item
+
+        traverse(source_json)
+        return path_to_value_map
+
+    def _collect_all_references(self, obj: Any) -> List[str]:
+        """
+        Collecte toutes les références {{...}} dans un objet.
+
+        Args:
+            obj: L'objet à analyser (dict, list, str, etc.)
+
+        Returns:
+            Liste des chemins référencés (sans les accolades)
+            Ex: ["conjugationPatterns->endingsByPerson[x]->person", ...]
+        """
+        import re
+
+        references = []
+
+        def traverse(o):
+            if isinstance(o, str):
+                # Chercher toutes les occurrences de {{...}}
+                matches = re.findall(r'\{\{([^}]+)\}\}', o)
+                references.extend(matches)
+            elif isinstance(o, dict):
+                for value in o.values():
+                    traverse(value)
+            elif isinstance(o, list):
+                for item in o:
+                    traverse(item)
+
+        traverse(obj)
+        return references
+
+    def _count_iterations_for_prefix(
+        self,
+        prefix_with_var: str,
+        path_to_value_map: Dict[str, Any]
+    ) -> int:
+        """
+        Compte combien d'indices existent pour un préfixe avec variable.
+
+        Args:
+            prefix_with_var: Préfixe avec variable, ex "conjugationPatterns->endingsByPerson[x]"
+            path_to_value_map: Map des chemins concrets vers valeurs
+
+        Returns:
+            Nombre d'itérations nécessaires
+
+        Exemple:
+            prefix_with_var = "conjugationPatterns->endingsByPerson[x]"
+            path_to_value_map contient:
+                "conjugationPatterns->endingsByPerson[0]->person"
+                "conjugationPatterns->endingsByPerson[1]->person"
+                "conjugationPatterns->endingsByPerson[2]->person"
+            → Retourne 3
+        """
+        import re
+
+        # Créer un pattern regex en remplaçant [x/y/z] par (\d+)
+        pattern = re.escape(prefix_with_var)
+        pattern = pattern.replace(r'\[x\]', r'\[(\d+)\]')
+        pattern = pattern.replace(r'\[y\]', r'\[(\d+)\]')
+        pattern = pattern.replace(r'\[z\]', r'\[(\d+)\]')
+
+        # Trouver tous les indices qui matchent
+        indices = set()
+        for path in path_to_value_map.keys():
+            match = re.match(pattern, path)
+            if match:
+                idx = int(match.group(1))
+                indices.add(idx)
+
+        # Le nombre d'itérations est max + 1 (car indices commencent à 0)
+        return max(indices) + 1 if indices else 0
+
+    def _replace_inline_references(
+        self,
+        text: str,
+        path_to_value_map: Dict[str, Any]
+    ) -> str:
+        """
+        Remplace les références inline dans un texte.
+
+        Ex: "Titre: {{metadata->course}}" → "Titre: Mini cours d'espagnol"
+
+        Args:
+            text: Texte contenant des références {{...}}
+            path_to_value_map: Map des valeurs
+
+        Returns:
+            Texte avec références remplacées
+        """
+        import re
+
+        def replacer(match):
+            path = match.group(1)
+            value = path_to_value_map.get(path, match.group(0))
+            return str(value)
+
+        return re.sub(r'\{\{([^}]+)\}\}', replacer, text)
+
+    def _simple_replace(
+        self,
+        obj: Any,
+        path_to_value_map: Dict[str, Any]
+    ) -> Any:
+        """
+        Remplace simplement les références {{chemin}} par leurs valeurs.
+        Utilisé quand il n'y a PAS de variables [x], [y], [z].
+
+        Args:
+            obj: L'objet à traiter
+            path_to_value_map: Map des valeurs
+
+        Returns:
+            Objet avec références remplacées
+        """
+        import re
+
+        if isinstance(obj, str):
+            if obj.startswith('{{') and obj.endswith('}}'):
+                path = obj[2:-2]  # Extraire le chemin
+                # Récupérer la valeur
+                return path_to_value_map.get(path, obj)
+            else:
+                # Peut contenir des références inline
+                return self._replace_inline_references(obj, path_to_value_map)
+
+        elif isinstance(obj, dict):
+            return {
+                key: self._simple_replace(value, path_to_value_map)
+                for key, value in obj.items()
+            }
+
+        elif isinstance(obj, list):
+            return [
+                self._simple_replace(item, path_to_value_map)
+                for item in obj
+            ]
+
+        else:
+            return obj
+
+    def _replace_variable_with_index(
+        self,
+        obj: Any,
+        var_name: str,
+        index: int,
+        path_to_value_map: Dict[str, Any]
+    ) -> Any:
+        """
+        Remplace toutes les occurrences de [var_name] par [index] et récupère les valeurs.
+
+        Args:
+            obj: L'objet à traiter
+            var_name: Nom de la variable ('x', 'y', ou 'z')
+            index: Indice concret (0, 1, 2, ...)
+            path_to_value_map: Map des valeurs
+
+        Returns:
+            Objet avec variable remplacée par l'indice et valeurs résolues
+        """
+        import re
+
+        if isinstance(obj, str):
+            if obj.startswith('{{') and obj.endswith('}}'):
+                path = obj[2:-2]
+                # Remplacer la variable par l'indice
+                concrete_path = path.replace(f'[{var_name}]', f'[{index}]')
+
+                # Vérifier si c'est une référence à un groupe imbriqué
+                # (se termine par une variable différente)
+                if re.search(r'\[[x-z]\]$', concrete_path):
+                    # C'est une référence de groupe, ne pas résoudre maintenant
+                    # (sera résolu récursivement)
+                    return f'{{{{{concrete_path}}}}}'
+
+                # Récupérer la valeur
+                value = path_to_value_map.get(concrete_path)
+                if value is None:
+                    # Warning: référence non trouvée
+                    print(f"⚠️ Référence non trouvée: {concrete_path}")
+                    return obj  # Garder la référence telle quelle
+                return value
+            else:
+                # Références inline
+                def replacer(match):
+                    path = match.group(1)
+                    concrete_path = path.replace(f'[{var_name}]', f'[{index}]')
+                    value = path_to_value_map.get(concrete_path, match.group(0))
+                    return str(value)
+                return re.sub(r'\{\{([^}]+)\}\}', replacer, obj)
+
+        elif isinstance(obj, dict):
+            return {
+                key: self._replace_variable_with_index(
+                    value, var_name, index, path_to_value_map
+                )
+                for key, value in obj.items()
+            }
+
+        elif isinstance(obj, list):
+            return [
+                self._replace_variable_with_index(
+                    item, var_name, index, path_to_value_map
+                )
+                for item in obj
+            ]
+
+        else:
+            return obj
+
+    def _resolve_group_json(
+        self,
+        group_json: Dict[str, Any],
+        path_to_value_map: Dict[str, Any]
+    ) -> Any:
+        """
+        Résout un group_json en remplaçant les références par les valeurs.
+
+        Grâce aux contraintes validées à l'étape 4:
+        - Tous les chemins avec variables partagent le même préfixe
+        - Tous les chemins ont la même profondeur de variable
+
+        Args:
+            group_json: JSON avec références {{chemin[x]}}
+            path_to_value_map: Map chemin concret → valeur
+
+        Returns:
+            - Si pas de variable: JSON avec valeurs remplacées
+            - Si variable: Liste de JSON (un par itération)
+        """
+        import re
+
+        # Collecter toutes les références {{...}} dans le group_json
+        references = self._collect_all_references(group_json)
+
+        # Déterminer s'il y a une variable à résoudre
+        variable_in_group = None
+        prefix_with_var = None
+
+        for ref in references:
+            var_match = re.search(r'\[([x-z])\]', ref)
+            if var_match:
+                variable_in_group = var_match.group(1)  # 'x', 'y', ou 'z'
+                # Extraire le préfixe jusqu'à la variable (incluse)
+                prefix_with_var = ref[:var_match.end()]
+                break
+
+        # CAS 1: Pas de variable → simple remplacement
+        if not variable_in_group:
+            return self._simple_replace(group_json, path_to_value_map)
+
+        # CAS 2: Avec variable → expansion
+        # Compter combien d'itérations nécessaires
+        num_iterations = self._count_iterations_for_prefix(
+            prefix_with_var,
+            path_to_value_map
+        )
+
+        if num_iterations == 0:
+            print(f"⚠️ Aucune itération trouvée pour le préfixe: {prefix_with_var}")
+            return group_json  # Retourner tel quel
+
+        # Dupliquer et résoudre pour chaque itération
+        expanded_list = []
+        for i in range(num_iterations):
+            # Remplacer toutes les occurrences de [variable] par [i]
+            item = self._replace_variable_with_index(
+                group_json,
+                variable_in_group,
+                i,
+                path_to_value_map
+            )
+            expanded_list.append(item)
+
+        return expanded_list
+
+    def _combine_group_jsons(
+        self,
+        group_jsons: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """
+        Combine plusieurs JSONs de groupes dans une structure finale cohérente.
+
+        Args:
+            group_jsons: Liste des JSONs générés pour chaque groupe
+
+        Returns:
+            JSON final combiné dans un container global
+        """
+        # Si un seul groupe, le retourner directement
+        if len(group_jsons) == 1:
+            return group_jsons[0]
+
+        # Sinon, créer un container vertical qui contient tous les groupes
+        return {
+            "template_name": "layouts/vertical_column/container",
+            "items": group_jsons,
+            "version": "1.0.0"
+        }
+
     def _generate_structure_with_llm(
         self,
         source_json: Dict[str, Any],
-        templates: List[Dict[str, Any]],
+        templates: List[Dict[str, Any]],  # Gardé pour compatibilité mais non utilisé avec la nouvelle approche
         context_description: str,
     ):
         # Extraire les chemins source avec variables [x], [y], [z]
@@ -254,43 +982,91 @@ class TemplateStructureGenerator:
             source_json, use_variables=True
         )
 
-        # Générer les mappings source → destination avec le LLM
-        destination_mappings = self._generate_destination_paths_with_llm(
+        # NOUVELLE APPROCHE: Générer les groupes de chemins avec formats
+        path_groups = self._generate_path_groups_with_llm(
             source_paths=json_paths_with_variables,
-            templates=templates,
             context_description=context_description,
         )
 
-        # destination_mappings = {
-        #     "learning_objective": 'layouts/vertical_column/container["items"][0]text/description_longue["text"]',
-        #     "course_sections[x]section_title": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["title"]text/titre_secondaire["text"]',
-        #     "course_sections[x]section_description": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]text/description_longue["text"]',
-        #     "course_sections[x]key_concepts[y]concept_name": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]conceptual/concept["title"]',
-        #     "course_sections[x]key_concepts[y]explanation": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]conceptual/concept["description"]',
-        #     "course_sections[x]key_concepts[y]examples": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]text/liste_exemples["items"]',
-        #     "course_sections[x]key_concepts[y]related_media": 'layouts/vertical_column/container["items"][1]layouts/vertical_column/item["content"]layouts/vertical_column/container["items"][y]text/detail_technique["text"]',
-        #     "course_sections[x]additional_notes": 'layouts/vertical_column/container["items"][2]text/contexte["text"]',
-        # }
+        # Ajouter les références aux groupes imbriqués
+        path_groups_before = path_groups
+        path_groups = self._add_nested_group_references(path_groups)
 
-        # Valider les destination_mappings
-        validation_errors = self._validate_destination_mappings(destination_mappings)
-        if validation_errors:
-            import warnings
-            for error in validation_errors:
-                warnings.warn(f"\n⚠️  VALIDATION ERROR in destination_mappings:\n{error}\n")
+        # Valider les groupes (Étape 4)
+        validation_warnings = validate_path_groups(path_groups)
+        if validation_warnings:
+            print("\n=== WARNINGS DE VALIDATION DES PATH GROUPS ===")
+            print("\n".join(validation_warnings))
+            print("=" * 50 + "\n")
+            # Option: lever une exception si critique
+            # raise ValueError("Path groups invalides")
 
-        json_paths_with_indices = self._extract_all_json_paths(
-            source_json, include_indices=True
-        )
 
-        # Construire le JSON final
-        final_json = self._build_final_json(
-            source_json=source_json,
-            destination_mappings=destination_mappings,
-            json_paths_with_indices=json_paths_with_indices,
-        )
+        # Pour chaque groupe, récupérer les templates par embedding et générer le JSON
+        # On crée un dictionnaire {clé_de_référence: json_du_groupe} pour faciliter la résolution
+        group_jsons_map = {}
 
-        return final_json, "TODO: prompt", destination_mappings
+        for group in path_groups:
+            # Générer l'embedding à partir de la description du format
+            format_embedding = self._generate_embedding(group["format"])
+
+            # Récupérer les templates similaires
+            group_templates = fetch_similar_templates(
+                self.db,
+                format_embedding,
+                top_k=8,  # Limiter à 8 templates par groupe pour ne pas surcharger le prompt
+                include_full_data=False,
+            )
+
+            # Générer le JSON structuré pour ce groupe
+            group_json = self._generate_json_from_group(
+                group=group,
+                templates=group_templates,
+                source_json=source_json,
+            )
+
+            # Extraire la clé de référence pour ce groupe (son "chemin d'accès")
+            # C'est le préfixe jusqu'à la dernière variable
+            group_reference = self._extract_child_reference(group["keys"])
+            if not group_reference:
+                # Si pas de variable, utiliser la première clé
+                group_reference = group["keys"][0] if group["keys"] else group["group_name"]
+
+            group_jsons_map[group_reference] = group_json
+
+        # Résoudre les références de groupes imbriqués
+        resolved_jsons_map = self._resolve_group_references(group_jsons_map)
+
+        # Étape 6: Construire le mapping chemin → valeur avec indices réels
+        path_to_value_map = self._build_path_to_value_map(source_json)
+
+        # Étape 7: Résoudre les valeurs pour chaque groupe (expansion)
+        final_resolved_jsons_map = {}
+        for ref, group_json in resolved_jsons_map.items():
+            final_group = self._resolve_group_json(group_json, path_to_value_map)
+            final_resolved_jsons_map[ref] = final_group
+
+        # Identifier le(s) groupe(s) racine(s) (ceux qui ne sont pas référencés par d'autres)
+        # Pour simplifier, on prend les groupes avec le moins de variables
+        import re
+        root_groups = []
+        min_vars = float('inf')
+
+        for ref, json_data in final_resolved_jsons_map.items():
+            num_vars = len(re.findall(r'\[[x-z]\]', ref))
+            if num_vars < min_vars:
+                min_vars = num_vars
+                root_groups = [(ref, json_data)]
+            elif num_vars == min_vars:
+                root_groups.append((ref, json_data))
+
+        # Combiner les groupes racines
+        root_jsons = [json_data for _, json_data in root_groups]
+        final_json = self._combine_group_jsons(group_jsons=root_jsons)
+
+        # Pour la compatibilité avec l'ancienne interface, on retourne aussi un dict vide pour destination_mappings
+        # (ce n'est plus pertinent avec la nouvelle approche mais on le garde pour ne pas casser l'API)
+        return final_json, "TODO: prompt", {}
 
     def _extract_all_json_paths(
         self, data: Any, include_indices: bool = False, use_variables: bool = False
@@ -656,6 +1432,92 @@ Template {i}:
                         f"  Ceci est invalide. Les indices doivent être séparés par un template ou un champ."
                     )
                     warnings.warn(f"\n⚠️  {error_msg}\n")
+
+    def _generate_path_groups_with_llm(
+        self,
+        source_paths: List[str],
+        context_description: str = "",
+    ) -> List[Dict[str, Any]]:
+        """
+        Génère des groupes de chemins avec description de format en utilisant le LLM.
+
+        Cette fonction demande au LLM de regrouper les chemins source selon leur nature
+        sémantique et de fournir une description de format pour chaque groupe.
+
+        Args:
+            source_paths: Liste des chemins source avec variables (ex: ['learning_objective', 'course_sections[x]section_id'])
+            context_description: Description du contexte pour aider le LLM
+
+        Returns:
+            Liste de groupes au format:
+            [
+                {
+                    "group_name": "informations_personnelles",
+                    "keys": ["personne.nom", "personne.age"],
+                    "format": "structure simple clé-valeur pour données personnelles"
+                }
+            ]
+        """
+        # Construire le prompt
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """Tu es un expert en analyse de structures de données de cartes mentales.
+Ta tâche est de regrouper des chemins de données (source_paths) selon leur nature sémantique
+et de proposer le meilleur format pour représenter chaque groupe.
+
+RÈGLES CRITIQUES:
+
+1. **Regroupement STRICT par niveau de profondeur de tableaux**:
+   ⚠️ RÈGLE ABSOLUE: TOUS les chemins d'un groupe DOIVENT avoir EXACTEMENT le même nombre de variables [x], [y], [z]
+   ❌ INTERDIT - Mélanger des profondeurs différentes
+   ✅ CORRECT - Séparer par profondeur
+
+2. **Regroupement par préfixe COMPLET**:
+   - Les chemins avec la même profondeur DOIVENT aussi avoir le même préfixe jusqu'à la dernière variable
+3. **Description du format**:
+   - Utilise une phrase COURTE pour décrire le format
+   - Sois CONCRET et DESCRIPTIF (évite les termes génériques)
+
+
+RETOURNE un JSON avec le format exact suivant (UNIQUEMENT le JSON, sans explication):
+[
+  {{
+    "group_name": "nom_du_groupe",
+    "keys": ["chemin1", "chemin2", ...],
+    "format": "description courte du format"
+  }}
+]""",
+                ),
+                (
+                    "user",
+                    """Contexte: {context}
+
+Chemins source à regrouper (morceaux de cartes mentales):
+{source_paths}
+
+Génère les groupes avec leurs formats.""",
+                ),
+            ]
+        )
+
+        # Préparer les données pour le prompt
+        source_paths_formatted = "\n".join([f"  - {path}" for path in source_paths])
+
+        # Créer la chaîne LLM avec parser JSON
+        parser = JsonOutputParser()
+        chain = prompt | self.llm | parser
+
+        # Appeler le LLM
+        result = chain.invoke(
+            {
+                "context": context_description or "Aucun contexte spécifique fourni",
+                "source_paths": source_paths_formatted,
+            }
+        )
+
+        return result
 
     def _generate_destination_paths_with_llm(
         self,

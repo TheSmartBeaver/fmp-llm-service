@@ -272,7 +272,7 @@ async def generate_course_material_v2(
     )
 
     # Générer le support de cours
-    result = generator.generate_course_material(
+    result = await generator.generate_course_material(
         user_entry=request,
         top_k=top_k,
         category_quotas=None

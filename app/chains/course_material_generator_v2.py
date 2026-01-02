@@ -45,7 +45,7 @@ class CourseMaterialGeneratorV2:
             db_session=db_session, embedding_model=embedding_model
         )
 
-    def generate_course_material(
+    async def generate_course_material(
         self,
         user_entry: UserEntryDto,
         top_k: int = 20,
@@ -83,7 +83,7 @@ class CourseMaterialGeneratorV2:
             category_quotas = {"layouts/": 2, "text/": 0}
 
         structure_result = (
-            self.template_structure_generator.generate_template_structure(
+            await self.template_structure_generator.generate_template_structure(
                 source_json=pedagogical_json,
                 context_description=context_description,
                 category_quotas=category_quotas,

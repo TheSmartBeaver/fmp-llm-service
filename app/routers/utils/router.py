@@ -142,7 +142,7 @@ async def generate_template_structure(
     try:
         generator = TemplateStructureGenerator(db, embedding_model)
 
-        result = generator.generate_template_structure(
+        result = await generator.generate_template_structure(
             source_json=request.source_json,
             context_description=request.context_description,
             top_k=request.top_k,

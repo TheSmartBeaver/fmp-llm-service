@@ -1,4 +1,5 @@
 import json
+import asyncio
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
@@ -45,14 +46,30 @@ class CourseMaterialGeneratorV2:
             db_session=db_session, embedding_model=embedding_model
         )
 
-    async def generate_course_material(
+    def generate_course_material(
         self,
         user_entry: UserEntryDto,
         top_k: int = 20,
         category_quotas: Dict[str, int] = None,
     ) -> Dict[str, Any]:
         """
-        Génère des supports de cours à partir d'un UserEntryDto.
+        Version synchrone qui appelle la version async.
+        Utilisée par Celery et autres contextes synchrones.
+        """
+        return asyncio.run(self.generate_course_material_async(
+            user_entry=user_entry,
+            top_k=top_k,
+            category_quotas=category_quotas
+        ))
+
+    async def generate_course_material_async(
+        self,
+        user_entry: UserEntryDto,
+        top_k: int = 20,
+        category_quotas: Dict[str, int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Version asynchrone - Génère des supports de cours à partir d'un UserEntryDto.
 
         Args:
             user_entry: Contient le contexte, le contenu textuel et les médias

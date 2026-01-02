@@ -271,8 +271,8 @@ async def generate_course_material_v2(
         embedding_model=embedding_model
     )
 
-    # Générer le support de cours
-    result = await generator.generate_course_material(
+    # Générer le support de cours (utiliser la version async)
+    result = await generator.generate_course_material_async(
         user_entry=request,
         top_k=top_k,
         category_quotas=None

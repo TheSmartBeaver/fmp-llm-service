@@ -66,24 +66,29 @@ def validate_path_groups(path_groups: List[Dict[str, Any]]) -> List[str]:
                 )
                 warnings.append(warning_msg)
             
-            # Vérifier le préfixe commun jusqu'à la dernière variable
-            prefixes = []
-            for key in keys_with_vars:
-                # Extraire le préfixe jusqu'à la dernière variable
-                vars_matches = list(re.finditer(r'\[([x-z])\]', key))
-                if vars_matches:
-                    last_var_end = vars_matches[-1].end()
-                    prefix = key[:last_var_end]
-                    prefixes.append(prefix)
-            
-            # Tous les préfixes doivent être identiques
-            unique_prefixes = set(prefixes)
-            if len(unique_prefixes) > 1:
-                warning_msg = f"⚠️ Groupe '{group['group_name']}' contient des clés avec préfixes différents:\n"
-                for prefix in unique_prefixes:
-                    matching_keys = [k for k, p in zip(keys_with_vars, prefixes) if p == prefix]
-                    warning_msg += f"  Préfixe '{prefix}': {matching_keys}\n"
-                warning_msg += f"  → Ces clés devraient être dans des groupes séparés."
-                warnings.append(warning_msg)
+            # NOTE: La vérification du préfixe commun est désactivée car il est légitime
+            # d'avoir des clés avec des préfixes différents dans un même groupe lorsqu'elles
+            # sont sémantiquement liées (ex: themes[x]groups[y] et themes[x]examples[y],
+            # ou media->videos[x] et media->images[x])
+
+            # # Vérifier le préfixe commun jusqu'à la dernière variable
+            # prefixes = []
+            # for key in keys_with_vars:
+            #     # Extraire le préfixe jusqu'à la dernière variable
+            #     vars_matches = list(re.finditer(r'\[([x-z])\]', key))
+            #     if vars_matches:
+            #         last_var_end = vars_matches[-1].end()
+            #         prefix = key[:last_var_end]
+            #         prefixes.append(prefix)
+            #
+            # # Tous les préfixes doivent être identiques
+            # unique_prefixes = set(prefixes)
+            # if len(unique_prefixes) > 1:
+            #     warning_msg = f"⚠️ Groupe '{group['group_name']}' contient des clés avec préfixes différents:\n"
+            #     for prefix in unique_prefixes:
+            #         matching_keys = [k for k, p in zip(keys_with_vars, prefixes) if p == prefix]
+            #         warning_msg += f"  Préfixe '{prefix}': {matching_keys}\n"
+            #     warning_msg += f"  → Ces clés devraient être dans des groupes séparés."
+            #     warnings.append(warning_msg)
     
     return warnings

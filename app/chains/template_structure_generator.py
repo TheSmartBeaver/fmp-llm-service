@@ -10,6 +10,7 @@ from app.utils.structure_process import extract_json_structure, create_embedding
 from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
 from app.chains.llm.open_ai_o3_mini_llm import OpenAiO3MiniLlm
 from app.validation.path_group_validator import validate_path_groups
+from app.utils.test import shit_path_group
 
 
 class TemplateStructureGenerator:
@@ -1566,20 +1567,27 @@ Génère maintenant le JSON structuré.""",
             source_json, use_variables=True
         )
 
-        # NOUVELLE APPROCHE: Générer les groupes de chemins avec formats
-        path_groups = self._generate_path_groups_with_llm(
-            source_paths=json_paths_with_variables,
-            context_description=context_description,
-        )
+        path_groups = []
+        not_shit = False
 
-        # Ajouter les références aux groupes imbriqués
-        path_groups_before = path_groups
-        path_groups = self._add_nested_group_references(path_groups)
+        if not_shit:
+            # NOUVELLE APPROCHE: Générer les groupes de chemins avec formats
+            path_groups = self._generate_path_groups_with_llm(
+                source_paths=json_paths_with_variables,
+                context_description=context_description,
+            )
 
-        path_groups = self._clean_and_separate_groups_by_depth(path_groups)
+            # Ajouter les références aux groupes imbriqués
+            path_groups_before = path_groups
+            path_groups = self._add_nested_group_references(path_groups)
 
-        # Ajouter les références manquantes (création de groupes parents si nécessaire)
-        path_groups = self._add_missing_nested_references(path_groups)
+            path_groups = self._clean_and_separate_groups_by_depth(path_groups)
+
+            # Ajouter les références manquantes (création de groupes parents si nécessaire)
+            path_groups = self._add_missing_nested_references(path_groups)
+
+        else: 
+            path_groups = shit_path_group
 
         # Valider les groupes (Étape 4)
         validation_warnings = validate_path_groups(path_groups)

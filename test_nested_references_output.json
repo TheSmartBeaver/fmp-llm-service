@@ -1,0 +1,159 @@
+{
+  "original_count": 12,
+  "result_count": 17,
+  "groups": [
+    {
+      "group_name": "Métadonnées de cours",
+      "keys": [
+        "course",
+        "topicPath"
+      ],
+      "format": "Identifiants et chemins de navigation du cours"
+    },
+    {
+      "group_name": "Résumé et relations",
+      "keys": [
+        "summary->explanation",
+        "summary->title",
+        "relations->differences",
+        "relations->practicalLinks",
+        "relations->similarities"
+      ],
+      "format": "Textes descriptifs et comparatifs du sujet"
+    },
+    {
+      "group_name": "Stratégies d'apprentissage",
+      "keys": [
+        "learningStrategies->concreteTips",
+        "learningStrategies->pitfallsToAvoid",
+        "learningStrategies->principles"
+      ],
+      "format": "Conseils pédagogiques et points clés"
+    },
+    {
+      "group_name": "Collection d'exemples",
+      "keys": [
+        "examplesCollection->examples[x]notes",
+        "examplesCollection->examples[x]sentence",
+        "examplesCollection->examples[x]translation",
+        "examplesCollection->purpose"
+      ],
+      "format": "Phrases d'exemple avec annotations et traductions"
+    },
+    {
+      "group_name": "Glossaire simple",
+      "keys": [
+        "glossary[x]definition",
+        "glossary[x]term"
+      ],
+      "format": "Termes avec définitions"
+    },
+    {
+      "group_name": "Ressources médias images",
+      "keys": [
+        "media->images[x]label",
+        "media->images[x]url",
+        "media->images[x]usageSuggestion"
+      ],
+      "format": "Images avec étiquettes et contexte d'utilisation"
+    },
+    {
+      "group_name": "Ressources médias vidéos",
+      "keys": [
+        "media->videos[x]label",
+        "media->videos[x]start",
+        "media->videos[x]url",
+        "media->videos[x]usageSuggestion"
+      ],
+      "format": "Vidéos avec timestamps de démarrage et suggestions d'usage"
+    },
+    {
+      "group_name": "Thèmes niveau 1",
+      "keys": [
+        "themes[x]details",
+        "themes[x]explanation",
+        "themes[x]name",
+        "themes[x]examples[y]",
+        "themes[x]groups[y]"
+      ],
+      "format": "Propriétés descriptives des thèmes"
+    },
+    {
+      "group_name": "Exemples dans thèmes (niveau 2)",
+      "keys": [
+        "themes[x]examples[y]explanation",
+        "themes[x]examples[y]infinitive",
+        "themes[x]examples[y]label",
+        "themes[x]examples[y]usageNotes",
+        "themes[x]examples[y]conjugation[z]"
+      ],
+      "format": "Données d'exemple simple avec infinitif et notes"
+    },
+    {
+      "group_name": "Conjugaisons dans exemples (niveau 3)",
+      "keys": [
+        "themes[x]examples[y]conjugation[z]form",
+        "themes[x]examples[y]conjugation[z]meaning",
+        "themes[x]examples[y]conjugation[z]pronoun"
+      ],
+      "format": "Formes conjuguées avec pronoms et significations"
+    },
+    {
+      "group_name": "Groupes dans thèmes (niveau 2)",
+      "keys": [
+        "themes[x]groups[y]ending",
+        "themes[x]groups[y]exampleSentences",
+        "themes[x]groups[y]explanation",
+        "themes[x]groups[y]label",
+        "themes[x]groups[y]conjugationTable[z]"
+      ],
+      "format": "Groupes de conjugaison avec finales et phrases d'exemple"
+    },
+    {
+      "group_name": "Tables de conjugaison (niveau 3)",
+      "keys": [
+        "themes[x]groups[y]conjugationTable[z]form",
+        "themes[x]groups[y]conjugationTable[z]meaning",
+        "themes[x]groups[y]conjugationTable[z]person",
+        "themes[x]groups[y]conjugationTable[z]pronoun",
+        "themes[x]groups[y]conjugationTable[z]translation"
+      ],
+      "format": "Entrées structurées de conjugaison avec personne, pronom et traduction"
+    },
+    {
+      "group_name": "Groupe Examplescollection Examples",
+      "keys": [
+        "examplesCollection->examples[x]"
+      ],
+      "format": "Groupe parent pour examplesCollection->examples"
+    },
+    {
+      "group_name": "Groupe Glossary",
+      "keys": [
+        "glossary[x]"
+      ],
+      "format": "Groupe parent pour glossary"
+    },
+    {
+      "group_name": "Groupe Media Images",
+      "keys": [
+        "media->images[x]"
+      ],
+      "format": "Groupe parent pour media->images"
+    },
+    {
+      "group_name": "Groupe Media Videos",
+      "keys": [
+        "media->videos[x]"
+      ],
+      "format": "Groupe parent pour media->videos"
+    },
+    {
+      "group_name": "Groupe Themes",
+      "keys": [
+        "themes[x]"
+      ],
+      "format": "Groupe parent pour themes"
+    }
+  ]
+}

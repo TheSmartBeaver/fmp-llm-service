@@ -406,6 +406,67 @@ Génère maintenant le JSON structuré.""",
         # Utiliser la version async via asyncio.run
         return asyncio.run(self._generate_json_from_group_async(group, templates, source_json))
 
+    def _add_missing_nested_references(
+        self,
+        path_groups: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """
+        Ajoute automatiquement les références manquantes pour les groupes imbriqués.
+
+        Logique :
+        1. Pour chaque groupe avec variables (ex: themes[x]examples[y]...),
+           trouver ou créer un groupe parent avec une variable de moins (ex: themes[x]...)
+           et y ajouter la référence (ex: themes[x]examples[y])
+
+        2. Pour chaque groupe avec une variable (ex: glossary[x]...),
+           trouver ou créer un groupe racine sans variable
+           et y ajouter la référence (ex: glossary[x])
+        """
+        import re
+
+        # Étape 1: Extraire toutes les références nécessaires et leurs préfixes parents
+        references_to_add = {}  # {parent_prefix: [child_refs]}
+
+        for group in path_groups:
+            # Extraire la référence de ce groupe (jusqu'à la dernière variable)
+            child_ref = self._extract_child_reference(group["keys"])
+
+            if child_ref:
+                # Trouver le préfixe parent (une variable de moins)
+                parent_prefix = self._get_parent_prefix(child_ref)
+
+                if parent_prefix not in references_to_add:
+                    references_to_add[parent_prefix] = []
+                if child_ref not in references_to_add[parent_prefix]:
+                    references_to_add[parent_prefix].append(child_ref)
+
+        # Étape 2: Pour chaque préfixe parent, trouver le groupe approprié ou le créer
+        new_groups = []
+        all_groups = path_groups.copy()
+
+        for parent_prefix, child_refs in references_to_add.items():
+            # Chercher un groupe existant qui correspond au parent
+            parent_group = self._find_group_by_prefix(all_groups, parent_prefix)
+
+            if parent_group:
+                # Ajouter les références si elles n'existent pas déjà
+                for child_ref in child_refs:
+                    if child_ref not in parent_group["keys"]:
+                        parent_group["keys"].append(child_ref)
+            else:
+                # Créer un nouveau groupe parent
+                new_group = self._create_parent_group(parent_prefix, child_refs, all_groups)
+                new_groups.append(new_group)
+                all_groups.append(new_group)
+
+        # Étape 3: Fusionner les nouveaux groupes
+        result_groups = path_groups + new_groups
+
+        # Étape 4: Gérer les cas spéciaux (regrouper les groupes frères comme media->images et media->videos)
+        result_groups = self._merge_sibling_media_groups(result_groups)
+
+        return result_groups
+
     def _add_nested_group_references(
         self,
         path_groups: List[Dict[str, Any]],
@@ -586,6 +647,229 @@ Génère maintenant le JSON structuré.""",
         reference = child_key[:last_var.end()]
 
         return reference
+
+    def _get_parent_prefix(self, child_ref: str) -> str:
+        """
+        Extrait le préfixe parent d'une référence enfant (une variable de moins).
+
+        Exemples:
+        - "themes[x]examples[y]" → "themes[x]"
+        - "glossary[x]" → "" (pas de parent avec variable)
+        - "examplesCollection->examples[x]" → "examplesCollection"
+
+        Args:
+            child_ref: Référence enfant (ex: "themes[x]examples[y]")
+
+        Returns:
+            Préfixe parent ou chaîne vide si pas de parent
+        """
+        import re
+
+        # Trouver toutes les variables dans la référence
+        vars_matches = list(re.finditer(r'\[([x-z])\]', child_ref))
+
+        if not vars_matches:
+            return ""
+
+        if len(vars_matches) == 1:
+            # Une seule variable, le parent n'a pas de variable
+            # Retourner tout ce qui est avant la variable
+            first_var = vars_matches[0]
+            parent = child_ref[:first_var.start()]
+            # Enlever le dernier séparateur si présent (-> ou rien)
+            if parent.endswith('->'):
+                parent = parent[:-2]
+            return parent
+
+        # Plus d'une variable, retourner jusqu'à l'avant-dernière variable (incluse)
+        second_to_last_var = vars_matches[-2]
+        return child_ref[:second_to_last_var.end()]
+
+    def _find_group_by_prefix(
+        self,
+        groups: List[Dict[str, Any]],
+        prefix: str
+    ) -> Dict[str, Any]:
+        """
+        Trouve un groupe dont les clés correspondent au préfixe donné.
+
+        Args:
+            groups: Liste des groupes
+            prefix: Préfixe à chercher (ex: "themes[x]" ou "examplesCollection")
+
+        Returns:
+            Le groupe correspondant ou None
+        """
+        import re
+
+        # Cas spécial: préfixe vide (groupes racine sans variable)
+        if not prefix:
+            return None
+
+        # Vérifier si le préfixe contient des variables
+        has_vars = bool(re.search(r'\[([x-z])\]', prefix))
+
+        for group in groups:
+            if not group["keys"]:
+                continue
+
+            first_key = group["keys"][0]
+
+            if has_vars:
+                # Le préfixe a des variables, chercher un groupe dont les clés commencent par ce préfixe
+                # et qui ont exactement le même nombre de variables
+                if first_key.startswith(prefix):
+                    # Vérifier que first_key a le même nombre de variables que prefix
+                    prefix_vars = len(re.findall(r'\[([x-z])\]', prefix))
+                    key_vars = len(re.findall(r'\[([x-z])\]', first_key))
+                    if prefix_vars == key_vars:
+                        return group
+            else:
+                # Le préfixe n'a pas de variables, chercher un groupe avec ce préfixe sans variables
+                if first_key.startswith(prefix) and not re.search(r'\[([x-z])\]', first_key):
+                    return group
+
+        return None
+
+    def _create_parent_group(
+        self,
+        parent_prefix: str,
+        child_refs: List[str],
+        existing_groups: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Crée un nouveau groupe parent pour contenir les références enfants.
+
+        Args:
+            parent_prefix: Préfixe du groupe parent (ex: "themes[x]" ou "examplesCollection")
+            child_refs: Références enfants à ajouter (ex: ["themes[x]examples[y]", "themes[x]groups[y]"])
+            existing_groups: Groupes existants pour chercher d'autres clés liées
+
+        Returns:
+            Nouveau groupe parent
+        """
+        import re
+
+        # Collecter toutes les clés qui devraient faire partie de ce groupe parent
+        parent_keys = []
+
+        # Ajouter les références enfants
+        parent_keys.extend(child_refs)
+
+        # Chercher d'autres clés dans les groupes existants qui correspondent au préfixe parent
+        has_vars = bool(re.search(r'\[([x-z])\]', parent_prefix))
+
+        for group in existing_groups:
+            for key in group["keys"]:
+                if has_vars:
+                    # Le parent a des variables, chercher les clés avec le même préfixe et même nombre de variables
+                    if key.startswith(parent_prefix):
+                        prefix_vars = len(re.findall(r'\[([x-z])\]', parent_prefix))
+                        key_vars = len(re.findall(r'\[([x-z])\]', key))
+                        if prefix_vars == key_vars and key not in parent_keys:
+                            parent_keys.append(key)
+                else:
+                    # Le parent n'a pas de variables
+                    if key.startswith(parent_prefix) and not re.search(r'\[([x-z])\]', key) and key not in parent_keys:
+                        parent_keys.append(key)
+
+        # Générer un nom de groupe
+        group_name = self._generate_group_name(parent_prefix)
+
+        # Générer un format générique
+        format_desc = f"Groupe parent pour {parent_prefix}"
+
+        return {
+            "group_name": group_name,
+            "keys": parent_keys,
+            "format": format_desc
+        }
+
+    def _generate_group_name(self, prefix: str) -> str:
+        """
+        Génère un nom de groupe à partir d'un préfixe.
+
+        Args:
+            prefix: Préfixe (ex: "themes[x]" ou "examplesCollection")
+
+        Returns:
+            Nom de groupe lisible
+        """
+        import re
+
+        # Enlever les variables
+        name = re.sub(r'\[[x-z]\]', '', prefix)
+        # Remplacer -> par des espaces
+        name = name.replace('->', ' ')
+        # Capitaliser
+        name = name.strip().title()
+
+        if not name:
+            name = "Root Group"
+
+        return f"Groupe {name}"
+
+    def _merge_sibling_media_groups(
+        self,
+        groups: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Fusionne les groupes frères qui devraient être ensemble.
+        Par exemple: "media->images[x]" et "media->videos[x]" dans un seul groupe "media".
+
+        Args:
+            groups: Liste des groupes
+
+        Returns:
+            Liste des groupes avec les groupes frères fusionnés
+        """
+        import re
+
+        # Identifier les groupes qui ne contiennent qu'une seule référence enfant
+        single_ref_groups = []
+        other_groups = []
+
+        for group in groups:
+            # Vérifier si le groupe ne contient qu'une seule clé et que c'est une référence
+            if len(group["keys"]) == 1:
+                key = group["keys"][0]
+                if re.search(r'\[([x-z])\]$', key):  # Se termine par une variable
+                    single_ref_groups.append(group)
+                else:
+                    other_groups.append(group)
+            else:
+                other_groups.append(group)
+
+        # Grouper les groupes qui ont le même préfixe parent
+        prefix_map = {}  # {parent_prefix: [groups]}
+
+        for group in single_ref_groups:
+            key = group["keys"][0]
+            parent_prefix = self._get_parent_prefix(key)
+
+            if parent_prefix not in prefix_map:
+                prefix_map[parent_prefix] = []
+            prefix_map[parent_prefix].append(group)
+
+        # Pour chaque préfixe avec plusieurs groupes, les fusionner
+        for parent_prefix, sibling_groups in prefix_map.items():
+            if len(sibling_groups) > 1:
+                # Fusionner ces groupes
+                merged_keys = []
+                for sg in sibling_groups:
+                    merged_keys.extend(sg["keys"])
+
+                merged_group = {
+                    "group_name": self._generate_group_name(parent_prefix) if parent_prefix else "Root Media Group",
+                    "keys": merged_keys,
+                    "format": f"Groupe parent pour {parent_prefix}" if parent_prefix else "Groupe racine"
+                }
+                other_groups.append(merged_group)
+            else:
+                # Un seul groupe, le garder tel quel
+                other_groups.extend(sibling_groups)
+
+        return other_groups
 
     def _resolve_group_references(
         self,
@@ -1021,6 +1305,9 @@ Génère maintenant le JSON structuré.""",
         # Ajouter les références aux groupes imbriqués
         path_groups_before = path_groups
         path_groups = self._add_nested_group_references(path_groups)
+
+        # Ajouter les références manquantes (création de groupes parents si nécessaire)
+        path_groups = self._add_missing_nested_references(path_groups)
 
         # Valider les groupes (Étape 4)
         validation_warnings = validate_path_groups(path_groups)

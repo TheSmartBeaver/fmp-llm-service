@@ -44,6 +44,10 @@ class CourseMaterialResponse(BaseModel):
     prompt: str
     pedagogical_json: dict = None
     destination_mappings: dict = None
+    path_groups: list = None
+    resolved_jsons_map: dict = None
+    path_to_value_map: dict = None
+    final_resolved_jsons_map: dict = None
 
     class Config:
         json_schema_extra = {
@@ -53,7 +57,11 @@ class CourseMaterialResponse(BaseModel):
                 "templates_used": 15,
                 "prompt": "Génère des supports de cours...",
                 "pedagogical_json": {},
-                "destination_mappings": {}
+                "destination_mappings": {},
+                "path_groups": [],
+                "resolved_jsons_map": {},
+                "path_to_value_map": {},
+                "final_resolved_jsons_map": {}
             }
         }
 
@@ -286,13 +294,20 @@ async def generate_course_material_v2(
         f"{result['prompts']['step2_template_structure']}"
     )
 
+    # Extraire les informations de débogage
+    debug_info = result.get("debug_info", {})
+
     return CourseMaterialResponse(
         success=True,
         supports=[{"support": result["support"]}],  # Encapsuler dans une liste pour compatibilité
         templates_used=top_k,
         prompt=full_prompt,
         pedagogical_json=result.get("pedagogical_json"),
-        destination_mappings=result.get("destination_mappings")
+        destination_mappings=result.get("destination_mappings"),
+        path_groups=debug_info.get("path_groups"),
+        resolved_jsons_map=debug_info.get("resolved_jsons_map"),
+        path_to_value_map=debug_info.get("path_to_value_map"),
+        final_resolved_jsons_map=debug_info.get("final_resolved_jsons_map")
     )
 
 

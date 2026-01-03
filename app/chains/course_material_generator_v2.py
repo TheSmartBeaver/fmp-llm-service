@@ -110,6 +110,7 @@ class CourseMaterialGeneratorV2:
         template_structure = structure_result["template_structure"]
         structure_prompt = structure_result["prompt"]
         destination_mappings = structure_result["destination_mappings"]
+        debug_info = structure_result.get("debug_info", {})
 
         # Étape 3: Le JSON final est déjà construit par TemplateStructureGenerator
         # Il contient la structure avec les valeurs hydratées
@@ -126,6 +127,7 @@ class CourseMaterialGeneratorV2:
             "support": validated_support,
             "pedagogical_json": pedagogical_json,
             "destination_mappings": destination_mappings,
+            "debug_info": debug_info,
             "prompts": {
                 "step1_pedagogical_json": pedagogical_prompt,
                 "step2_template_structure": structure_prompt,

@@ -101,7 +101,7 @@ class TemplateStructureGenerator:
         templates = list(all_templates.values())
 
         # Étape 3: Générer la structure via le LLM
-        template_structure, prompt, destination_mappings = (
+        template_structure, prompt, destination_mappings, debug_info = (
             await self._generate_structure_with_llm(
                 source_json, templates, context_description
             )
@@ -170,6 +170,7 @@ class TemplateStructureGenerator:
             "template_structure": template_structure,
             "prompt": prompt,
             "destination_mappings": destination_mappings,
+            "debug_info": debug_info,
         }
 
     def _create_search_text_from_packet(
@@ -1099,9 +1100,17 @@ Génère maintenant le JSON structuré.""",
         root_jsons = [json_data for _, json_data in root_groups]
         final_json = self._combine_group_jsons(group_jsons=root_jsons)
 
+        # Construire le dictionnaire de retour avec toutes les informations de débogage
+        debug_info = {
+            "path_groups": path_groups,
+            "resolved_jsons_map": resolved_jsons_map,
+            "path_to_value_map": path_to_value_map,
+            "final_resolved_jsons_map": final_resolved_jsons_map
+        }
+
         # Pour la compatibilité avec l'ancienne interface, on retourne aussi un dict vide pour destination_mappings
         # (ce n'est plus pertinent avec la nouvelle approche mais on le garde pour ne pas casser l'API)
-        return final_json, "TODO: prompt", {}
+        return final_json, "TODO: prompt", {}, debug_info
 
     def _extract_all_json_paths(
         self, data: Any, include_indices: bool = False, use_variables: bool = False

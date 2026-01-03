@@ -465,7 +465,274 @@ Génère maintenant le JSON structuré.""",
         # Étape 4: Gérer les cas spéciaux (regrouper les groupes frères comme media->images et media->videos)
         result_groups = self._merge_sibling_media_groups(result_groups)
 
+        # Étape 5: Nettoyer et séparer les groupes par profondeur
+        result_groups = self._clean_and_separate_groups_by_depth(result_groups)
+
         return result_groups
+
+    def _clean_and_separate_groups_by_depth(
+        self,
+        groups: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Nettoie les groupes en séparant les clés par profondeur (nombre de variables).
+
+        Problèmes corrigés:
+        1. Les clés sans variable qui sont dans des groupes avec variables sont déplacées
+           vers les groupes parents appropriés
+        2. Les groupes qui mélangent des clés avec différentes profondeurs sont divisés
+
+        Args:
+            groups: Liste des groupes à nettoyer
+
+        Returns:
+            Liste des groupes nettoyés et réorganisés
+        """
+        import re
+
+        new_groups = []
+
+        for group in groups:
+            # Grouper les clés par profondeur (nombre de variables)
+            depth_map = {}  # {depth: [keys]}
+
+            for key in group["keys"]:
+                # Compter le nombre de variables dans la clé
+                num_vars = len(re.findall(r'\[([x-z])\]', key))
+
+                if num_vars not in depth_map:
+                    depth_map[num_vars] = []
+                depth_map[num_vars].append(key)
+
+            # Si toutes les clés ont la même profondeur, garder le groupe tel quel
+            if len(depth_map) == 1:
+                new_groups.append(group)
+                continue
+
+            # Sinon, diviser le groupe en plusieurs groupes par profondeur
+            for depth, keys in sorted(depth_map.items()):
+                if not keys:
+                    continue
+
+                # Créer un nouveau groupe pour cette profondeur
+                new_group = {
+                    "group_name": self._generate_group_name_for_depth(group["group_name"], depth, keys[0]),
+                    "keys": keys,
+                    "format": self._generate_format_for_depth(group["format"], depth)
+                }
+                new_groups.append(new_group)
+
+        # Étape 2: Déplacer les clés sans variable vers les groupes parents appropriés
+        new_groups = self._move_no_var_keys_to_parents(new_groups)
+
+        # Étape 3: Fusionner les groupes dupliqués (même nom et même profondeur)
+        new_groups = self._merge_duplicate_groups(new_groups)
+
+        return new_groups
+
+    def _merge_duplicate_groups(
+        self,
+        groups: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Fusionne les groupes qui ont le même nom de base et la même profondeur.
+
+        Args:
+            groups: Liste des groupes
+
+        Returns:
+            Liste des groupes fusionnés
+        """
+        import re
+
+        # Grouper par (nom_base, profondeur)
+        group_map = {}  # {(nom_base, profondeur): [groupes]}
+
+        for group in groups:
+            # Calculer la profondeur du groupe
+            if group["keys"]:
+                num_vars = len(re.findall(r'\[([x-z])\]', group["keys"][0]))
+            else:
+                num_vars = 0
+
+            # Utiliser le nom du groupe comme clé
+            key = (group["group_name"], num_vars)
+
+            if key not in group_map:
+                group_map[key] = []
+            group_map[key].append(group)
+
+        # Fusionner les groupes dupliqués
+        merged_groups = []
+
+        for (name, _depth), group_list in group_map.items():
+            if len(group_list) == 1:
+                # Pas de duplication
+                merged_groups.append(group_list[0])
+            else:
+                # Fusionner les clés
+                merged_keys = []
+                merged_format = group_list[0]["format"]
+
+                for g in group_list:
+                    for key in g["keys"]:
+                        if key not in merged_keys:
+                            merged_keys.append(key)
+
+                merged_group = {
+                    "group_name": name,
+                    "keys": merged_keys,
+                    "format": merged_format
+                }
+                merged_groups.append(merged_group)
+
+        return merged_groups
+
+    def _generate_group_name_for_depth(
+        self,
+        original_name: str,
+        depth: int,
+        sample_key: str
+    ) -> str:
+        """
+        Génère un nom de groupe basé sur la profondeur.
+
+        Args:
+            original_name: Nom original du groupe
+            depth: Profondeur (nombre de variables)
+            sample_key: Exemple de clé pour extraire le contexte
+
+        Returns:
+            Nouveau nom de groupe
+        """
+        import re
+
+        if depth == 0:
+            # Pas de variable, c'est un groupe parent
+            # Extraire le préfixe de la clé
+            prefix = sample_key.split('->')[0] if '->' in sample_key else sample_key
+            return f"Groupe {prefix.title()}"
+
+        # Garder le nom original pour les groupes avec variables
+        return original_name
+
+    def _generate_format_for_depth(
+        self,
+        original_format: str,
+        depth: int
+    ) -> str:
+        """
+        Génère une description de format basée sur la profondeur.
+
+        Args:
+            original_format: Format original
+            depth: Profondeur (nombre de variables)
+
+        Returns:
+            Nouveau format
+        """
+        if depth == 0:
+            return "Groupe parent sans variable de tableau"
+
+        return original_format
+
+    def _move_no_var_keys_to_parents(
+        self,
+        groups: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Déplace les clés sans variable vers les groupes parents appropriés.
+
+        Exemple: "examplesCollection->purpose" doit être déplacé vers
+        le groupe parent "Groupe Examplescollection" qui contient "examplesCollection->examples[x]"
+
+        Args:
+            groups: Liste des groupes
+
+        Returns:
+            Liste des groupes avec les clés déplacées
+        """
+        import re
+
+        # Identifier les clés sans variable qui devraient être déplacées
+        keys_to_move = {}  # {key: source_group}
+        parent_prefixes = {}  # {prefix: parent_group}
+
+        # Étape 1: Identifier tous les groupes parents (qui contiennent des références)
+        for group in groups:
+            for key in group["keys"]:
+                # Si c'est une référence (se termine par une variable)
+                if re.search(r'\[([x-z])\]$', key):
+                    # Extraire le préfixe parent
+                    prefix = self._get_parent_prefix(key)
+                    if prefix and prefix not in parent_prefixes:
+                        # Chercher ou créer le groupe parent pour ce préfixe
+                        parent_group = self._find_or_create_parent_group_for_prefix(groups, prefix)
+                        if parent_group:
+                            parent_prefixes[prefix] = parent_group
+
+        # Étape 2: Identifier les clés sans variable qui devraient être dans des groupes parents
+        for group in groups:
+            keys_to_remove = []
+
+            for key in group["keys"]:
+                # Si la clé n'a pas de variable
+                num_vars = len(re.findall(r'\[([x-z])\]', key))
+
+                if num_vars == 0:
+                    # Vérifier si cette clé a un groupe parent approprié
+                    # Extraire le préfixe de la clé (avant le dernier ->)
+                    if '->' in key:
+                        prefix = key.rsplit('->', 1)[0]
+                    else:
+                        prefix = key
+
+                    # Vérifier si un groupe parent existe pour ce préfixe
+                    if prefix in parent_prefixes:
+                        target_group = parent_prefixes[prefix]
+
+                        # Vérifier que ce n'est pas déjà le bon groupe
+                        if target_group != group:
+                            # Marquer pour déplacement
+                            if key not in target_group["keys"]:
+                                target_group["keys"].append(key)
+                            keys_to_remove.append(key)
+
+            # Supprimer les clés qui ont été déplacées
+            for key in keys_to_remove:
+                group["keys"].remove(key)
+
+        # Étape 3: Supprimer les groupes vides
+        groups = [g for g in groups if g["keys"]]
+
+        return groups
+
+    def _find_or_create_parent_group_for_prefix(
+        self,
+        groups: List[Dict[str, Any]],
+        prefix: str
+    ) -> Dict[str, Any]:
+        """
+        Trouve ou crée un groupe parent pour un préfixe donné.
+
+        Args:
+            groups: Liste des groupes
+            prefix: Préfixe à chercher
+
+        Returns:
+            Le groupe parent trouvé ou None
+        """
+        import re
+
+        # Chercher un groupe qui contient ce préfixe sans variable
+        for group in groups:
+            for key in group["keys"]:
+                if key == prefix or key.startswith(prefix + '->'):
+                    # Vérifier que cette clé n'a pas de variable
+                    if not re.search(r'\[([x-z])\]', key):
+                        return group
+
+        return None
 
     def _add_nested_group_references(
         self,
@@ -1308,6 +1575,8 @@ Génère maintenant le JSON structuré.""",
         # Ajouter les références aux groupes imbriqués
         path_groups_before = path_groups
         path_groups = self._add_nested_group_references(path_groups)
+
+        path_groups = self._clean_and_separate_groups_by_depth(path_groups)
 
         # Ajouter les références manquantes (création de groupes parents si nécessaire)
         path_groups = self._add_missing_nested_references(path_groups)

@@ -1,0 +1,80 @@
+{
+  "original_count": 6,
+  "result_count": 9,
+  "groups": [
+    {
+      "group_name": "Métadonnées de cours",
+      "keys": [
+        "course",
+        "topicPath"
+      ],
+      "format": "Identifiants et chemins de navigation du cours"
+    },
+    {
+      "group_name": "Groupe Examplescollection",
+      "keys": [
+        "examplesCollection->purpose"
+      ],
+      "format": "Groupe parent sans variable de tableau"
+    },
+    {
+      "group_name": "Collection d'exemples",
+      "keys": [
+        "examplesCollection->examples[x]notes",
+        "examplesCollection->examples[x]sentence",
+        "examplesCollection->examples[x]translation"
+      ],
+      "format": "Phrases d'exemple avec annotations et traductions"
+    },
+    {
+      "group_name": "Exemples dans thèmes (niveau 2)",
+      "keys": [
+        "themes[x]examples[y]explanation",
+        "themes[x]examples[y]infinitive",
+        "themes[x]examples[y]label",
+        "themes[x]examples[y]usageNotes"
+      ],
+      "format": "Données d'exemple simple avec infinitif et notes"
+    },
+    {
+      "group_name": "Exemples dans thèmes (niveau 2)",
+      "keys": [
+        "themes[x]examples[y]conjugation[z]"
+      ],
+      "format": "Données d'exemple simple avec infinitif et notes"
+    },
+    {
+      "group_name": "Conjugaisons dans exemples (niveau 3)",
+      "keys": [
+        "themes[x]examples[y]conjugation[z]form",
+        "themes[x]examples[y]conjugation[z]meaning",
+        "themes[x]examples[y]conjugation[z]pronoun"
+      ],
+      "format": "Formes conjuguées avec pronoms et significations"
+    },
+    {
+      "group_name": "Groupe Examplescollection",
+      "keys": [
+        "examplesCollection->examples[x]"
+      ],
+      "format": "Groupe parent pour examplesCollection"
+    },
+    {
+      "group_name": "Thèmes niveau 1",
+      "keys": [
+        "themes[x]details",
+        "themes[x]explanation",
+        "themes[x]name"
+      ],
+      "format": "Propriétés descriptives des thèmes"
+    },
+    {
+      "group_name": "Thèmes niveau 1",
+      "keys": [
+        "themes[x]examples[y]",
+        "themes[x]groups[y]"
+      ],
+      "format": "Propriétés descriptives des thèmes"
+    }
+  ]
+}

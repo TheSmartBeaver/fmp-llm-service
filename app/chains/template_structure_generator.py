@@ -1933,31 +1933,36 @@ Exemple INCORRECT (à NE JAMAIS faire):
         tasks = [process_group_async(group) for group in path_groups]
         group_jsons_list = await asyncio.gather(*tasks)
 
-        # Construire group_jsons_map en extrayant les clés de chaque JSON généré
-        def extract_keys_from_json(json_obj, keys_set=None):
-            """Extrait récursivement toutes les clés présentes dans un JSON."""
-            if keys_set is None:
-                keys_set = set()
+        # Construire group_jsons_map en extrayant les chemins {{chemin}} de chaque JSON généré
+        def extract_paths_from_json(json_obj, paths_set=None):
+            """Extrait récursivement tous les chemins de la forme {{chemin}} présents dans un JSON."""
+            import re
+
+            if paths_set is None:
+                paths_set = set()
 
             if isinstance(json_obj, dict):
                 for key, value in json_obj.items():
-                    if key != "items":  # Ne pas utiliser "items" comme clé de mapping
-                        keys_set.add(key)
-                    extract_keys_from_json(value, keys_set)
+                    extract_paths_from_json(value, paths_set)
             elif isinstance(json_obj, list):
                 for item in json_obj:
-                    extract_keys_from_json(item, keys_set)
+                    extract_paths_from_json(item, paths_set)
+            elif isinstance(json_obj, str):
+                # Chercher les patterns {{chemin}} dans les strings
+                matches = re.findall(r'\{\{([^}]+)\}\}', json_obj)
+                for match in matches:
+                    paths_set.add(match)
 
-            return keys_set
+            return paths_set
 
         group_jsons_map = {}
         for group_json in group_jsons_list:
-            # Extraire toutes les clés du JSON
-            json_keys = extract_keys_from_json(group_json)
+            # Extraire tous les chemins {{chemin}} du JSON
+            json_paths = extract_paths_from_json(group_json)
 
-            # Ajouter chaque clé dans group_jsons_map avec le JSON comme valeur
-            for key in json_keys:
-                group_jsons_map[key] = group_json
+            # Ajouter chaque chemin dans group_jsons_map avec le JSON comme valeur
+            for path in json_paths:
+                group_jsons_map[path] = group_json
 
         # Étape 6: Construire le mapping chemin → valeur avec indices réels
         path_to_value_map = self._build_path_to_value_map(source_json)

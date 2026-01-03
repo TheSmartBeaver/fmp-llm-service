@@ -1927,19 +1927,37 @@ Exemple INCORRECT (à NE JAMAIS faire):
                 templates=group_templates
             )
 
-            # Extraire la clé de référence pour ce groupe (son "chemin d'accès")
-            # C'est le préfixe jusqu'à la dernière variable
-            group_reference = self._extract_child_reference(group["keys"])
-            if not group_reference:
-                # Si pas de variable, utiliser la première clé
-                group_reference = group["keys"][0] if group["keys"] else group["group_name"]
-
-            return group_reference, group_json
+            return group_json
 
         # Lancer tous les appels LLM en parallèle avec asyncio.gather (pour TOUS les groupes)
         tasks = [process_group_async(group) for group in path_groups]
-        results = await asyncio.gather(*tasks)
-        group_jsons_map = dict(results)
+        group_jsons_list = await asyncio.gather(*tasks)
+
+        # Construire group_jsons_map en extrayant les clés de chaque JSON généré
+        def extract_keys_from_json(json_obj, keys_set=None):
+            """Extrait récursivement toutes les clés présentes dans un JSON."""
+            if keys_set is None:
+                keys_set = set()
+
+            if isinstance(json_obj, dict):
+                for key, value in json_obj.items():
+                    if key != "items":  # Ne pas utiliser "items" comme clé de mapping
+                        keys_set.add(key)
+                    extract_keys_from_json(value, keys_set)
+            elif isinstance(json_obj, list):
+                for item in json_obj:
+                    extract_keys_from_json(item, keys_set)
+
+            return keys_set
+
+        group_jsons_map = {}
+        for group_json in group_jsons_list:
+            # Extraire toutes les clés du JSON
+            json_keys = extract_keys_from_json(group_json)
+
+            # Ajouter chaque clé dans group_jsons_map avec le JSON comme valeur
+            for key in json_keys:
+                group_jsons_map[key] = group_json
 
         # Étape 6: Construire le mapping chemin → valeur avec indices réels
         path_to_value_map = self._build_path_to_value_map(source_json)
@@ -1975,6 +1993,7 @@ Exemple INCORRECT (à NE JAMAIS faire):
         debug_info = {
             "json_paths_with_variables": json_paths_with_variables,
             "path_groups": path_groups,
+            "group_jsons_list": group_jsons_list,  # Liste des JSONs générés par le LLM
             "group_jsons_map": group_jsons_map,
             "resolved_jsons_map": resolved_jsons_map,
             "path_to_value_map": path_to_value_map,

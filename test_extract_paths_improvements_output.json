@@ -1,7 +1,8 @@
 {
-  "paths_count": 12,
+  "paths_count": 15,
   "paths": [
     "course",
+    "glossary[x]*",
     "glossary[x]->definition",
     "glossary[x]->term",
     "learningStrategies->concreteTips[x]",
@@ -9,7 +10,9 @@
     "learningStrategies->principles",
     "summary->explanation",
     "summary->title",
+    "themes[x]*",
     "themes[x]->details[y]",
+    "themes[x]->groups[y]*",
     "themes[x]->groups[y]->exampleSentences[z]",
     "themes[x]->groups[y]->label",
     "themes[x]->name"

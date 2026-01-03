@@ -319,12 +319,27 @@ EXEMPLE DE SORTIE ATTENDUE:
 
 3. **Références aux données**:
    - Utilise la notation {{{{chemin}}}} pour référencer les données source
-   - Conserve les variables [x], [y] dans les chemins si présentes
    - TOUJOURS utiliser le séparateur -> entre les parties du chemin
-   - Exemples:
-     * {{{{XXXX}}}} (sans variable)
-     * {{{{XXXX[x]->XXXX}}}} (avec variable [x])
-     * {{{{XXXX[x]->XXXX[y]->XXXX}}}} (avec variables [x] et [y])
+   - ⚠️ RÈGLE CRITIQUE pour les variables de tableau:
+     * ✅ TOUJOURS utiliser les variables génériques [x], [y], [z] exactement comme dans les chemins source
+     * ❌ N'utilise JAMAIS d'indices numériques [0], [1], [2], etc.
+     * Si le chemin source est "media->videos[x]->label", tu DOIS écrire {{{{media->videos[x]->label}}}}
+     * ❌ INTERDIT: {{{{media->videos[0]->label}}}}, {{{{media->videos[1]->label}}}}
+   - ⚠️ RÈGLE CRITIQUE pour le suffixe * (références INTERMÉDIAIRES):
+     * Si un chemin se termine par *, c'est une référence INTERMÉDIAIRE (contient des sous-propriétés)
+     * ❌ N'utilise JAMAIS une référence * seule dans le JSON
+     * ✅ Tu DOIS utiliser les sous-propriétés qui suivent
+     * Exemple: Si "themes[x]*" est dans les chemins, utilise "themes[x]->label", "themes[x]->description", etc.
+     * ❌ INTERDIT: "items": "{{{{themes[x]}}}}" (référence intermédiaire utilisée seule)
+     * ✅ CORRECT: "title": "{{{{themes[x]->label}}}}" (sous-propriété utilisée)
+   - Exemples CORRECTS:
+     * {{{{course}}}} (sans variable)
+     * {{{{media->videos[x]->label}}}} (avec variable [x] - CORRECT)
+     * {{{{themes[x]->groups[y]->label}}}} (avec variables [x] et [y] - CORRECT)
+   - Exemples INCORRECTS (à NE JAMAIS faire):
+     * {{{{media->videos[0]->label}}}} ❌ (utilise [x] pas [0])
+     * {{{{themes[0]->groups[1]->label}}}} ❌ (utilise [x] et [y] pas [0] et [1])
+     * {{{{themes[x]}}}} ❌ si themes[x]* est marqué comme intermédiaire (utilise les sous-propriétés)
 
 4. **Imbrication des templates**:
    - Tu DOIS imbriquer plusieurs templates de manière sémantiquement cohérente
@@ -343,19 +358,50 @@ Format attendu: {format_description}
 Templates disponibles (sélectionnés par embedding):
 {templates}
 
-Chemins source disponibles pour les références {{chemin}}:
+Chemins source disponibles pour les références {{{{chemin}}}}:
 {source_paths}
+
+{special_instructions}
+
+⚠️ RAPPEL IMPORTANT: Utilise UNIQUEMENT les chemins ci-dessus avec leurs variables [x], [y], [z] EXACTEMENT comme indiqué.
+N'utilise JAMAIS d'indices numériques [0], [1], [2] dans tes références.
 
 Génère maintenant le JSON structuré.""",
                 ),
             ]
         )
 
+        # Ajouter des instructions spéciales pour les groupes de référence pure
+        special_instructions = ""
+        if group.get("is_reference_only", False):
+            special_instructions = """
+⚠️ ATTENTION SPÉCIALE: Ce groupe contient UNIQUEMENT une référence (ex: glossary[x], themes[x]).
+
+RÈGLE CRITIQUE:
+- Tu DOIS utiliser la référence EXACTEMENT comme fournie, SANS ajouter de propriétés
+- ❌ N'invente PAS de propriétés après la référence (comme ->term, ->definition, ->label, etc.)
+- ✅ Utilise SEULEMENT la référence telle quelle
+
+Exemple CORRECT pour glossary[x]:
+{
+  "template_name": "layouts/vertical_column/container",
+  "items": "{{glossary[x]}}"
+}
+
+Exemple INCORRECT (à NE JAMAIS faire):
+{
+  "template_name": "text/definition",
+  "term": "{{glossary[x]->term}}",  ❌ N'invente PAS de propriétés!
+  "definition": "{{glossary[x]->definition}}"
+}
+"""
+
         params = {
             "group_name": group["group_name"],
             "format_description": group["format"],
             "templates": templates_formatted,
             "source_paths": source_paths_formatted,
+            "special_instructions": special_instructions,
         }
 
         return prompt, params
@@ -364,7 +410,6 @@ Génère maintenant le JSON structuré.""",
         self,
         group: Dict[str, Any],
         templates: List[Dict[str, Any]],
-        source_json: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
         Génère le JSON structuré pour un groupe en utilisant les templates récupérés par embedding (version async).
@@ -1336,6 +1381,65 @@ Génère maintenant le JSON structuré.""",
 
         return normalized
 
+    def _is_reference_only_group(self, group: Dict[str, Any]) -> bool:
+        """
+        Détermine si un groupe contient UNIQUEMENT des références à d'autres groupes,
+        sans propriétés détaillées.
+
+        Un groupe de référence pure a des clés qui sont toutes des préfixes courts
+        (ex: "glossary[x]", "themes[x]", "glossary[x]*") sans propriétés après (pas de ->).
+        Le suffixe * est ignoré lors de l'analyse.
+
+        Args:
+            group: Le groupe à analyser
+
+        Returns:
+            True si le groupe contient uniquement des références, False sinon
+
+        Exemples:
+            - {"keys": ["glossary[x]"]} → True (référence pure)
+            - {"keys": ["themes[x]*"]} → True (référence pure, * ignoré)
+            - {"keys": ["glossary[x]->term", "glossary[x]->definition"]} → False (propriétés détaillées)
+            - {"keys": ["course", "topicPath"]} → False (propriétés simples)
+        """
+        keys = group.get("keys", [])
+
+        if not keys:
+            return False
+
+        # Un groupe de référence pure a des clés qui:
+        # 1. Contiennent au moins une variable [x], [y], ou [z]
+        # 2. N'ont PAS de propriétés après la variable (pas de ->)
+        # Note: Le suffixe * est ignoré (enlevé avant l'analyse)
+
+        for key in keys:
+            # Enlever le suffixe * s'il existe
+            key_without_star = key.rstrip('*')
+
+            # Si la clé contient une variable
+            if '[x]' in key_without_star or '[y]' in key_without_star or '[z]' in key_without_star:
+                # Vérifier s'il y a des propriétés après la dernière variable
+                # Ex: "glossary[x]->term" a des propriétés, "glossary[x]" n'en a pas
+
+                # Trouver la position de la dernière variable
+                import re
+                last_var_match = None
+                for match in re.finditer(r'\[[xyz]\]', key_without_star):
+                    last_var_match = match
+
+                if last_var_match:
+                    # Vérifier s'il y a du contenu après la dernière variable
+                    after_var = key_without_star[last_var_match.end():]
+                    if after_var and after_var != '':
+                        # Il y a des propriétés après → pas un groupe de référence pure
+                        return False
+            else:
+                # Clé sans variable → pas un groupe de référence pure
+                return False
+
+        # Toutes les clés sont des références pures
+        return True
+
     def _collect_all_references(self, obj: Any) -> List[str]:
         """
         Collecte toutes les références {{...}} dans un objet.
@@ -1387,40 +1491,92 @@ Génère maintenant le JSON structuré.""",
         if not references:
             return  # Aucune référence à valider
 
-        # Normaliser les références (enlever les ->)
+        # Normaliser les références (enlever les -> et *)
         normalized_references = set()
         for ref in references:
-            # Normaliser: enlever les -> pour comparaison
-            normalized_ref = ref.replace("->", "")
+            # Normaliser: enlever les -> et * pour comparaison
+            normalized_ref = ref.replace("->", "").replace("*", "")
             normalized_references.add(normalized_ref)
 
-        # Normaliser les clés du groupe
+        # Normaliser les clés du groupe ET identifier les références intermédiaires
         valid_keys = group.get("keys", [])
         normalized_valid_keys = set()
-        for key in valid_keys:
-            normalized_key = key.replace("->", "")
-            normalized_valid_keys.add(normalized_key)
+        intermediate_refs = set()  # Clés marquées avec * (références intermédiaires)
 
-        # Trouver les références fictives
+        for key in valid_keys:
+            # Si la clé se termine par *, c'est une référence intermédiaire
+            if key.endswith("*"):
+                # Enlever le * et normaliser
+                normalized_key = key[:-1].replace("->", "")
+                intermediate_refs.add(normalized_key)
+                normalized_valid_keys.add(normalized_key)
+            else:
+                # Clé normale (finale)
+                normalized_key = key.replace("->", "")
+                normalized_valid_keys.add(normalized_key)
+
+        # Trouver les références fictives (utilisées mais non valides)
         fictive_refs = normalized_references - normalized_valid_keys
 
-        if fictive_refs:
-            print(f"\n⚠️  AVERTISSEMENT: Le LLM a inventé {len(fictive_refs)} clé(s) fictive(s) dans le groupe '{group.get('format', 'Unknown')}':")
+        # Trouver les clés manquantes (valides mais non utilisées)
+        missing_refs = normalized_valid_keys - normalized_references
 
-            # Retrouver les références originales (avec ->) pour un affichage plus clair
-            original_fictive_refs = []
-            for ref in references:
-                if ref.replace("->", "") in fictive_refs:
-                    original_fictive_refs.append(ref)
+        # Vérifier si des références intermédiaires sont utilisées seules
+        intermediate_used_alone = []
+        for ref in references:
+            normalized_ref = ref.replace("->", "").replace("*", "")
+            if normalized_ref in intermediate_refs:
+                # Cette référence est marquée comme intermédiaire mais utilisée seule
+                intermediate_used_alone.append(ref)
 
-            for ref in sorted(set(original_fictive_refs)):
-                print(f"   ❌ {{{{{ref}}}}}")
+        # Afficher les warnings
+        if fictive_refs or missing_refs or intermediate_used_alone:
+            print(f"\n⚠️  AVERTISSEMENT dans le groupe '{group.get('format', 'Unknown')}':")
 
-            print(f"\n   Clés valides pour ce groupe:")
+            # Warning spécial pour les références intermédiaires utilisées seules
+            if intermediate_used_alone:
+                print(f"\n   🔶 {len(intermediate_used_alone)} référence(s) INTERMÉDIAIRE(S) utilisée(s) seule(s):")
+                print(f"      (Les références marquées * doivent utiliser leurs sous-propriétés)")
+                for ref in sorted(set(intermediate_used_alone)):
+                    print(f"      {{{{{ref}}}}} ← INTERMÉDIAIRE (utilisez les sous-propriétés)")
+
+            # Clés fictives (inventées par le LLM)
+            if fictive_refs:
+                print(f"\n   ❌ {len(fictive_refs)} clé(s) FICTIVE(S) (inventées par le LLM):")
+
+                # Retrouver les références originales (avec ->) pour un affichage plus clair
+                original_fictive_refs = []
+                for ref in references:
+                    if ref.replace("->", "").replace("*", "") in fictive_refs:
+                        original_fictive_refs.append(ref)
+
+                for ref in sorted(set(original_fictive_refs)):
+                    print(f"      {{{{{ref}}}}}")
+
+            # Clés manquantes (devraient être utilisées mais ne le sont pas)
+            if missing_refs:
+                print(f"\n   ⚠️  {len(missing_refs)} clé(s) MANQUANTE(S) (devraient être utilisées):")
+
+                # Retrouver les clés originales (avec -> et éventuellement *) pour un affichage plus clair
+                original_missing_refs = []
+                for key in valid_keys:
+                    # Normaliser la clé en enlevant -> et *
+                    normalized = key.replace("->", "").replace("*", "")
+                    if normalized in missing_refs:
+                        original_missing_refs.append(key)
+
+                for key in sorted(original_missing_refs):
+                    print(f"      {{{{{key}}}}}")
+
+            # Clés valides pour référence
+            print(f"\n   📋 Toutes les clés valides pour ce groupe ({len(valid_keys)}):")
             for key in sorted(valid_keys)[:5]:
-                print(f"   ✅ {key}")
+                # Normaliser pour la comparaison
+                normalized = key.replace("->", "").replace("*", "")
+                used = "✅" if normalized in normalized_references else "⚪"
+                print(f"      {used} {key}")
             if len(valid_keys) > 5:
-                print(f"   ... et {len(valid_keys) - 5} autres")
+                print(f"      ... et {len(valid_keys) - 5} autres")
 
     def _count_iterations_for_prefix(
         self,
@@ -1738,6 +1894,20 @@ Génère maintenant le JSON structuré.""",
         # On crée un dictionnaire {clé_de_référence: json_du_groupe} pour faciliter la résolution
         group_jsons_map = {}
 
+        # Identifier les groupes de référence pure (nécessitent des instructions spéciales)
+        reference_only_groups_count = 0
+
+        for group in path_groups:
+            if self._is_reference_only_group(group):
+                reference_only_groups_count += 1
+                # Marquer le groupe comme référence pure
+                group["is_reference_only"] = True
+            else:
+                group["is_reference_only"] = False
+
+        if reference_only_groups_count > 0:
+            print(f"\n📌 INFO: {reference_only_groups_count} groupe(s) de référence pure détecté(s) (instructions spéciales)")
+
         # Créer une fonction async pour traiter un groupe
         async def process_group_async(group):
             # Générer l'embedding à partir de la description du format
@@ -1754,8 +1924,7 @@ Génère maintenant le JSON structuré.""",
             # Générer le JSON structuré pour ce groupe (appel async du LLM)
             group_json = await self._generate_json_from_group_async(
                 group=group,
-                templates=group_templates,
-                source_json=source_json,
+                templates=group_templates
             )
 
             # Extraire la clé de référence pour ce groupe (son "chemin d'accès")
@@ -1767,7 +1936,7 @@ Génère maintenant le JSON structuré.""",
 
             return group_reference, group_json
 
-        # Lancer tous les appels LLM en parallèle avec asyncio.gather
+        # Lancer tous les appels LLM en parallèle avec asyncio.gather (pour TOUS les groupes)
         tasks = [process_group_async(group) for group in path_groups]
         results = await asyncio.gather(*tasks)
         group_jsons_map = dict(results)
@@ -1915,11 +2084,16 @@ Génère maintenant le JSON structuré.""",
 
                     if isinstance(sample, dict):
                         # Tableau d'objets
+                        # La référence au tableau lui-même est INTERMÉDIAIRE (contient des sous-propriétés)
+                        # On ajoute le suffixe * pour le marquer
+                        array_path = f"{path}{index_notation}*"
+                        paths.append(array_path)
+
                         for key, value in sample.items():
-                            # Créer le chemin avec [] ou [x]
-                            array_path = f"{path}{index_notation}"
+                            # Créer le chemin avec [] ou [x] (SANS * car on va dans les sous-propriétés)
+                            array_path_for_key = f"{path}{index_notation}"
                             # IMPORTANT: Toujours utiliser -> entre l'index et la clé suivante
-                            new_path = f"{array_path}->{key}"
+                            new_path = f"{array_path_for_key}->{key}"
 
                             # Cas 1: Primitive simple
                             if is_primitive(value):
@@ -1936,9 +2110,18 @@ Génère maintenant le JSON structuré.""",
 
                             # Cas 3: Objet ou tableau d'objets
                             elif isinstance(value, (dict, list)):
+                                # Si c'est un objet ou tableau d'objets, c'est une référence INTERMÉDIAIRE
+                                # Ajouter le chemin avec * pour marquer comme intermédiaire
+                                if isinstance(value, list) and len(value) > 0 and isinstance(value[0], dict):
+                                    # Tableau d'objets imbriqué
+                                    if use_variables and (array_depth + 1) < len(array_vars):
+                                        sub_index = f"[{array_vars[array_depth + 1]}]"
+                                    else:
+                                        sub_index = "[y]" if index_notation == "[x]" else "[z]"
+                                    paths.append(f"{new_path}{sub_index}*")
                                 extract_paths(value, new_path, array_depth + 1)
                     else:
-                        # Tableau de primitives
+                        # Tableau de primitives → FINAL (pas de *)
                         array_path = f"{path}{index_notation}"
                         paths.append(array_path)
 

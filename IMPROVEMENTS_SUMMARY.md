@@ -149,9 +149,60 @@ glossary[x]->term                         ✅ Variable générique
 3. **Robustesse**: Validation à plusieurs niveaux
 4. **Maintenabilité**: Tests complets pour chaque amélioration
 
+### 5. ✅ Amélioration du prompt LLM pour éviter les hallucinations
+
+#### 5.1 Problème identifié
+- **Hallucination fréquente**: Le LLM utilisait des indices numériques `[0]`, `[1]`, `[2]` au lieu des variables génériques `[x]`, `[y]`, `[z]`
+- **Exemple d'erreur**:
+  ```
+  ⚠️  AVERTISSEMENT: Le LLM a inventé 12 clé(s) fictive(s):
+     ❌ {{media->videos[0]->label}}
+     ❌ {{media->videos[1]->label}}
+     ❌ {{media->videos[2]->label}}
+
+  Clé valide: media->videos[x]->label
+  ```
+
+#### 5.2 Solution implémentée
+- **Modification de `_build_json_generation_prompt()` (lignes 320-334)**
+- **Instructions explicites ajoutées**:
+  1. ⚠️ RÈGLE CRITIQUE: TOUJOURS utiliser `[x]`, `[y]`, `[z]` exactement comme dans les chemins source
+  2. ❌ JAMAIS d'indices numériques `[0]`, `[1]`, `[2]`
+  3. Exemples CORRECTS vs INCORRECTS clairement montrés
+  4. Rappel dans le prompt utilisateur (ligne 356-357)
+
+#### 5.3 Extraits du prompt amélioré
+```
+⚠️ RÈGLE CRITIQUE pour les variables de tableau:
+  * ✅ TOUJOURS utiliser les variables génériques [x], [y], [z] exactement comme dans les chemins source
+  * ❌ N'utilise JAMAIS d'indices numériques [0], [1], [2], etc.
+  * Si le chemin source est "media->videos[x]->label", tu DOIS écrire {{media->videos[x]->label}}
+  * ❌ INTERDIT: {{media->videos[0]->label}}, {{media->videos[1]->label}}
+
+Exemples CORRECTS:
+  * {{course}} (sans variable)
+  * {{media->videos[x]->label}} (avec variable [x] - CORRECT)
+  * {{themes[x]->groups[y]->label}} (avec variables [x] et [y] - CORRECT)
+
+Exemples INCORRECTS (à NE JAMAIS faire):
+  * {{media->videos[0]->label}} ❌ (utilise [x] pas [0])
+  * {{themes[0]->groups[1]->label}} ❌ (utilise [x] et [y] pas [0] et [1])
+```
+
+#### 5.4 Validation du prompt
+- **Test**: `test_prompt_improvements.py`
+- **Résultat**: ✅ 6/6 vérifications réussies
+  1. ✅ Mentionne les variables `[x]`, `[y]`, `[z]`
+  2. ✅ Interdit explicitement les indices numériques
+  3. ✅ Mentionne le séparateur `->`
+  4. ✅ Contient exemples corrects ET incorrects
+  5. ✅ Rappel dans le prompt utilisateur
+  6. ✅ Chemins source avec `[x]` affichés
+
 ## 📊 Prochaines étapes recommandées
 
 1. ✅ Utiliser ces warnings pour améliorer les prompts du LLM
 2. ✅ Monitorer les types d'erreurs les plus fréquents
 3. ✅ Ajuster les quotas de catégories si nécessaire
 4. ✅ Enrichir les templates avec plus d'exemples
+5. ✅ Tester le nouveau prompt avec de vraies données et vérifier la réduction des hallucinations

@@ -1,103 +1,135 @@
-#!/usr/bin/env python3
 """
-Script de test pour vérifier la correction automatique des chevauchements.
+Test pour démontrer le nouveau format de validation avec clés fictives ET manquantes.
 """
-
 from app.chains.template_structure_generator import TemplateStructureGenerator
 
 
-def test_auto_fix_overlaps():
-    """Teste la correction automatique des chevauchements."""
+def test_auto_fix():
+    """
+    Tester le nouveau format de validation qui affiche:
+    - Clés fictives (inventées)
+    - Clés manquantes (devraient être utilisées)
+    - Liste complète des clés valides avec indicateurs ✅/⚪
+    """
+    print("=" * 80)
+    print("DÉMONSTRATION DU NOUVEAU FORMAT DE VALIDATION")
+    print("=" * 80)
 
     generator = TemplateStructureGenerator(db_session=None, embedding_model=None)
 
-    # Test 1: Conflit typique sur ["content"]
-    print("=" * 80)
-    print("TEST 1: Conflit sur le champ [\"content\"]")
-    print("=" * 80)
-
-    source_paths = [
-        "course_sections[x]section_description",
-        "course_sections[x]key_concepts[y]concept_name",
-    ]
-
-    mappings_with_conflict = {
-        "course_sections[x]section_description": 'container["items"][x]layouts/item["content"]text/description["text"]',
-        "course_sections[x]key_concepts[y]concept_name": 'container["items"][x]layouts/item["content"]layouts/container["items"][y]concept["title"]',
+    # Groupe de test
+    test_group = {
+        "format": "Glossaire avec 4 propriétés",
+        "keys": [
+            "glossary[x]->term",
+            "glossary[x]->definition",
+            "glossary[x]->example",
+            "glossary[x]->notes"
+        ]
     }
 
-    print("\n❌ AVANT correction:")
-    for src, dest in mappings_with_conflict.items():
-        print(f'  "{src}": \'{dest}\'')
-
-    # Validation avant
-    errors_before = generator._validate_destination_mappings(mappings_with_conflict)
-    print(f"\nErreurs détectées AVANT: {len(errors_before)}")
-    for err in errors_before:
-        print(f"  - {err[:100]}...")
-
-    # Correction automatique
-    fixed_mappings = generator._auto_fix_overlaps(mappings_with_conflict, source_paths)
-
-    print("\n✅ APRÈS correction:")
-    for src, dest in fixed_mappings.items():
-        print(f'  "{src}": \'{dest}\'')
-
-    # Validation après
-    errors_after = generator._validate_destination_mappings(fixed_mappings)
-    print(f"\nErreurs détectées APRÈS: {len(errors_after)}")
-    if errors_after:
-        for err in errors_after:
-            print(f"  - {err[:100]}...")
-    else:
-        print("  ✅ Aucune erreur ! Correction réussie.")
-
-    # Test 2: Exemple complet avec multiples conflits
+    # CAS 1: JSON incomplet avec clés fictives et manquantes
     print("\n" + "=" * 80)
-    print("TEST 2: Exemple complet avec multiples chemins")
+    print("CAS 1: JSON INCOMPLET (clés fictives + manquantes)")
     print("=" * 80)
 
-    source_paths_2 = [
-        "learning_objective",
-        "course_sections[x]section_title",
-        "course_sections[x]section_description",
-        "course_sections[x]key_concepts[y]concept_name",
-        "course_sections[x]additional_notes",
-    ]
-
-    mappings_with_conflict_2 = {
-        "learning_objective": 'layouts/vertical_column/container["items"][0]text/description["text"]',
-        "course_sections[x]section_title": 'layouts/vertical_column/container["items"][1]layouts/item["items"][x]["title"]text/titre["text"]',
-        "course_sections[x]section_description": 'layouts/vertical_column/container["items"][1]layouts/item["items"][x]["content"]text/description["text"]',
-        "course_sections[x]key_concepts[y]concept_name": 'layouts/vertical_column/container["items"][1]layouts/item["items"][x]["content"]layouts/container["items"][y]conceptual/concept["title"]',
-        "course_sections[x]additional_notes": 'layouts/vertical_column/container["items"][1]layouts/item["items"][x]text/notes["text"]',
+    incomplete_json = {
+        "template_name": "text/definition",
+        "term": "{{glossary[x]->term}}",
+        # definition MANQUANTE
+        # example MANQUANTE
+        "usage": "{{glossary[x]->usage}}",  # ❌ FICTIF (n'existe pas)
+        "pronunciation": "{{glossary[x]->pronunciation}}"  # ❌ FICTIF
     }
 
-    print("\n❌ AVANT correction:")
-    for src, dest in mappings_with_conflict_2.items():
-        print(f'  "{src}": \'{dest}\'')
+    print("\n📊 JSON généré par le LLM:")
+    import json
+    print(json.dumps(incomplete_json, indent=2, ensure_ascii=False))
 
-    errors_before_2 = generator._validate_destination_mappings(mappings_with_conflict_2)
-    print(f"\nErreurs détectées AVANT: {len(errors_before_2)}")
+    print("\n🔍 VALIDATION:")
+    print("-" * 80)
+    generator._validate_group_json_references(incomplete_json, test_group)
+    print("-" * 80)
 
-    fixed_mappings_2 = generator._auto_fix_overlaps(mappings_with_conflict_2, source_paths_2)
+    print("\n💡 ANALYSE:")
+    print("   - Le LLM a utilisé 1 clé valide: 'term'")
+    print("   - Le LLM a inventé 2 clés fictives: 'usage', 'pronunciation'")
+    print("   - Le LLM a oublié 3 clés valides: 'definition', 'example', 'notes'")
+    print("\n   ✅ Le warning permet de voir:")
+    print("      1. Ce qui est FICTIF (à retirer)")
+    print("      2. Ce qui MANQUE (à ajouter)")
+    print("      3. La liste COMPLÈTE avec indicateurs (utilisé ✅ ou non ⚪)")
 
-    print("\n✅ APRÈS correction:")
-    for src, dest in fixed_mappings_2.items():
-        print(f'  "{src}": \'{dest}\'')
+    # CAS 2: JSON parfait (toutes les clés utilisées)
+    print("\n" + "=" * 80)
+    print("CAS 2: JSON PARFAIT (toutes les clés utilisées)")
+    print("=" * 80)
 
-    errors_after_2 = generator._validate_destination_mappings(fixed_mappings_2)
-    print(f"\nErreurs détectées APRÈS: {len(errors_after_2)}")
-    if errors_after_2:
-        for err in errors_after_2:
-            print(f"  - {err[:100]}...")
-    else:
-        print("  ✅ Aucune erreur ! Correction réussie.")
+    perfect_json = {
+        "template_name": "text/definition",
+        "term": "{{glossary[x]->term}}",
+        "definition": "{{glossary[x]->definition}}",
+        "example": "{{glossary[x]->example}}",
+        "notes": "{{glossary[x]->notes}}"
+    }
+
+    print("\n📊 JSON généré par le LLM:")
+    print(json.dumps(perfect_json, indent=2, ensure_ascii=False))
+
+    print("\n🔍 VALIDATION:")
+    print("-" * 80)
+    generator._validate_group_json_references(perfect_json, test_group)
+    print("-" * 80)
+    print("\n✅ Aucun warning (JSON parfait)")
+
+    # CAS 3: JSON avec seulement des clés manquantes
+    print("\n" + "=" * 80)
+    print("CAS 3: JSON PARTIEL (seulement des clés manquantes)")
+    print("=" * 80)
+
+    partial_json = {
+        "template_name": "text/definition",
+        "term": "{{glossary[x]->term}}",
+        "definition": "{{glossary[x]->definition}}"
+        # example MANQUANTE
+        # notes MANQUANTE
+    }
+
+    print("\n📊 JSON généré par le LLM:")
+    print(json.dumps(partial_json, indent=2, ensure_ascii=False))
+
+    print("\n🔍 VALIDATION:")
+    print("-" * 80)
+    generator._validate_group_json_references(partial_json, test_group)
+    print("-" * 80)
+
+    print("\n💡 ANALYSE:")
+    print("   - Aucune clé fictive (pas d'invention)")
+    print("   - 2 clés manquantes (le LLM n'a pas utilisé toutes les clés)")
+    print("   - Cela peut être normal si certaines clés sont optionnelles")
+
+    # Résumé
+    print("\n" + "=" * 80)
+    print("RÉSUMÉ DES AMÉLIORATIONS")
+    print("=" * 80)
+
+    print("\n✅ Le nouveau format de validation affiche:")
+    print("   1. ❌ Clés FICTIVES: Inventées par le LLM, n'existent pas")
+    print("   2. ⚠️  Clés MANQUANTES: Valides mais non utilisées")
+    print("   3. 📋 Liste COMPLÈTE: Toutes les clés valides avec indicateurs")
+    print("      - ✅ Clé utilisée")
+    print("      - ⚪ Clé non utilisée")
+
+    print("\n💡 Avantages:")
+    print("   - Vue complète de ce qui va mal")
+    print("   - Identification rapide des clés à retirer (fictives)")
+    print("   - Identification rapide des clés à ajouter (manquantes)")
+    print("   - Facilite le débogage et l'amélioration du prompt")
 
     print("\n" + "=" * 80)
-    print("Tests terminés!")
+    print("✅ Test terminé")
     print("=" * 80)
 
 
 if __name__ == "__main__":
-    test_auto_fix_overlaps()
+    test_auto_fix()

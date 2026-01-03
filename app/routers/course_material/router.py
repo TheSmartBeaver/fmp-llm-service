@@ -45,6 +45,7 @@ class CourseMaterialResponse(BaseModel):
     pedagogical_json: dict = None
     destination_mappings: dict = None
     path_groups: list = None
+    group_jsons_map: dict = None
     resolved_jsons_map: dict = None
     path_to_value_map: dict = None
     final_resolved_jsons_map: dict = None
@@ -59,6 +60,7 @@ class CourseMaterialResponse(BaseModel):
                 "pedagogical_json": {},
                 "destination_mappings": {},
                 "path_groups": [],
+                "group_jsons_map": {},
                 "resolved_jsons_map": {},
                 "path_to_value_map": {},
                 "final_resolved_jsons_map": {}
@@ -305,6 +307,7 @@ async def generate_course_material_v2(
         pedagogical_json=result.get("pedagogical_json"),
         destination_mappings=result.get("destination_mappings"),
         path_groups=debug_info.get("path_groups"),
+        group_jsons_map=debug_info.get("group_jsons_map"),
         resolved_jsons_map=debug_info.get("resolved_jsons_map"),
         path_to_value_map=debug_info.get("path_to_value_map"),
         final_resolved_jsons_map=debug_info.get("final_resolved_jsons_map")

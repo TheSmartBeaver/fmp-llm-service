@@ -1745,6 +1745,7 @@ Génère maintenant le JSON structuré.""",
         # Construire le dictionnaire de retour avec toutes les informations de débogage
         debug_info = {
             "path_groups": path_groups,
+            "group_jsons_map": group_jsons_map,
             "resolved_jsons_map": resolved_jsons_map,
             "path_to_value_map": path_to_value_map,
             "final_resolved_jsons_map": final_resolved_jsons_map

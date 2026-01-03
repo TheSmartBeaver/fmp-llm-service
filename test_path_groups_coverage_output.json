@@ -1,0 +1,97 @@
+{
+  "required_keys_count": 30,
+  "main_groups_count": 9,
+  "required_keys": [
+    "course",
+    "examplesCollection->examples[x]->sentence",
+    "examplesCollection->examples[x]->translation",
+    "examplesCollection->purpose",
+    "glossary[x]->definition",
+    "glossary[x]->term",
+    "learningStrategies->concreteTips[x]",
+    "learningStrategies->pitfallsToAvoid",
+    "learningStrategies->principles",
+    "media->images[x]->label",
+    "media->images[x]->url",
+    "media->videos[x]->label",
+    "media->videos[x]->url",
+    "relations->differences",
+    "relations->similarities",
+    "summary->explanation",
+    "summary->title",
+    "themes[x]->details[y]",
+    "themes[x]->examples[y]->conjugation[z]->form",
+    "themes[x]->examples[y]->conjugation[z]->pronoun",
+    "themes[x]->examples[y]->infinitive",
+    "themes[x]->examples[y]->label",
+    "themes[x]->explanation",
+    "themes[x]->groups[y]->conjugationTable[z]->person",
+    "themes[x]->groups[y]->conjugationTable[z]->pronoun",
+    "themes[x]->groups[y]->ending",
+    "themes[x]->groups[y]->exampleSentences[z]",
+    "themes[x]->groups[y]->label",
+    "themes[x]->name",
+    "topicPath"
+  ],
+  "main_groups": [
+    "course",
+    "examplesCollection",
+    "glossary[x]",
+    "learningStrategies",
+    "media",
+    "relations",
+    "summary",
+    "themes[x]",
+    "topicPath"
+  ],
+  "keys_by_group": {
+    "course": [
+      "course"
+    ],
+    "examplesCollection": [
+      "examplesCollection->examples[x]->sentence",
+      "examplesCollection->examples[x]->translation",
+      "examplesCollection->purpose"
+    ],
+    "glossary[x]": [
+      "glossary[x]->definition",
+      "glossary[x]->term"
+    ],
+    "learningStrategies": [
+      "learningStrategies->concreteTips[x]",
+      "learningStrategies->pitfallsToAvoid",
+      "learningStrategies->principles"
+    ],
+    "media": [
+      "media->images[x]->label",
+      "media->images[x]->url",
+      "media->videos[x]->label",
+      "media->videos[x]->url"
+    ],
+    "relations": [
+      "relations->differences",
+      "relations->similarities"
+    ],
+    "summary": [
+      "summary->explanation",
+      "summary->title"
+    ],
+    "themes[x]": [
+      "themes[x]->details[y]",
+      "themes[x]->examples[y]->conjugation[z]->form",
+      "themes[x]->examples[y]->conjugation[z]->pronoun",
+      "themes[x]->examples[y]->infinitive",
+      "themes[x]->examples[y]->label",
+      "themes[x]->explanation",
+      "themes[x]->groups[y]->conjugationTable[z]->person",
+      "themes[x]->groups[y]->conjugationTable[z]->pronoun",
+      "themes[x]->groups[y]->ending",
+      "themes[x]->groups[y]->exampleSentences[z]",
+      "themes[x]->groups[y]->label",
+      "themes[x]->name"
+    ],
+    "topicPath": [
+      "topicPath"
+    ]
+  }
+}

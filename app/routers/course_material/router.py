@@ -44,6 +44,7 @@ class CourseMaterialResponse(BaseModel):
     prompt: str
     pedagogical_json: dict = None
     destination_mappings: dict = None
+    json_paths_with_variables: list = None
     path_groups: list = None
     group_jsons_map: dict = None
     resolved_jsons_map: dict = None
@@ -59,6 +60,7 @@ class CourseMaterialResponse(BaseModel):
                 "prompt": "Génère des supports de cours...",
                 "pedagogical_json": {},
                 "destination_mappings": {},
+                "json_paths_with_variables": [],
                 "path_groups": [],
                 "group_jsons_map": {},
                 "resolved_jsons_map": {},
@@ -306,6 +308,7 @@ async def generate_course_material_v2(
         prompt=full_prompt,
         pedagogical_json=result.get("pedagogical_json"),
         destination_mappings=result.get("destination_mappings"),
+        json_paths_with_variables=debug_info.get("json_paths_with_variables"),
         path_groups=debug_info.get("path_groups"),
         group_jsons_map=debug_info.get("group_jsons_map"),
         resolved_jsons_map=debug_info.get("resolved_jsons_map"),

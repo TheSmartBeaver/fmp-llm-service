@@ -1,0 +1,41 @@
+{
+  "total_paths_extracted": 42,
+  "paths_with_variables": 32,
+  "paths_without_arrow_issues": 0,
+  "path_to_value_pairs": 204,
+  "sample_paths": [
+    "course",
+    "examplesCollection->examples[x]->notes",
+    "examplesCollection->examples[x]->sentence",
+    "examplesCollection->examples[x]->translation",
+    "examplesCollection->purpose",
+    "glossary[x]->definition",
+    "glossary[x]->term",
+    "learningStrategies->concreteTips[x]",
+    "learningStrategies->pitfallsToAvoid",
+    "learningStrategies->principles",
+    "media->images[x]->label",
+    "media->images[x]->url",
+    "media->images[x]->usageSuggestion",
+    "media->videos[x]->label",
+    "media->videos[x]->start",
+    "media->videos[x]->url",
+    "media->videos[x]->usageSuggestion",
+    "relations->differences",
+    "relations->practicalLinks",
+    "relations->similarities"
+  ],
+  "sample_path_to_value": {
+    "course": "Mini cours d’espagnol – Apprendre la conjugaison",
+    "topicPath": "string",
+    "summary->title": "Principes généraux de la conjugaison espagnole au présent de l'indicatif",
+    "summary->explanation": "En espagnol, la conjugaison des verbes dépend du groupe verbal (terminaisons en -ar, -er, -ir), de l",
+    "themes[0]->name": "Groupes verbaux réguliers",
+    "themes[0]->explanation": "Les verbes réguliers se classent en trois groupes selon leur infinitif : -ar, -er, -ir. Chacun de ce",
+    "themes[0]->groups[0]->label": "Verbes en -ar (modèle : hablar)",
+    "themes[0]->groups[0]->ending": "-ar",
+    "themes[0]->groups[0]->explanation": "Les verbes en -ar forment le groupe le plus vaste et suivent un modèle régulier. En retirant -ar à l",
+    "themes[0]->groups[0]->conjugationTable[0]->person": "1re personne du singulier"
+  },
+  "all_improvements_working": true
+}

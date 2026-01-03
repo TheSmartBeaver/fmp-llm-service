@@ -1,0 +1,19 @@
+{
+  "paths_count": 12,
+  "paths": [
+    "course",
+    "glossary[x]->definition",
+    "glossary[x]->term",
+    "learningStrategies->concreteTips[x]",
+    "learningStrategies->pitfallsToAvoid",
+    "learningStrategies->principles",
+    "summary->explanation",
+    "summary->title",
+    "themes[x]->details[y]",
+    "themes[x]->groups[y]->exampleSentences[z]",
+    "themes[x]->groups[y]->label",
+    "themes[x]->name"
+  ],
+  "issues": [],
+  "test_passed": true
+}

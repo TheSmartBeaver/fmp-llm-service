@@ -385,6 +385,10 @@ Génère maintenant le JSON structuré.""",
 
         # Appeler le LLM de manière asynchrone
         result = await chain.ainvoke(params)
+
+        # VALIDATION: Vérifier que le LLM n'a pas inventé de clés fictives
+        self._validate_group_json_references(result, group)
+
         return result
 
     def _generate_json_from_group(
@@ -1362,6 +1366,62 @@ Génère maintenant le JSON structuré.""",
         traverse(obj)
         return references
 
+    def _validate_group_json_references(
+        self,
+        group_json: Dict[str, Any],
+        group: Dict[str, Any]
+    ) -> None:
+        """
+        Valide que toutes les références {{...}} dans le JSON généré par le LLM
+        correspondent à des clés existantes dans le groupe.
+
+        Affiche un warning si le LLM a inventé des clés fictives.
+
+        Args:
+            group_json: Le JSON généré par le LLM
+            group: Le groupe original avec ses clés valides
+        """
+        # Extraire toutes les références du JSON généré
+        references = self._collect_all_references(group_json)
+
+        if not references:
+            return  # Aucune référence à valider
+
+        # Normaliser les références (enlever les ->)
+        normalized_references = set()
+        for ref in references:
+            # Normaliser: enlever les -> pour comparaison
+            normalized_ref = ref.replace("->", "")
+            normalized_references.add(normalized_ref)
+
+        # Normaliser les clés du groupe
+        valid_keys = group.get("keys", [])
+        normalized_valid_keys = set()
+        for key in valid_keys:
+            normalized_key = key.replace("->", "")
+            normalized_valid_keys.add(normalized_key)
+
+        # Trouver les références fictives
+        fictive_refs = normalized_references - normalized_valid_keys
+
+        if fictive_refs:
+            print(f"\n⚠️  AVERTISSEMENT: Le LLM a inventé {len(fictive_refs)} clé(s) fictive(s) dans le groupe '{group.get('format', 'Unknown')}':")
+
+            # Retrouver les références originales (avec ->) pour un affichage plus clair
+            original_fictive_refs = []
+            for ref in references:
+                if ref.replace("->", "") in fictive_refs:
+                    original_fictive_refs.append(ref)
+
+            for ref in sorted(set(original_fictive_refs)):
+                print(f"   ❌ {{{{{ref}}}}}")
+
+            print(f"\n   Clés valides pour ce groupe:")
+            for key in sorted(valid_keys)[:5]:
+                print(f"   ✅ {key}")
+            if len(valid_keys) > 5:
+                print(f"   ... et {len(valid_keys) - 5} autres")
+
     def _count_iterations_for_prefix(
         self,
         prefix_with_var: str,
@@ -1643,7 +1703,7 @@ Génère maintenant le JSON structuré.""",
         )
 
         path_groups = []
-        not_shit = False
+        not_shit = True
 
         if not_shit:
             # NOUVELLE APPROCHE: Générer les groupes de chemins avec formats
@@ -1744,6 +1804,7 @@ Génère maintenant le JSON structuré.""",
 
         # Construire le dictionnaire de retour avec toutes les informations de débogage
         debug_info = {
+            "json_paths_with_variables": json_paths_with_variables,
             "path_groups": path_groups,
             "group_jsons_map": group_jsons_map,
             "resolved_jsons_map": resolved_jsons_map,
@@ -1802,17 +1863,14 @@ Génère maintenant le JSON structuré.""",
         # Variables pour les niveaux d'imbrication de tableaux
         array_vars = ["x", "y", "z", "w", "v", "u", "t", "s", "r", "q"]
 
-        def is_simple_value(val: Any) -> bool:
-            """Vérifie si une valeur est simple (primitive ou tableau de primitives)"""
-            if isinstance(val, (str, int, float, bool, type(None))):
-                return True
-            if isinstance(val, list):
-                # Tableau de primitives
-                return all(
-                    isinstance(item, (str, int, float, bool, type(None)))
-                    for item in val
-                )
-            # Les objets ne sont jamais considérés comme simples
+        def is_primitive(val: Any) -> bool:
+            """Vérifie si une valeur est une primitive (string, number, boolean, null)"""
+            return isinstance(val, (str, int, float, bool, type(None)))
+
+        def is_array_of_primitives(val: Any) -> bool:
+            """Vérifie si une valeur est un tableau de primitives"""
+            if isinstance(val, list) and len(val) > 0:
+                return all(is_primitive(item) for item in val)
             return False
 
         def extract_paths(obj: Any, path: str = "", array_depth: int = 0):
@@ -1827,12 +1885,21 @@ Génère maintenant le JSON structuré.""",
                         # Racine
                         new_path = key
 
-                    # Ajouter ce chemin SEULEMENT si la valeur est simple
-                    if is_simple_value(value):
+                    # Cas 1: Primitive simple (string, number, etc.)
+                    if is_primitive(value):
                         paths.append(new_path)
 
-                    # Continuer la récursion pour les objets/tableaux complexes
-                    if isinstance(value, (dict, list)) and not is_simple_value(value):
+                    # Cas 2: Tableau de primitives → ajouter [x], [y], [z]
+                    elif is_array_of_primitives(value):
+                        # Déterminer la notation d'index
+                        if use_variables and array_depth < len(array_vars):
+                            index_notation = f"[{array_vars[array_depth]}]"
+                        else:
+                            index_notation = "[x]"  # Par défaut utiliser [x]
+                        paths.append(f"{new_path}{index_notation}")
+
+                    # Cas 3: Objet ou tableau d'objets → continuer la récursion
+                    elif isinstance(value, (dict, list)):
                         extract_paths(value, new_path, array_depth)
 
             elif isinstance(obj, list):
@@ -1851,16 +1918,24 @@ Génère maintenant le JSON structuré.""",
                         for key, value in sample.items():
                             # Créer le chemin avec [] ou [x]
                             array_path = f"{path}{index_notation}"
-                            new_path = f"{array_path}{key}"
+                            # IMPORTANT: Toujours utiliser -> entre l'index et la clé suivante
+                            new_path = f"{array_path}->{key}"
 
-                            # Ajouter ce chemin SEULEMENT si la valeur est simple
-                            if is_simple_value(value):
+                            # Cas 1: Primitive simple
+                            if is_primitive(value):
                                 paths.append(new_path)
 
-                            # Récursion pour les valeurs imbriquées avec profondeur incrémentée
-                            if isinstance(value, (dict, list)) and not is_simple_value(
-                                value
-                            ):
+                            # Cas 2: Tableau de primitives
+                            elif is_array_of_primitives(value):
+                                # Déterminer la notation pour le sous-tableau
+                                if use_variables and (array_depth + 1) < len(array_vars):
+                                    sub_index = f"[{array_vars[array_depth + 1]}]"
+                                else:
+                                    sub_index = "[y]" if index_notation == "[x]" else "[z]"
+                                paths.append(f"{new_path}{sub_index}")
+
+                            # Cas 3: Objet ou tableau d'objets
+                            elif isinstance(value, (dict, list)):
                                 extract_paths(value, new_path, array_depth + 1)
                     else:
                         # Tableau de primitives

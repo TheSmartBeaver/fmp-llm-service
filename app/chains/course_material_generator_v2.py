@@ -90,7 +90,7 @@ class CourseMaterialGeneratorV2:
         pedagogical_prompt = "string"
 
         pedagogical_json_string = json.dumps(pedagogical_json, indent=0, ensure_ascii=False)
-        print(f" pedagogical_json = {pedagogical_json_string}")
+        # print(f" pedagogical_json = {pedagogical_json_string}")
 
         # Étape 2: Générer la structure de templates
         context_description = self._create_context_description(user_entry)
@@ -121,7 +121,7 @@ class CourseMaterialGeneratorV2:
         validated_support_string = json.dumps(
             validated_support, indent=0, ensure_ascii=False
         )
-        print(f" validated_support = {validated_support_string}")
+        # print(f" validated_support = {validated_support_string}")
 
         return {
             "support": validated_support,

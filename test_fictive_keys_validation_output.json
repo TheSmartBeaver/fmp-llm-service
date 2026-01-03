@@ -1,0 +1,86 @@
+{
+  "test_cases": [
+    {
+      "name": "CAS 1: JSON correct",
+      "group_keys": [
+        "glossary[x]->term",
+        "glossary[x]->definition"
+      ],
+      "json": {
+        "template_name": "layouts/vertical_column/container",
+        "items": [
+          {
+            "template_name": "text/definition",
+            "term": "{{glossary[x]->term}}",
+            "definition": "{{glossary[x]->definition}}"
+          }
+        ]
+      },
+      "expected_warnings": 0
+    },
+    {
+      "name": "CAS 2: JSON avec clés fictives",
+      "group_keys": [
+        "glossary[x]->term",
+        "glossary[x]->definition"
+      ],
+      "json": {
+        "template_name": "layouts/vertical_column/container",
+        "items": [
+          {
+            "template_name": "text/definition",
+            "term": "{{glossary[x]->term}}",
+            "definition": "{{glossary[x]->definition}}",
+            "example": "{{glossary[x]->example}}",
+            "pronunciation": "{{glossary[x]->pronunciation}}"
+          }
+        ]
+      },
+      "expected_warnings": 2,
+      "fictive_keys": [
+        "glossary[x]->example",
+        "glossary[x]->pronunciation"
+      ]
+    },
+    {
+      "name": "CAS 3: JSON avec clés ambiguës",
+      "group_keys": [
+        "learningStrategies->principles",
+        "learningStrategies->concreteTips[x]",
+        "learningStrategies->pitfallsToAvoid"
+      ],
+      "json": {
+        "template_name": "text/tips",
+        "principles": "{{learningStrategies->principles}}",
+        "tips": "{{learningStrategies->concreteTips}}",
+        "pitfalls": "{{learningStrategies->pitfallsToAvoid}}"
+      },
+      "expected_warnings": 1,
+      "fictive_keys": [
+        "learningStrategies->concreteTips"
+      ]
+    },
+    {
+      "name": "CAS 4: JSON avec indices numériques",
+      "group_keys": [
+        "glossary[x]->term",
+        "glossary[x]->definition"
+      ],
+      "json": {
+        "template_name": "layouts/vertical_column/container",
+        "items": [
+          {
+            "template_name": "text/definition",
+            "term": "{{glossary[0]->term}}",
+            "definition": "{{glossary[1]->definition}}"
+          }
+        ]
+      },
+      "expected_warnings": 2,
+      "fictive_keys": [
+        "glossary[0]->term",
+        "glossary[1]->definition"
+      ]
+    }
+  ]
+}

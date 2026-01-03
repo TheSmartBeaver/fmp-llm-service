@@ -1145,6 +1145,7 @@ Génère maintenant le JSON structuré.""",
     def _resolve_group_references(
         self,
         group_jsons_map: Dict[str, Dict[str, Any]],
+        path_to_value_map: Dict[str, Any],
     ) -> Dict[str, Dict[str, Any]]:
         """
         Résout les références de groupes imbriqués en remplaçant les placeholders.
@@ -1154,6 +1155,7 @@ Génère maintenant le JSON structuré.""",
 
         Args:
             group_jsons_map: Dictionnaire {clé_de_référence: json_du_groupe}
+            path_to_value_map: Dictionnaire {chemin_concret: valeur} pour vérifier les clés nécessaires
 
         Returns:
             Dictionnaire avec les références résolues
@@ -1206,6 +1208,43 @@ Génère maintenant le JSON structuré.""",
         for key, group_json in group_jsons_map.items():
             resolved_map[key] = resolve_in_value(group_json)
 
+        # Vérification: Extraire toutes les clés présentes dans resolved_map et comparer avec path_to_value_map
+        def extract_all_keys(obj, keys_set=None):
+            """Extrait toutes les clés présentes dans resolved_map (récursivement)."""
+            if keys_set is None:
+                keys_set = set()
+
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    if key != "items":  # Ne pas ajouter "items" comme clé
+                        keys_set.add(key)
+                    # Descendre récursivement même si c'est "items"
+                    extract_all_keys(value, keys_set)
+            elif isinstance(obj, list):
+                for item in obj:
+                    extract_all_keys(item, keys_set)
+
+            return keys_set
+
+        # Extraire toutes les clés de resolved_map
+        resolved_keys = extract_all_keys(resolved_map)
+
+        # Normaliser les clés de path_to_value_map
+        required_keys = {self._normalize_path_to_generic(path) for path in path_to_value_map.keys()}
+
+        # Trouver les clés manquantes
+        missing_keys = required_keys - resolved_keys
+
+        if missing_keys:
+            print(f"⚠️  AVERTISSEMENT: {len(missing_keys)} clés manquantes dans resolved_jsons_map:")
+            for key in sorted(missing_keys):
+                print(f"   - {key}")
+            print(f"   Total de clés requises: {len(required_keys)}")
+            print(f"   Total de clés présentes: {len(resolved_keys)}")
+            print(f"   Taux de couverture: {((len(required_keys) - len(missing_keys)) / len(required_keys) * 100):.1f}%")
+        else:
+            print(f"✅ Toutes les {len(required_keys)} clés de path_to_value_map sont présentes dans resolved_jsons_map")
+
         return resolved_map
 
     def _build_path_to_value_map(self, source_json: Dict[str, Any]) -> Dict[str, Any]:
@@ -1256,6 +1295,42 @@ Génère maintenant le JSON structuré.""",
 
         traverse(source_json)
         return path_to_value_map
+
+    def _normalize_path_to_generic(self, path: str) -> str:
+        """
+        Normalise un chemin avec indices réels [0], [1], [2]... vers des variables génériques [x], [y], [z].
+
+        Args:
+            path: Chemin avec indices réels, ex: "themes[0]->examples[1]->conjugation[2]->form"
+
+        Returns:
+            Chemin normalisé avec variables génériques, ex: "themes[x]examples[y]conjugation[z]form"
+
+        Exemples:
+            "glossary[0]->term" → "glossary[x]term"
+            "themes[0]->examples[1]->label" → "themes[x]examples[y]label"
+            "media->images[0]->url" → "media->images[x]url"
+        """
+        import re
+
+        # Variables génériques dans l'ordre
+        generic_vars = ['x', 'y', 'z']
+        var_index = 0
+
+        def replace_index(match):
+            nonlocal var_index
+            if var_index < len(generic_vars):
+                replacement = f"[{generic_vars[var_index]}]"
+                var_index += 1
+                return replacement
+            else:
+                # Si on dépasse x, y, z, on continue avec des indices
+                return f"[{var_index}]"
+
+        # Remplacer tous les [0], [1], [2]... par [x], [y], [z]
+        normalized = re.sub(r'\[\d+\]', replace_index, path)
+
+        return normalized
 
     def _collect_all_references(self, obj: Any) -> List[str]:
         """
@@ -1637,11 +1712,11 @@ Génère maintenant le JSON structuré.""",
         results = await asyncio.gather(*tasks)
         group_jsons_map = dict(results)
 
-        # Résoudre les références de groupes imbriqués
-        resolved_jsons_map = self._resolve_group_references(group_jsons_map)
-
         # Étape 6: Construire le mapping chemin → valeur avec indices réels
         path_to_value_map = self._build_path_to_value_map(source_json)
+
+        # Résoudre les références de groupes imbriqués
+        resolved_jsons_map = self._resolve_group_references(group_jsons_map, path_to_value_map)
 
         # Étape 7: Résoudre les valeurs pour chaque groupe (expansion)
         final_resolved_jsons_map = {}

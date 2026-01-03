@@ -676,9 +676,12 @@ Génère maintenant le JSON structuré.""",
             # Retourner tout ce qui est avant la variable
             first_var = vars_matches[0]
             parent = child_ref[:first_var.start()]
-            # Enlever le dernier séparateur si présent (-> ou rien)
-            if parent.endswith('->'):
-                parent = parent[:-2]
+
+            # Enlever la dernière partie après -> si présent
+            # Ex: "media->images" → "media", "examplesCollection->examples" → "examplesCollection"
+            if '->' in parent:
+                parent = parent.rsplit('->', 1)[0]
+
             return parent
 
         # Plus d'une variable, retourner jusqu'à l'avant-dernière variable (incluse)

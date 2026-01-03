@@ -1,6 +1,6 @@
 {
   "original_count": 12,
-  "result_count": 17,
+  "result_count": 16,
   "groups": [
     {
       "group_name": "Métadonnées de cours",
@@ -121,11 +121,20 @@
       "format": "Entrées structurées de conjugaison avec personne, pronom et traduction"
     },
     {
-      "group_name": "Groupe Examplescollection Examples",
+      "group_name": "Groupe Examplescollection",
       "keys": [
-        "examplesCollection->examples[x]"
+        "examplesCollection->examples[x]",
+        "examplesCollection->purpose"
       ],
-      "format": "Groupe parent pour examplesCollection->examples"
+      "format": "Groupe parent pour examplesCollection"
+    },
+    {
+      "group_name": "Groupe Media",
+      "keys": [
+        "media->images[x]",
+        "media->videos[x]"
+      ],
+      "format": "Groupe parent pour media"
     },
     {
       "group_name": "Groupe Glossary",
@@ -133,20 +142,6 @@
         "glossary[x]"
       ],
       "format": "Groupe parent pour glossary"
-    },
-    {
-      "group_name": "Groupe Media Images",
-      "keys": [
-        "media->images[x]"
-      ],
-      "format": "Groupe parent pour media->images"
-    },
-    {
-      "group_name": "Groupe Media Videos",
-      "keys": [
-        "media->videos[x]"
-      ],
-      "format": "Groupe parent pour media->videos"
     },
     {
       "group_name": "Groupe Themes",

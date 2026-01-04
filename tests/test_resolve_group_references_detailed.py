@@ -192,7 +192,16 @@ def simulate_resolve_group_references(
                 print(f"    ... et {len(refs_before) - 5} autres")
 
         # Résoudre
-        resolved_map[key] = resolve_in_value(group_json, key)
+        resolved_value = resolve_in_value(group_json, key)
+        resolved_map[key] = resolved_value
+
+        # Afficher le JSON construit après résolution
+        if verbose:
+            print(f"\n  {'=' * 76}")
+            print(f"  JSON CONSTRUIT pour '{key}':")
+            print(f"  {'=' * 76}")
+            print(json.dumps(resolved_value, indent=2, ensure_ascii=False))
+            print(f"  {'=' * 76}")
 
     # Afficher le résumé des substitutions
     if verbose:

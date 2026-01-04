@@ -202,7 +202,7 @@ def generate_course_material_task(
         # Adapter le format de retour pour compatibilité avec le système existant
         result = {
             "success": True,
-            "supports": result_v2,  # Encapsuler dans une liste
+            "supports": result_v2["support"],  # Encapsuler dans une liste
             "templates_used": top_k,
             "prompt": full_prompt,
             "pedagogical_json": result_v2.get("pedagogical_json"),

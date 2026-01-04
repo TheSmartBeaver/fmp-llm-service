@@ -1,0 +1,6 @@
+# Chaque clé ne peut apparaître qu'une seule fois dans un même JSON généré par LLM ??
+# Comment créer efficacement un tableau de conjugaison avec plusieurs lignes ?
+# RESOLU : Il y a une erreur de contexte ici, le LLM a cru afficher une consugaison d'un verbe, alors qu'il devait afficher une explication pour les verbes avec une certaine terminaison...
+# Faire un système pour extraire toutes les templates interdépendantes (container + item / tableau + header + rows) et les passer ensemble au LLM
+# Dès qu'un chemin manque, re-lancer le même prompt, mais cette fois en mettant sa réponse eronnée et en pointant du doigt le chemin manquant
+# "themes[x]->groups[y]->conjugationTable[z]->meaning" ne devrait pas être dans le même groupe que"themes[x]->groups[y]->exampleSentences[z]

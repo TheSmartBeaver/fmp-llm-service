@@ -247,10 +247,51 @@ class TemplateStructureGenerator:
         embedding = self.embedding_model.encode(text, normalize_embeddings=True)
         return embedding.tolist()
 
+    def _get_sample_values_for_path(self, path_with_vars: str, path_to_value_map: Dict[str, Any]) -> List[Any]:
+        """
+        Récupère des échantillons de valeurs pour un chemin avec variables [x], [y], [z].
+
+        Args:
+            path_with_vars: Chemin avec variables génériques (ex: "items[x]->name")
+            path_to_value_map: Map des chemins concrets vers valeurs (ex: {"items[0]->name": "A", "items[1]->name": "B"})
+
+        Returns:
+            Liste d'échantillons de valeurs (max 3 exemples)
+
+        Exemple:
+            Input: "items[x]->name", {"items[0]->name": "A", "items[1]->name": "B", "items[2]->name": "C"}
+            Output: ["A", "B", "C"]
+        """
+        import re
+
+        # Échapper les caractères spéciaux regex sauf [x], [y], [z]
+        # Remplacer [x] par un pattern qui match [0], [1], [2], etc.
+        pattern = path_with_vars
+        pattern = pattern.replace("->", "->")  # Garder tel quel
+        pattern = re.escape(pattern)  # Échapper tout
+        # Puis déséchapper et remplacer les variables
+        pattern = pattern.replace(r"\[x\]", r"\[\d+\]")
+        pattern = pattern.replace(r"\[y\]", r"\[\d+\]")
+        pattern = pattern.replace(r"\[z\]", r"\[\d+\]")
+
+        # Compiler le pattern
+        regex = re.compile(f"^{pattern}$")
+
+        # Trouver tous les chemins concrets qui matchent
+        matching_values = []
+        for concrete_path, value in path_to_value_map.items():
+            if regex.match(concrete_path):
+                matching_values.append(value)
+                if len(matching_values) >= 3:  # Limiter à 3 exemples
+                    break
+
+        return matching_values
+
     def _build_json_generation_prompt(
         self,
         group: Dict[str, Any],
         templates: List[Dict[str, Any]],
+        path_to_value_map: Dict[str, Any],
     ) -> tuple[ChatPromptTemplate, dict]:
         """
         Construit le prompt et les paramètres pour la génération de JSON à partir d'un groupe.
@@ -258,6 +299,7 @@ class TemplateStructureGenerator:
         Args:
             group: Un groupe de chemins avec format
             templates: Templates récupérés par embedding pour ce groupe
+            path_to_value_map: Dictionnaire {chemin_concret: valeur} pour fournir des exemples
 
         Returns:
             Tuple (prompt, params) pour l'invocation du LLM
@@ -265,8 +307,21 @@ class TemplateStructureGenerator:
         # Formater les templates pour le prompt
         templates_formatted = self._format_templates_for_prompt(templates)
 
-        # Formater les chemins source
-        source_paths_formatted = "\n".join([f"  - {path}" for path in group["keys"]])
+        # Formater les chemins source avec des exemples de valeurs
+        source_paths_lines = []
+        for path in group["keys"]:
+            # Récupérer des échantillons de valeurs pour ce chemin
+            sample_values = self._get_sample_values_for_path(path, path_to_value_map)
+
+            if sample_values:
+                # Formater les exemples (max 3)
+                examples_str = ", ".join([f'"{v}"' if isinstance(v, str) else str(v) for v in sample_values[:3]])
+                source_paths_lines.append(f"  - {path}  (exemples: {examples_str})")
+            else:
+                # Pas d'exemples trouvés (peut arriver pour des chemins intermédiaires)
+                source_paths_lines.append(f"  - {path}")
+
+        source_paths_formatted = "\n".join(source_paths_lines)
 
         # Construire le prompt
         prompt = ChatPromptTemplate.from_messages(
@@ -410,6 +465,7 @@ Exemple INCORRECT (à NE JAMAIS faire):
         self,
         group: Dict[str, Any],
         templates: List[Dict[str, Any]],
+        path_to_value_map: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
         Génère le JSON structuré pour un groupe en utilisant les templates récupérés par embedding (version async).
@@ -417,14 +473,14 @@ Exemple INCORRECT (à NE JAMAIS faire):
         Args:
             group: Un groupe de chemins avec format (output de _generate_path_groups_with_llm)
             templates: Templates récupérés par embedding pour ce groupe
-            source_json: Le JSON source complet
+            path_to_value_map: Dictionnaire {chemin_concret: valeur} pour fournir des exemples au LLM
 
         Returns:
             Dictionnaire contenant:
                 - "json": JSON structuré avec template_name et références {{{{chemin}}}}
                 - "prompt": Le prompt formaté envoyé au LLM pour générer ce JSON
         """
-        prompt, params = self._build_json_generation_prompt(group, templates)
+        prompt, params = self._build_json_generation_prompt(group, templates, path_to_value_map)
 
         # Créer la chaîne LLM avec parser JSON
         parser = JsonOutputParser()
@@ -448,6 +504,7 @@ Exemple INCORRECT (à NE JAMAIS faire):
         self,
         group: Dict[str, Any],
         templates: List[Dict[str, Any]],
+        path_to_value_map: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
         Génère le JSON structuré pour un groupe en utilisant les templates récupérés par embedding (version sync).
@@ -455,6 +512,7 @@ Exemple INCORRECT (à NE JAMAIS faire):
         Args:
             group: Un groupe de chemins avec format (output de _generate_path_groups_with_llm)
             templates: Templates récupérés par embedding pour ce groupe
+            path_to_value_map: Dictionnaire {chemin_concret: valeur} pour fournir des exemples au LLM
 
         Returns:
             Dictionnaire contenant:
@@ -462,7 +520,7 @@ Exemple INCORRECT (à NE JAMAIS faire):
                 - "prompt": Le prompt formaté envoyé au LLM pour générer ce JSON
         """
         # Utiliser la version async via asyncio.run
-        return asyncio.run(self._generate_json_from_group_async(group, templates))
+        return asyncio.run(self._generate_json_from_group_async(group, templates, path_to_value_map))
 
     def _add_missing_nested_references(
         self,
@@ -1898,6 +1956,10 @@ Exemple INCORRECT (à NE JAMAIS faire):
             # raise ValueError("Path groups invalides")
 
 
+        # Étape 5: Construire le mapping chemin → valeur AVANT la génération des JSONs
+        # Cela permettra de passer des échantillons de valeurs au LLM
+        path_to_value_map = self._build_path_to_value_map(source_json)
+
         # Pour chaque groupe, récupérer les templates par embedding et générer le JSON
         # On crée un dictionnaire {clé_de_référence: json_du_groupe} pour faciliter la résolution
         group_jsons_map = {}
@@ -1932,7 +1994,8 @@ Exemple INCORRECT (à NE JAMAIS faire):
             # Générer le JSON structuré pour ce groupe (appel async du LLM)
             group_json = await self._generate_json_from_group_async(
                 group=group,
-                templates=group_templates
+                templates=group_templates,
+                path_to_value_map=path_to_value_map
             )
 
             return group_json
@@ -1974,9 +2037,6 @@ Exemple INCORRECT (à NE JAMAIS faire):
             # Ajouter chaque chemin dans group_jsons_map avec le JSON comme valeur
             for path in json_paths:
                 group_jsons_map[path] = group_json
-
-        # Étape 6: Construire le mapping chemin → valeur avec indices réels
-        path_to_value_map = self._build_path_to_value_map(source_json)
 
         # Résoudre les références de groupes imbriqués
         resolved_jsons_map = self._resolve_group_references(group_jsons_map, path_to_value_map)

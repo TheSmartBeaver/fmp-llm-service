@@ -1,0 +1,664 @@
+[
+  {
+    "template_name": "procedural/methode",
+    "title": "{{course}}",
+    "content": "{{topicPath}}"
+  },
+  {
+    "template_name": "conceptual/concept",
+    "title": "{{summary->title}}",
+    "description": {
+      "template_name": "text/explication",
+      "text": "{{summary->explanation}}"
+    }
+  },
+  {
+    "template_name": "text/liste_puces",
+    "items": [
+      {
+        "template_name": "text/description_courte",
+        "text": "{{themes[0]->name}}"
+      },
+      {
+        "template_name": "text/description_longue",
+        "text": "{{themes[0]->explanation}}"
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[0]->groups[0]->label}}",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Terminaison",
+              "content": "{{themes[0]->groups[0]->ending}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Explication",
+              "content": {
+                "template_name": "text/description_longue",
+                "text": "{{themes[0]->groups[0]->explanation}}"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[0]->conjugationTable[0]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[0]->conjugationTable[0]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[0]->conjugationTable[0]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[0]->conjugationTable[0]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[0]->conjugationTable[0]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Phrases d'exemple",
+              "content": {
+                "template_name": "text/liste_exemples",
+                "items": [
+                  "{{themes[x]->groups[y]->exampleSentences[z]}}"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[0]->conjugationTable[1]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[0]->conjugationTable[1]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[0]->conjugationTable[1]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[0]->conjugationTable[1]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[0]->conjugationTable[1]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Phrases d'exemple",
+              "content": {
+                "template_name": "text/liste_exemples",
+                "items": [
+                  "{{themes[x]->groups[y]->exampleSentences[z]}}"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[0]->conjugationTable[2]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[0]->conjugationTable[2]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[0]->conjugationTable[2]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[0]->conjugationTable[2]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[0]->conjugationTable[2]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Phrases d'exemple",
+              "content": {
+                "template_name": "text/liste_exemples",
+                "items": [
+                  "{{themes[x]->groups[y]->exampleSentences[z]}}"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[0]->conjugationTable[3]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[0]->conjugationTable[3]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[0]->conjugationTable[3]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[0]->conjugationTable[3]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[0]->conjugationTable[3]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Phrases d'exemple",
+              "content": {
+                "template_name": "text/liste_exemples",
+                "items": [
+                  "{{themes[x]->groups[y]->exampleSentences[z]}}"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[0]->conjugationTable[4]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[0]->conjugationTable[4]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[0]->conjugationTable[4]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[0]->conjugationTable[4]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[0]->conjugationTable[4]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Phrases d'exemple",
+              "content": {
+                "template_name": "text/liste_exemples",
+                "items": [
+                  "{{themes[x]->groups[y]->exampleSentences[z]}}"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[0]->conjugationTable[5]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[0]->conjugationTable[5]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[0]->conjugationTable[5]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[0]->conjugationTable[5]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[0]->conjugationTable[5]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/item",
+    "title": "Phrases d'exemple",
+    "content": {
+      "template_name": "text/liste_exemples",
+      "items": [
+        "{{themes[0]->groups[0]->exampleSentences[0]}}"
+      ]
+    }
+  },
+  {
+    "template_name": "layouts/vertical_column/item",
+    "title": "Phrases d'exemple",
+    "content": {
+      "template_name": "text/liste_exemples",
+      "items": [
+        "{{themes[0]->groups[0]->exampleSentences[1]}}"
+      ]
+    }
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[0]->groups[1]->label}}",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Terminaison",
+              "content": "{{themes[0]->groups[1]->ending}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Explication",
+              "content": {
+                "template_name": "text/description_longue",
+                "text": "{{themes[0]->groups[1]->explanation}}"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[1]->conjugationTable[0]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[1]->conjugationTable[0]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[1]->conjugationTable[0]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[1]->conjugationTable[0]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[1]->conjugationTable[0]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[1]->conjugationTable[1]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[1]->conjugationTable[1]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[1]->conjugationTable[1]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[1]->conjugationTable[1]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[1]->conjugationTable[1]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[1]->conjugationTable[2]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[1]->conjugationTable[2]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[1]->conjugationTable[2]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[1]->conjugationTable[2]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[1]->conjugationTable[2]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[1]->conjugationTable[3]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[1]->conjugationTable[3]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[1]->conjugationTable[3]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[1]->conjugationTable[3]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[1]->conjugationTable[3]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[1]->conjugationTable[4]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[1]->conjugationTable[4]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[1]->conjugationTable[4]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[1]->conjugationTable[4]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[1]->conjugationTable[4]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Groupes de conjugaison",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Formes conjuguées par personne",
+              "content": {
+                "template_name": "layouts/grid/container",
+                "items": [
+                  {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "{{themes[0]->groups[1]->conjugationTable[5]->person}}",
+                    "content": {
+                      "template_name": "layouts/vertical_column/container",
+                      "items": [
+                        {
+                          "template_name": "text/liste_puces",
+                          "items": [
+                            "<strong>Pronom:</strong> {{themes[0]->groups[1]->conjugationTable[5]->pronoun}}",
+                            "<strong>Forme conjuguée:</strong> {{themes[0]->groups[1]->conjugationTable[5]->form}}",
+                            "<strong>Traduction:</strong> {{themes[0]->groups[1]->conjugationTable[5]->translation}}",
+                            "<strong>Signification:</strong> {{themes[0]->groups[1]->conjugationTable[5]->meaning}}"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "template_name": "layouts/vertical_column/item",
+    "title": "Phrases d'exemple",
+    "content": {
+      "template_name": "text/liste_exemples",
+      "items": [
+        "{{themes[0]->groups[1]->exampleSentences[0]}}"
+      ]
+    }
+  },
+  {
+    "template_name": "layouts/vertical_column/item",
+    "title": "Phrases d'exemple",
+    "content": {
+      "template_name": "text/liste_exemples",
+      "items": [
+        "{{themes[0]->groups[1]->exampleSentences[1]}}"
+      ]
+    }
+  }
+]

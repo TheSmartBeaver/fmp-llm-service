@@ -305,7 +305,8 @@ async def generate_course_material_v2(
 
     return CourseMaterialResponse(
         success=True,
-        supports=[{"support": result["support"]}],  # Encapsuler dans une liste pour compatibilité
+        # supports=[{"support": result["support"]}],  # Encapsuler dans une liste pour compatibilité
+        supports=result["support"],
         templates_used=top_k,
         prompt=full_prompt,
         pedagogical_json=result.get("pedagogical_json"),

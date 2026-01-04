@@ -1,6 +1,6 @@
 import json
 import asyncio
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 from langchain_core.prompts import ChatPromptTemplate
@@ -331,12 +331,12 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
         """
         return f"Cours de {user_entry.context_entry.course} - Sujet: {user_entry.context_entry.topic_path}"
 
-    def _validate_support(self, support_json: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_support(self, support_json: Union[Dict[str, Any], List[Any]]) -> Union[Dict[str, Any], List[Any]]:
         """
         Valide la structure du support de cours généré.
 
         Args:
-            support_json: JSON du support à valider
+            support_json: JSON du support à valider (dict ou list)
 
         Returns:
             Support JSON validé avec version
@@ -344,15 +344,15 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
         Raises:
             ValueError: Si le JSON est invalide
         """
-        if not isinstance(support_json, dict):
-            raise ValueError("Le support doit être un objet JSON")
+        if not isinstance(support_json, (dict, list)):
+            raise ValueError("Le support doit être un objet JSON ou un tableau")
 
         # Vérifier qu'il y a au moins un template_name quelque part dans la structure
         if not self._contains_template_name(support_json):
             raise ValueError("Le support doit contenir au moins un template_name")
 
-        # Ajouter la version si absente
-        if "version" not in support_json:
+        # Ajouter la version si absente (seulement si c'est un dict)
+        if isinstance(support_json, dict) and "version" not in support_json:
             support_json["version"] = "1.0.0"
 
         return support_json

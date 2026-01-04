@@ -563,3 +563,2916 @@ shit_path_group = [
         "format": "Groupe parent pour themes",
     },
 ]
+
+shit_test_3 = [
+    {
+        "support": {
+            "template_name": "layouts/vertical_column/container",
+            "items": [
+                {
+                    "template_name": "text/description_courte",
+                    "text": {
+                        "template_name": "layouts/vertical_column/container",
+                        "items": [
+                            {
+                                "template_name": "text/description_courte",
+                                "text": "{-{-course-}-}",
+                            },
+                            {
+                                "template_name": "text/explication",
+                                "text": "{-{-topicPath-}-}",
+                            },
+                        ],
+                    },
+                },
+                {
+                    "template_name": "text/explication",
+                    "text": {
+                        "template_name": "layouts/vertical_column/container",
+                        "items": [
+                            {
+                                "template_name": "text/description_courte",
+                                "text": "{-{-course-}-}",
+                            },
+                            {
+                                "template_name": "text/explication",
+                                "text": "{-{-topicPath-}-}",
+                            },
+                        ],
+                    },
+                },
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/titre_principal",
+            "text": {
+                "template_name": "text/titre_principal",
+                "text": "{-{-summary->title-}-}",
+                "items": [
+                    {
+                        "template_name": "text/description_longue",
+                        "text": "{-{-summary->explanation-}-}",
+                    }
+                ],
+            },
+            "items": [
+                {
+                    "template_name": "text/description_longue",
+                    "text": {
+                        "template_name": "text/titre_principal",
+                        "text": "{-{-summary->title-}-}",
+                        "items": [
+                            {
+                                "template_name": "text/description_longue",
+                                "text": "{-{-summary->explanation-}-}",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "conceptual/concept",
+            "title": "Thèmes grammaticaux",
+            "description": "Structure organisée des thèmes d'apprentissage",
+            "items": [
+                {
+                    "template_name": "conceptual/concept",
+                    "title": {
+                        "template_name": "conceptual/concept",
+                        "title": "Thèmes grammaticaux",
+                        "description": "Structure organisée des thèmes d'apprentissage",
+                        "items": [
+                            {
+                                "template_name": "conceptual/concept",
+                                "title": "{-{-themes[0]->name-}-}",
+                                "description": {
+                                    "template_name": "text/explication",
+                                    "text": "{-{-themes[0]->explanation-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "description": {
+                        "template_name": "text/explication",
+                        "text": {
+                            "template_name": "conceptual/concept",
+                            "title": "Thèmes grammaticaux",
+                            "description": "Structure organisée des thèmes d'apprentissage",
+                            "items": [
+                                {
+                                    "template_name": "conceptual/concept",
+                                    "title": "{-{-themes[0]->name-}-}",
+                                    "description": {
+                                        "template_name": "text/explication",
+                                        "text": "{-{-themes[0]->explanation-}-}",
+                                    },
+                                }
+                            ],
+                        },
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "layouts/tree_left_right/item",
+            "title": {
+                "template_name": "layouts/tree_left_right/item",
+                "title": "{-{-themes[0]->groups[0]->label-}-}",
+                "content": {
+                    "template_name": "text/liste_hierarchique",
+                    "items": [
+                        {
+                            "template_name": "logical_relations/si_alors",
+                            "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[0]->ending-}-}",
+                            "alors_content": "{-{-themes[0]->groups[0]->explanation-}-}",
+                        }
+                    ],
+                },
+            },
+            "content": {
+                "template_name": "text/liste_hierarchique",
+                "items": [
+                    {
+                        "template_name": "logical_relations/si_alors",
+                        "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[0]->ending-}-}",
+                        "alors_content": {
+                            "template_name": "layouts/tree_left_right/item",
+                            "title": "{-{-themes[0]->groups[0]->label-}-}",
+                            "content": {
+                                "template_name": "text/liste_hierarchique",
+                                "items": [
+                                    {
+                                        "template_name": "logical_relations/si_alors",
+                                        "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[0]->ending-}-}",
+                                        "alors_content": "{-{-themes[0]->groups[0]->explanation-}-}",
+                                    }
+                                ],
+                            },
+                        },
+                    }
+                ],
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[0]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[1]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[2]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[3]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[4]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[0]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[0]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[0]->conjugationTable[5]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": {
+                "template_name": "text/liste_exemples",
+                "items": "{-{-themes[0]->groups[0]->exampleSentences[0]-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": {
+                "template_name": "text/liste_exemples",
+                "items": "{-{-themes[0]->groups[0]->exampleSentences[1]-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "layouts/tree_left_right/item",
+            "title": {
+                "template_name": "layouts/tree_left_right/item",
+                "title": "{-{-themes[0]->groups[1]->label-}-}",
+                "content": {
+                    "template_name": "text/liste_hierarchique",
+                    "items": [
+                        {
+                            "template_name": "logical_relations/si_alors",
+                            "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[1]->ending-}-}",
+                            "alors_content": "{-{-themes[0]->groups[1]->explanation-}-}",
+                        }
+                    ],
+                },
+            },
+            "content": {
+                "template_name": "text/liste_hierarchique",
+                "items": [
+                    {
+                        "template_name": "logical_relations/si_alors",
+                        "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[1]->ending-}-}",
+                        "alors_content": {
+                            "template_name": "layouts/tree_left_right/item",
+                            "title": "{-{-themes[0]->groups[1]->label-}-}",
+                            "content": {
+                                "template_name": "text/liste_hierarchique",
+                                "items": [
+                                    {
+                                        "template_name": "logical_relations/si_alors",
+                                        "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[1]->ending-}-}",
+                                        "alors_content": "{-{-themes[0]->groups[1]->explanation-}-}",
+                                    }
+                                ],
+                            },
+                        },
+                    }
+                ],
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[0]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[1]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[2]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[3]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[4]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[1]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[1]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[1]->conjugationTable[5]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": {
+                "template_name": "text/liste_exemples",
+                "items": "{-{-themes[0]->groups[1]->exampleSentences[0]-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": {
+                "template_name": "text/liste_exemples",
+                "items": "{-{-themes[0]->groups[1]->exampleSentences[1]-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "layouts/tree_left_right/item",
+            "title": {
+                "template_name": "layouts/tree_left_right/item",
+                "title": "{-{-themes[0]->groups[2]->label-}-}",
+                "content": {
+                    "template_name": "text/liste_hierarchique",
+                    "items": [
+                        {
+                            "template_name": "logical_relations/si_alors",
+                            "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[2]->ending-}-}",
+                            "alors_content": "{-{-themes[0]->groups[2]->explanation-}-}",
+                        }
+                    ],
+                },
+            },
+            "content": {
+                "template_name": "text/liste_hierarchique",
+                "items": [
+                    {
+                        "template_name": "logical_relations/si_alors",
+                        "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[2]->ending-}-}",
+                        "alors_content": {
+                            "template_name": "layouts/tree_left_right/item",
+                            "title": "{-{-themes[0]->groups[2]->label-}-}",
+                            "content": {
+                                "template_name": "text/liste_hierarchique",
+                                "items": [
+                                    {
+                                        "template_name": "logical_relations/si_alors",
+                                        "si_content": "Terminaison de l'infinitif: {-{-themes[0]->groups[2]->ending-}-}",
+                                        "alors_content": "{-{-themes[0]->groups[2]->explanation-}-}",
+                                    }
+                                ],
+                            },
+                        },
+                    }
+                ],
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[0]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[0]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[0]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[1]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[1]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[1]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[2]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[2]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[2]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[3]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[3]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[3]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[4]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[4]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[4]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/tableau_decisionnel",
+            "title": "Tables de Conjugaison",
+            "header1": "Personne",
+            "header2": "Pronom",
+            "header3": "Forme Conjuguée",
+            "row1_col1": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->translation-}-}",
+            },
+            "row1_col2": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->translation-}-}",
+            },
+            "row1_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->translation-}-}",
+            },
+            "row2_col1": "Sens",
+            "row2_col2": "Traduction",
+            "row2_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->translation-}-}",
+            },
+            "row3_col1": "Référence",
+            "row3_col2": "Détail",
+            "row3_col3": {
+                "template_name": "tableaux/tableau_decisionnel",
+                "title": "Tables de Conjugaison",
+                "header1": "Personne",
+                "header2": "Pronom",
+                "header3": "Forme Conjuguée",
+                "row1_col1": "{-{-themes[0]->groups[2]->conjugationTable[5]->person-}-}",
+                "row1_col2": "{-{-themes[0]->groups[2]->conjugationTable[5]->pronoun-}-}",
+                "row1_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->form-}-}",
+                "row2_col1": "Sens",
+                "row2_col2": "Traduction",
+                "row2_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->meaning-}-}",
+                "row3_col1": "Référence",
+                "row3_col2": "Détail",
+                "row3_col3": "{-{-themes[0]->groups[2]->conjugationTable[5]->translation-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": {
+                "template_name": "text/liste_exemples",
+                "items": "{-{-themes[0]->groups[2]->exampleSentences[0]-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": {
+                "template_name": "text/liste_exemples",
+                "items": "{-{-themes[0]->groups[2]->exampleSentences[1]-}-}",
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "conceptual/concept",
+            "title": "Thèmes grammaticaux",
+            "description": "Structure organisée des thèmes d'apprentissage",
+            "items": [
+                {
+                    "template_name": "conceptual/concept",
+                    "title": {
+                        "template_name": "conceptual/concept",
+                        "title": "Thèmes grammaticaux",
+                        "description": "Structure organisée des thèmes d'apprentissage",
+                        "items": [
+                            {
+                                "template_name": "conceptual/concept",
+                                "title": "{-{-themes[1]->name-}-}",
+                                "description": {
+                                    "template_name": "text/explication",
+                                    "text": "{-{-themes[1]->explanation-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "description": {
+                        "template_name": "text/explication",
+                        "text": {
+                            "template_name": "conceptual/concept",
+                            "title": "Thèmes grammaticaux",
+                            "description": "Structure organisée des thèmes d'apprentissage",
+                            "items": [
+                                {
+                                    "template_name": "conceptual/concept",
+                                    "title": "{-{-themes[1]->name-}-}",
+                                    "description": {
+                                        "template_name": "text/explication",
+                                        "text": "{-{-themes[1]->explanation-}-}",
+                                    },
+                                }
+                            ],
+                        },
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": [
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>{-{-themes[1]->examples[0]->label-}-}</strong><br/><em>Infinitif:</em> {-{-themes[1]->examples[0]->infinitive-}-}<br/><br/><strong>Explication:</strong><br/>{-{-themes[1]->examples[0]->explanation-}-}<br/><br/><strong>Notes d'usage:</strong><br/>{-{-themes[1]->examples[0]->usageNotes-}-}",
+                },
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>{-{-themes[1]->examples[0]->label-}-}</strong><br/><em>Infinitif:</em> {-{-themes[1]->examples[0]->infinitive-}-}<br/><br/><strong>Explication:</strong><br/>{-{-themes[1]->examples[0]->explanation-}-}<br/><br/><strong>Notes d'usage:</strong><br/>{-{-themes[1]->examples[0]->usageNotes-}-}",
+                },
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[0]->conjugation[0]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[0]->conjugation[0]->form-}-} - {-{-themes[1]->examples[0]->conjugation[0]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[0]->conjugation[0]->form-}-} - {-{-themes[1]->examples[0]->conjugation[0]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[0]->conjugation[1]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[0]->conjugation[1]->form-}-} - {-{-themes[1]->examples[0]->conjugation[1]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[0]->conjugation[1]->form-}-} - {-{-themes[1]->examples[0]->conjugation[1]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[0]->conjugation[2]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[0]->conjugation[2]->form-}-} - {-{-themes[1]->examples[0]->conjugation[2]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[0]->conjugation[2]->form-}-} - {-{-themes[1]->examples[0]->conjugation[2]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[0]->conjugation[3]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[0]->conjugation[3]->form-}-} - {-{-themes[1]->examples[0]->conjugation[3]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[0]->conjugation[3]->form-}-} - {-{-themes[1]->examples[0]->conjugation[3]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[0]->conjugation[4]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[0]->conjugation[4]->form-}-} - {-{-themes[1]->examples[0]->conjugation[4]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[0]->conjugation[4]->form-}-} - {-{-themes[1]->examples[0]->conjugation[4]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[0]->conjugation[5]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[0]->conjugation[5]->form-}-} - {-{-themes[1]->examples[0]->conjugation[5]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[0]->conjugation[5]->form-}-} - {-{-themes[1]->examples[0]->conjugation[5]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": [
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>{-{-themes[1]->examples[1]->label-}-}</strong><br/><em>Infinitif:</em> {-{-themes[1]->examples[1]->infinitive-}-}<br/><br/><strong>Explication:</strong><br/>{-{-themes[1]->examples[1]->explanation-}-}<br/><br/><strong>Notes d'usage:</strong><br/>{-{-themes[1]->examples[1]->usageNotes-}-}",
+                },
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>{-{-themes[1]->examples[1]->label-}-}</strong><br/><em>Infinitif:</em> {-{-themes[1]->examples[1]->infinitive-}-}<br/><br/><strong>Explication:</strong><br/>{-{-themes[1]->examples[1]->explanation-}-}<br/><br/><strong>Notes d'usage:</strong><br/>{-{-themes[1]->examples[1]->usageNotes-}-}",
+                },
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[1]->conjugation[0]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[1]->conjugation[0]->form-}-} - {-{-themes[1]->examples[1]->conjugation[0]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[1]->conjugation[0]->form-}-} - {-{-themes[1]->examples[1]->conjugation[0]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[1]->conjugation[1]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[1]->conjugation[1]->form-}-} - {-{-themes[1]->examples[1]->conjugation[1]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[1]->conjugation[1]->form-}-} - {-{-themes[1]->examples[1]->conjugation[1]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[1]->conjugation[2]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[1]->conjugation[2]->form-}-} - {-{-themes[1]->examples[1]->conjugation[2]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[1]->conjugation[2]->form-}-} - {-{-themes[1]->examples[1]->conjugation[2]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[1]->conjugation[3]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[1]->conjugation[3]->form-}-} - {-{-themes[1]->examples[1]->conjugation[3]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[1]->conjugation[3]->form-}-} - {-{-themes[1]->examples[1]->conjugation[3]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[1]->conjugation[4]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[1]->conjugation[4]->form-}-} - {-{-themes[1]->examples[1]->conjugation[4]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[1]->conjugation[4]->form-}-} - {-{-themes[1]->examples[1]->conjugation[4]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "tableaux/ligne_cle_valeur",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": "{-{-themes[1]->examples[1]->conjugation[5]->pronoun-}-}",
+                                "value": {
+                                    "template_name": "text/resume",
+                                    "text": "{-{-themes[1]->examples[1]->conjugation[5]->form-}-} - {-{-themes[1]->examples[1]->conjugation[5]->meaning-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "value": {
+                        "template_name": "text/resume",
+                        "text": "{-{-themes[1]->examples[1]->conjugation[5]->form-}-} - {-{-themes[1]->examples[1]->conjugation[5]->meaning-}-}",
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "conceptual/concept",
+            "title": "Thèmes grammaticaux",
+            "description": "Structure organisée des thèmes d'apprentissage",
+            "items": [
+                {
+                    "template_name": "conceptual/concept",
+                    "title": {
+                        "template_name": "conceptual/concept",
+                        "title": "Thèmes grammaticaux",
+                        "description": "Structure organisée des thèmes d'apprentissage",
+                        "items": [
+                            {
+                                "template_name": "conceptual/concept",
+                                "title": "{-{-themes[2]->name-}-}",
+                                "description": {
+                                    "template_name": "text/explication",
+                                    "text": "{-{-themes[2]->explanation-}-}",
+                                },
+                            }
+                        ],
+                    },
+                    "description": {
+                        "template_name": "text/explication",
+                        "text": {
+                            "template_name": "conceptual/concept",
+                            "title": "Thèmes grammaticaux",
+                            "description": "Structure organisée des thèmes d'apprentissage",
+                            "items": [
+                                {
+                                    "template_name": "conceptual/concept",
+                                    "title": "{-{-themes[2]->name-}-}",
+                                    "description": {
+                                        "template_name": "text/explication",
+                                        "text": "{-{-themes[2]->explanation-}-}",
+                                    },
+                                }
+                            ],
+                        },
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "layouts/vertical_column/item",
+            "title": "Détails de thèmes",
+            "content": {
+                "template_name": "text/liste_exemples",
+                "items": {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "Détails de thèmes",
+                    "content": {
+                        "template_name": "text/liste_exemples",
+                        "items": "{-{-themes[2]->details[0]-}-}",
+                    },
+                },
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "layouts/vertical_column/item",
+            "title": "Détails de thèmes",
+            "content": {
+                "template_name": "text/liste_exemples",
+                "items": {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "Détails de thèmes",
+                    "content": {
+                        "template_name": "text/liste_exemples",
+                        "items": "{-{-themes[2]->details[1]-}-}",
+                    },
+                },
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "layouts/vertical_column/item",
+            "title": "Détails de thèmes",
+            "content": {
+                "template_name": "text/liste_exemples",
+                "items": {
+                    "template_name": "layouts/vertical_column/item",
+                    "title": "Détails de thèmes",
+                    "content": {
+                        "template_name": "text/liste_exemples",
+                        "items": "{-{-themes[2]->details[2]-}-}",
+                    },
+                },
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/description_longue",
+            "fields": {
+                "text": {
+                    "template_name": "text/description_longue",
+                    "fields": {"text": "{-{-relations->similarities-}-}"},
+                }
+            },
+        }
+    },
+    {
+        "support": {
+            "template_name": "layouts/vertical_column/container",
+            "items": [
+                {
+                    "template_name": "text/nom_categorie",
+                    "text": "Principes d'apprentissage",
+                },
+                {
+                    "template_name": "text/liste_hierarchique",
+                    "items": {
+                        "template_name": "layouts/vertical_column/container",
+                        "items": [
+                            {
+                                "template_name": "text/nom_categorie",
+                                "text": "Principes d'apprentissage",
+                            },
+                            {
+                                "template_name": "text/liste_hierarchique",
+                                "items": "{-{-learningStrategies->principles-}-}",
+                            },
+                            {
+                                "template_name": "text/nom_categorie",
+                                "text": "Pièges à éviter",
+                            },
+                            {
+                                "template_name": "text/liste_hierarchique",
+                                "items": "{-{-learningStrategies->pitfallsToAvoid-}-}",
+                            },
+                        ],
+                    },
+                },
+                {"template_name": "text/nom_categorie", "text": "Pièges à éviter"},
+                {
+                    "template_name": "text/liste_hierarchique",
+                    "items": {
+                        "template_name": "layouts/vertical_column/container",
+                        "items": [
+                            {
+                                "template_name": "text/nom_categorie",
+                                "text": "Principes d'apprentissage",
+                            },
+                            {
+                                "template_name": "text/liste_hierarchique",
+                                "items": "{-{-learningStrategies->principles-}-}",
+                            },
+                            {
+                                "template_name": "text/nom_categorie",
+                                "text": "Pièges à éviter",
+                            },
+                            {
+                                "template_name": "text/liste_hierarchique",
+                                "items": "{-{-learningStrategies->pitfallsToAvoid-}-}",
+                            },
+                        ],
+                    },
+                },
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_numerotee",
+            "items": [
+                {
+                    "template_name": "text/note",
+                    "text": {
+                        "template_name": "text/liste_numerotee",
+                        "items": [
+                            {
+                                "template_name": "text/note",
+                                "text": "{-{-learningStrategies->concreteTips[0]-}-}",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_numerotee",
+            "items": [
+                {
+                    "template_name": "text/note",
+                    "text": {
+                        "template_name": "text/liste_numerotee",
+                        "items": [
+                            {
+                                "template_name": "text/note",
+                                "text": "{-{-learningStrategies->concreteTips[1]-}-}",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_numerotee",
+            "items": [
+                {
+                    "template_name": "text/note",
+                    "text": {
+                        "template_name": "text/liste_numerotee",
+                        "items": [
+                            {
+                                "template_name": "text/note",
+                                "text": "{-{-learningStrategies->concreteTips[2]-}-}",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_numerotee",
+            "items": [
+                {
+                    "template_name": "text/note",
+                    "text": {
+                        "template_name": "text/liste_numerotee",
+                        "items": [
+                            {
+                                "template_name": "text/note",
+                                "text": "{-{-learningStrategies->concreteTips[3]-}-}",
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/titre_principal",
+            "text": "Galerie d'images indexées",
+            "items": [
+                {
+                    "template_name": "tableaux/ligne_cle_valeur",
+                    "key": {
+                        "template_name": "text/label_court",
+                        "text": {
+                            "template_name": "text/titre_principal",
+                            "text": "Galerie d'images indexées",
+                            "items": [
+                                {
+                                    "template_name": "tableaux/ligne_cle_valeur",
+                                    "key": {
+                                        "template_name": "text/label_court",
+                                        "text": "{-{-media->images[0]->label-}-}",
+                                    },
+                                    "value": {
+                                        "template_name": "tableaux/ligne_cle_valeur",
+                                        "key": "URL",
+                                        "value": "{-{-media->images[0]->url-}-}",
+                                    },
+                                },
+                                {
+                                    "template_name": "text/annotation",
+                                    "text": "{-{-media->images[0]->usageSuggestion-}-}",
+                                },
+                            ],
+                        },
+                    },
+                    "value": {
+                        "template_name": "tableaux/ligne_cle_valeur",
+                        "key": "URL",
+                        "value": {
+                            "template_name": "text/titre_principal",
+                            "text": "Galerie d'images indexées",
+                            "items": [
+                                {
+                                    "template_name": "tableaux/ligne_cle_valeur",
+                                    "key": {
+                                        "template_name": "text/label_court",
+                                        "text": "{-{-media->images[0]->label-}-}",
+                                    },
+                                    "value": {
+                                        "template_name": "tableaux/ligne_cle_valeur",
+                                        "key": "URL",
+                                        "value": "{-{-media->images[0]->url-}-}",
+                                    },
+                                },
+                                {
+                                    "template_name": "text/annotation",
+                                    "text": "{-{-media->images[0]->usageSuggestion-}-}",
+                                },
+                            ],
+                        },
+                    },
+                },
+                {
+                    "template_name": "text/annotation",
+                    "text": {
+                        "template_name": "text/titre_principal",
+                        "text": "Galerie d'images indexées",
+                        "items": [
+                            {
+                                "template_name": "tableaux/ligne_cle_valeur",
+                                "key": {
+                                    "template_name": "text/label_court",
+                                    "text": "{-{-media->images[0]->label-}-}",
+                                },
+                                "value": {
+                                    "template_name": "tableaux/ligne_cle_valeur",
+                                    "key": "URL",
+                                    "value": "{-{-media->images[0]->url-}-}",
+                                },
+                            },
+                            {
+                                "template_name": "text/annotation",
+                                "text": "{-{-media->images[0]->usageSuggestion-}-}",
+                            },
+                        ],
+                    },
+                },
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "temporal/chronologie/container",
+            "items": [
+                {
+                    "template_name": "temporal/chronologie/item",
+                    "start": {
+                        "template_name": "temporal/chronologie/container",
+                        "items": [
+                            {
+                                "template_name": "temporal/chronologie/item",
+                                "start": "{-{-media->videos[0]->start-}-}",
+                            },
+                            {
+                                "template_name": "text/liste_exemples",
+                                "items": [
+                                    {
+                                        "template_name": "text/liste_tags",
+                                        "items": ["{-{-media->videos[0]->label-}-}"],
+                                    },
+                                    {
+                                        "template_name": "text/liste_exemples",
+                                        "items": [
+                                            "URL: {-{-media->videos[0]->url-}-}",
+                                            "Usage: {-{-media->videos[0]->usageSuggestion-}-}",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+                {
+                    "template_name": "text/liste_exemples",
+                    "items": [
+                        {
+                            "template_name": "text/liste_tags",
+                            "items": [
+                                {
+                                    "template_name": "temporal/chronologie/container",
+                                    "items": [
+                                        {
+                                            "template_name": "temporal/chronologie/item",
+                                            "start": "{-{-media->videos[0]->start-}-}",
+                                        },
+                                        {
+                                            "template_name": "text/liste_exemples",
+                                            "items": [
+                                                {
+                                                    "template_name": "text/liste_tags",
+                                                    "items": [
+                                                        "{-{-media->videos[0]->label-}-}"
+                                                    ],
+                                                },
+                                                {
+                                                    "template_name": "text/liste_exemples",
+                                                    "items": [
+                                                        "URL: {-{-media->videos[0]->url-}-}",
+                                                        "Usage: {-{-media->videos[0]->usageSuggestion-}-}",
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                }
+                            ],
+                        },
+                        {
+                            "template_name": "text/liste_exemples",
+                            "items": [
+                                "URL: {-{-media->videos[0]->url-}-}",
+                                "Usage: {-{-media->videos[0]->usageSuggestion-}-}",
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "layouts/vertical_column/container",
+            "items": [
+                {"template_name": "text/nom_categorie", "text": "Examplesscollection"},
+                {
+                    "template_name": "text/liste_hierarchique",
+                    "items": {
+                        "template_name": "layouts/vertical_column/container",
+                        "items": [
+                            {
+                                "template_name": "text/nom_categorie",
+                                "text": "Examplesscollection",
+                            },
+                            {
+                                "template_name": "text/liste_hierarchique",
+                                "items": "{-{-examplesCollection->purpose-}-}",
+                            },
+                        ],
+                    },
+                },
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": [
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>Phrase:</strong> {-{-examplesCollection->examples[0]->sentence-}-}<br/><strong>Traduction:</strong> {-{-examplesCollection->examples[0]->translation-}-}<br/><strong>Note:</strong> {-{-examplesCollection->examples[0]->notes-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": [
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>Phrase:</strong> {-{-examplesCollection->examples[1]->sentence-}-}<br/><strong>Traduction:</strong> {-{-examplesCollection->examples[1]->translation-}-}<br/><strong>Note:</strong> {-{-examplesCollection->examples[1]->notes-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": [
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>Phrase:</strong> {-{-examplesCollection->examples[2]->sentence-}-}<br/><strong>Traduction:</strong> {-{-examplesCollection->examples[2]->translation-}-}<br/><strong>Note:</strong> {-{-examplesCollection->examples[2]->notes-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": [
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>Phrase:</strong> {-{-examplesCollection->examples[3]->sentence-}-}<br/><strong>Traduction:</strong> {-{-examplesCollection->examples[3]->translation-}-}<br/><strong>Note:</strong> {-{-examplesCollection->examples[3]->notes-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_exemples",
+            "items": [
+                {
+                    "template_name": "text/description_longue",
+                    "text": "<strong>Phrase:</strong> {-{-examplesCollection->examples[4]->sentence-}-}<br/><strong>Traduction:</strong> {-{-examplesCollection->examples[4]->translation-}-}<br/><strong>Note:</strong> {-{-examplesCollection->examples[4]->notes-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_puces",
+            "items": [
+                {
+                    "template_name": "text/definition",
+                    "text": "{-{-glossary[0]->term-}-}: {-{-glossary[0]->definition-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_puces",
+            "items": [
+                {
+                    "template_name": "text/definition",
+                    "text": "{-{-glossary[1]->term-}-}: {-{-glossary[1]->definition-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_puces",
+            "items": [
+                {
+                    "template_name": "text/definition",
+                    "text": "{-{-glossary[2]->term-}-}: {-{-glossary[2]->definition-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_puces",
+            "items": [
+                {
+                    "template_name": "text/definition",
+                    "text": "{-{-glossary[3]->term-}-}: {-{-glossary[3]->definition-}-}",
+                }
+            ],
+        }
+    },
+    {
+        "support": {
+            "template_name": "text/liste_puces",
+            "items": [
+                {
+                    "template_name": "text/definition",
+                    "text": "{-{-glossary[4]->term-}-}: {-{-glossary[4]->definition-}-}",
+                }
+            ],
+        }
+    },
+]

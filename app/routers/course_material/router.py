@@ -46,6 +46,7 @@ class CourseMaterialResponse(BaseModel):
     destination_mappings: dict = None
     json_paths_with_variables: list = None
     path_groups: list = None
+    group_jsons_list: list = None
     group_jsons_map: dict = None
     resolved_jsons_map: dict = None
     path_to_value_map: dict = None
@@ -310,6 +311,7 @@ async def generate_course_material_v2(
         destination_mappings=result.get("destination_mappings"),
         json_paths_with_variables=debug_info.get("json_paths_with_variables"),
         path_groups=debug_info.get("path_groups"),
+        group_jsons_list=debug_info.get("group_jsons_list"),
         group_jsons_map=debug_info.get("group_jsons_map"),
         resolved_jsons_map=debug_info.get("resolved_jsons_map"),
         path_to_value_map=debug_info.get("path_to_value_map"),

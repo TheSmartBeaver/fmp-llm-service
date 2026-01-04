@@ -420,7 +420,9 @@ Exemple INCORRECT (à NE JAMAIS faire):
             source_json: Le JSON source complet
 
         Returns:
-            JSON structuré avec template_name et références {{{{chemin}}}}
+            Dictionnaire contenant:
+                - "json": JSON structuré avec template_name et références {{{{chemin}}}}
+                - "prompt": Le prompt formaté envoyé au LLM pour générer ce JSON
         """
         prompt, params = self._build_json_generation_prompt(group, templates)
 
@@ -434,13 +436,18 @@ Exemple INCORRECT (à NE JAMAIS faire):
         # VALIDATION: Vérifier que le LLM n'a pas inventé de clés fictives
         self._validate_group_json_references(result, group)
 
-        return result
+        # Formater le prompt pour le retourner
+        formatted_prompt = prompt.format(**params)
+
+        return {
+            "json": result,
+            "prompt": formatted_prompt
+        }
 
     def _generate_json_from_group(
         self,
         group: Dict[str, Any],
         templates: List[Dict[str, Any]],
-        source_json: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
         Génère le JSON structuré pour un groupe en utilisant les templates récupérés par embedding (version sync).
@@ -448,13 +455,14 @@ Exemple INCORRECT (à NE JAMAIS faire):
         Args:
             group: Un groupe de chemins avec format (output de _generate_path_groups_with_llm)
             templates: Templates récupérés par embedding pour ce groupe
-            source_json: Le JSON source complet
 
         Returns:
-            JSON structuré avec template_name et références {{{{chemin}}}}
+            Dictionnaire contenant:
+                - "json": JSON structuré avec template_name et références {{{{chemin}}}}
+                - "prompt": Le prompt formaté envoyé au LLM pour générer ce JSON
         """
         # Utiliser la version async via asyncio.run
-        return asyncio.run(self._generate_json_from_group_async(group, templates, source_json))
+        return asyncio.run(self._generate_json_from_group_async(group, templates))
 
     def _add_missing_nested_references(
         self,
@@ -1956,7 +1964,10 @@ Exemple INCORRECT (à NE JAMAIS faire):
             return paths_set
 
         group_jsons_map = {}
-        for group_json in group_jsons_list:
+        for group_item in group_jsons_list:
+            # Extraire le JSON de l'objet qui contient aussi le prompt
+            group_json = group_item["json"]
+
             # Extraire tous les chemins {{chemin}} du JSON
             json_paths = extract_paths_from_json(group_json)
 

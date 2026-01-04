@@ -1,0 +1,1256 @@
+{
+  "topicPath": {
+    "template_name": "procedural/methode",
+    "title": "{{course}}",
+    "content": "{{topicPath}}"
+  },
+  "course": {
+    "template_name": "procedural/methode",
+    "title": "{{course}}",
+    "content": "{{topicPath}}"
+  },
+  "summary->title": {
+    "template_name": "conceptual/concept",
+    "title": "{{summary->title}}",
+    "description": {
+      "template_name": "text/explication",
+      "text": "{{summary->explanation}}"
+    }
+  },
+  "summary->explanation": {
+    "template_name": "conceptual/concept",
+    "title": "{{summary->title}}",
+    "description": {
+      "template_name": "text/explication",
+      "text": "{{summary->explanation}}"
+    }
+  },
+  "examplesCollection->purpose": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "text/nom_categorie",
+        "text": "{{examplesCollection->purpose}}"
+      }
+    ]
+  },
+  "examplesCollection->examples[x]": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "text/nom_categorie",
+        "text": "Examples Collection"
+      },
+      {
+        "template_name": "layouts/vertical_column/container",
+        "items": "{{examplesCollection->examples[x]}}"
+      }
+    ]
+  },
+  "examplesCollection->examples[x]->notes": {
+    "template_name": "text/liste_exemples",
+    "items": [
+      {
+        "template_name": "text/description_courte",
+        "text": "Phrase: {{examplesCollection->examples[x]->sentence}}"
+      },
+      {
+        "template_name": "text/description_courte",
+        "text": "Traduction: {{examplesCollection->examples[x]->translation}}"
+      },
+      {
+        "template_name": "text/annotation",
+        "text": "{{examplesCollection->examples[x]->notes}}"
+      }
+    ]
+  },
+  "examplesCollection->examples[x]->translation": {
+    "template_name": "text/liste_exemples",
+    "items": [
+      {
+        "template_name": "text/description_courte",
+        "text": "Phrase: {{examplesCollection->examples[x]->sentence}}"
+      },
+      {
+        "template_name": "text/description_courte",
+        "text": "Traduction: {{examplesCollection->examples[x]->translation}}"
+      },
+      {
+        "template_name": "text/annotation",
+        "text": "{{examplesCollection->examples[x]->notes}}"
+      }
+    ]
+  },
+  "examplesCollection->examples[x]->sentence": {
+    "template_name": "text/liste_exemples",
+    "items": [
+      {
+        "template_name": "text/description_courte",
+        "text": "Phrase: {{examplesCollection->examples[x]->sentence}}"
+      },
+      {
+        "template_name": "text/description_courte",
+        "text": "Traduction: {{examplesCollection->examples[x]->translation}}"
+      },
+      {
+        "template_name": "text/annotation",
+        "text": "{{examplesCollection->examples[x]->notes}}"
+      }
+    ]
+  },
+  "glossary[x]->definition": {
+    "template_name": "text/liste_puces",
+    "items": [
+      {
+        "template_name": "text/definition",
+        "text": "{{glossary[x]->term}}: {{glossary[x]->definition}}"
+      }
+    ]
+  },
+  "glossary[x]->term": {
+    "template_name": "text/liste_puces",
+    "items": [
+      {
+        "template_name": "text/definition",
+        "text": "{{glossary[x]->term}}: {{glossary[x]->definition}}"
+      }
+    ]
+  },
+  "learningStrategies->pitfallsToAvoid": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "text/nom_categorie",
+        "text": "Learning Strategies"
+      },
+      {
+        "template_name": "layouts/horizontal_line/container",
+        "items": [
+          {
+            "template_name": "layouts/vertical_column/container",
+            "items": [
+              {
+                "template_name": "text/nom_categorie",
+                "text": "Principles"
+              },
+              {
+                "template_name": "text/liste_hierarchique",
+                "items": "{{learningStrategies->principles}}"
+              }
+            ]
+          },
+          {
+            "template_name": "layouts/vertical_column/container",
+            "items": [
+              {
+                "template_name": "text/nom_categorie",
+                "text": "Pitfalls to Avoid"
+              },
+              {
+                "template_name": "text/liste_hierarchique",
+                "items": "{{learningStrategies->pitfallsToAvoid}}"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "learningStrategies->principles": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "text/nom_categorie",
+        "text": "Learning Strategies"
+      },
+      {
+        "template_name": "layouts/horizontal_line/container",
+        "items": [
+          {
+            "template_name": "layouts/vertical_column/container",
+            "items": [
+              {
+                "template_name": "text/nom_categorie",
+                "text": "Principles"
+              },
+              {
+                "template_name": "text/liste_hierarchique",
+                "items": "{{learningStrategies->principles}}"
+              }
+            ]
+          },
+          {
+            "template_name": "layouts/vertical_column/container",
+            "items": [
+              {
+                "template_name": "text/nom_categorie",
+                "text": "Pitfalls to Avoid"
+              },
+              {
+                "template_name": "text/liste_hierarchique",
+                "items": "{{learningStrategies->pitfallsToAvoid}}"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "learningStrategies->concreteTips[x]": {
+    "template_name": "comparison/pour_contre",
+    "pour_content": "{{learningStrategies->concreteTips[x]}}",
+    "contre_content": "{{learningStrategies->concreteTips[x]}}"
+  },
+  "media->images[x]->label": {
+    "template_name": "layouts/grid/container",
+    "items": [
+      {
+        "template_name": "tableaux/ligne_cle_valeur",
+        "key": "URL",
+        "value": "{{media->images[x]->url}}"
+      },
+      {
+        "template_name": "tableaux/ligne_cle_valeur",
+        "key": "Étiquette",
+        "value": "{{media->images[x]->label}}"
+      },
+      {
+        "template_name": "text/annotation",
+        "text": "{{media->images[x]->usageSuggestion}}"
+      }
+    ]
+  },
+  "media->images[x]->usageSuggestion": {
+    "template_name": "layouts/grid/container",
+    "items": [
+      {
+        "template_name": "tableaux/ligne_cle_valeur",
+        "key": "URL",
+        "value": "{{media->images[x]->url}}"
+      },
+      {
+        "template_name": "tableaux/ligne_cle_valeur",
+        "key": "Étiquette",
+        "value": "{{media->images[x]->label}}"
+      },
+      {
+        "template_name": "text/annotation",
+        "text": "{{media->images[x]->usageSuggestion}}"
+      }
+    ]
+  },
+  "media->images[x]->url": {
+    "template_name": "layouts/grid/container",
+    "items": [
+      {
+        "template_name": "tableaux/ligne_cle_valeur",
+        "key": "URL",
+        "value": "{{media->images[x]->url}}"
+      },
+      {
+        "template_name": "tableaux/ligne_cle_valeur",
+        "key": "Étiquette",
+        "value": "{{media->images[x]->label}}"
+      },
+      {
+        "template_name": "text/annotation",
+        "text": "{{media->images[x]->usageSuggestion}}"
+      }
+    ]
+  },
+  "media->videos[x]->start": {
+    "template_name": "temporal/present/container",
+    "items": [
+      {
+        "template_name": "temporal/present/item",
+        "start": "{{media->videos[x]->label}}"
+      },
+      {
+        "template_name": "temporal/chronologie/item",
+        "start": "{{media->videos[x]->start}}"
+      },
+      {
+        "template_name": "temporal/duree",
+        "duration": "{{media->videos[x]->start}}"
+      },
+      {
+        "template_name": "text/liste_tags",
+        "items": [
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->label}}"
+          },
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->usageSuggestion}}"
+          },
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->url}}"
+          }
+        ]
+      }
+    ]
+  },
+  "media->videos[x]->label": {
+    "template_name": "temporal/present/container",
+    "items": [
+      {
+        "template_name": "temporal/present/item",
+        "start": "{{media->videos[x]->label}}"
+      },
+      {
+        "template_name": "temporal/chronologie/item",
+        "start": "{{media->videos[x]->start}}"
+      },
+      {
+        "template_name": "temporal/duree",
+        "duration": "{{media->videos[x]->start}}"
+      },
+      {
+        "template_name": "text/liste_tags",
+        "items": [
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->label}}"
+          },
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->usageSuggestion}}"
+          },
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->url}}"
+          }
+        ]
+      }
+    ]
+  },
+  "media->videos[x]->url": {
+    "template_name": "temporal/present/container",
+    "items": [
+      {
+        "template_name": "temporal/present/item",
+        "start": "{{media->videos[x]->label}}"
+      },
+      {
+        "template_name": "temporal/chronologie/item",
+        "start": "{{media->videos[x]->start}}"
+      },
+      {
+        "template_name": "temporal/duree",
+        "duration": "{{media->videos[x]->start}}"
+      },
+      {
+        "template_name": "text/liste_tags",
+        "items": [
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->label}}"
+          },
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->usageSuggestion}}"
+          },
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->url}}"
+          }
+        ]
+      }
+    ]
+  },
+  "media->videos[x]->usageSuggestion": {
+    "template_name": "temporal/present/container",
+    "items": [
+      {
+        "template_name": "temporal/present/item",
+        "start": "{{media->videos[x]->label}}"
+      },
+      {
+        "template_name": "temporal/chronologie/item",
+        "start": "{{media->videos[x]->start}}"
+      },
+      {
+        "template_name": "temporal/duree",
+        "duration": "{{media->videos[x]->start}}"
+      },
+      {
+        "template_name": "text/liste_tags",
+        "items": [
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->label}}"
+          },
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->usageSuggestion}}"
+          },
+          {
+            "template_name": "text/liste_tags",
+            "items": "{{media->videos[x]->url}}"
+          }
+        ]
+      }
+    ]
+  },
+  "relations->differences": {
+    "template_name": "comparison/comparaison_simple",
+    "item1_title": "Ressemblances",
+    "item1_content": {
+      "template_name": "comparison/similarites",
+      "content": "{{relations->similarities}}"
+    },
+    "item2_title": "Différences",
+    "item2_content": {
+      "template_name": "comparison/differences",
+      "content": "{{relations->differences}}"
+    }
+  },
+  "relations->similarities": {
+    "template_name": "comparison/comparaison_simple",
+    "item1_title": "Ressemblances",
+    "item1_content": {
+      "template_name": "comparison/similarites",
+      "content": "{{relations->similarities}}"
+    },
+    "item2_title": "Différences",
+    "item2_content": {
+      "template_name": "comparison/differences",
+      "content": "{{relations->differences}}"
+    }
+  },
+  "themes[x]->name": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes verbaux avec leurs exemples conjugués, présentant les formes verbales selon les pronoms et les sens associés."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->name}}",
+        "description": {
+          "template_name": "text/description_courte",
+          "text": "{{themes[x]->explanation}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->explanation": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes verbaux avec leurs exemples conjugués, présentant les formes verbales selon les pronoms et les sens associés."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->name}}",
+        "description": {
+          "template_name": "text/description_courte",
+          "text": "{{themes[x]->explanation}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->examples[y]->infinitive": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->examples[y]->label}}",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Infinitif",
+              "content": "{{themes[x]->examples[y]->infinitive}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Explication",
+              "content": "{{themes[x]->examples[y]->explanation}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Notes d'utilisation",
+              "content": "{{themes[x]->examples[y]->usageNotes}}"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "themes[x]->examples[y]->explanation": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->examples[y]->label}}",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Infinitif",
+              "content": "{{themes[x]->examples[y]->infinitive}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Explication",
+              "content": "{{themes[x]->examples[y]->explanation}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Notes d'utilisation",
+              "content": "{{themes[x]->examples[y]->usageNotes}}"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes verbaux avec leurs exemples illustratifs et formes conjuguées. Chaque thème présente des verbes représentatifs avec leur infinitif, pronoms d'utilisation, sens et notes d'usage pour une compréhension complète des patterns de conjugaison."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->details[y]}}",
+        "description": {
+          "template_name": "text/sous_titre",
+          "text": "Groupe de conjugaison: {{themes[x]->groups[y]}}"
+        },
+        "examples": {
+          "template_name": "text/liste_exemples",
+          "items": [
+            {
+              "template_name": "conceptual/axiome",
+              "title": "{{themes[x]->examples[y]->label}}",
+              "description": {
+                "template_name": "text/definition",
+                "text": "Infinitif: {{themes[x]->examples[y]->infinitive}} | Sens: {{themes[x]->examples[y]->explanation}} | Remarques: {{themes[x]->examples[y]->usageNotes}}"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "themes[x]->details[y]": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes verbaux avec leurs exemples illustratifs et formes conjuguées. Chaque thème présente des verbes représentatifs avec leur infinitif, pronoms d'utilisation, sens et notes d'usage pour une compréhension complète des patterns de conjugaison."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->details[y]}}",
+        "description": {
+          "template_name": "text/sous_titre",
+          "text": "Groupe de conjugaison: {{themes[x]->groups[y]}}"
+        },
+        "examples": {
+          "template_name": "text/liste_exemples",
+          "items": [
+            {
+              "template_name": "conceptual/axiome",
+              "title": "{{themes[x]->examples[y]->label}}",
+              "description": {
+                "template_name": "text/definition",
+                "text": "Infinitif: {{themes[x]->examples[y]->infinitive}} | Sens: {{themes[x]->examples[y]->explanation}} | Remarques: {{themes[x]->examples[y]->usageNotes}}"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "themes[x]->examples[y]->usageNotes": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->examples[y]->label}}",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Infinitif",
+              "content": "{{themes[x]->examples[y]->infinitive}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Explication",
+              "content": "{{themes[x]->examples[y]->explanation}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Notes d'utilisation",
+              "content": "{{themes[x]->examples[y]->usageNotes}}"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "themes[x]->examples[y]->label": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->examples[y]->label}}",
+        "content": {
+          "template_name": "layouts/vertical_column/container",
+          "items": [
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Infinitif",
+              "content": "{{themes[x]->examples[y]->infinitive}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Explication",
+              "content": "{{themes[x]->examples[y]->explanation}}"
+            },
+            {
+              "template_name": "layouts/vertical_column/item",
+              "title": "Notes d'utilisation",
+              "content": "{{themes[x]->examples[y]->usageNotes}}"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "themes[x]->examples[y]->conjugation[z]->meaning": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes pédagogiques avec des exemples verbaux illustrant les différentes formes conjuguées, incluant l'infinitif, les pronoms associés et le sens de chaque conjugaison."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->label}}",
+        "description": {
+          "template_name": "text/sous_titre",
+          "text": "{{themes[x]->description}}"
+        },
+        "examples": [
+          {
+            "template_name": "conceptual/concept",
+            "title": "{{themes[x]->examples[y]->infinitive}}",
+            "description": {
+              "template_name": "text/description_courte",
+              "text": "{{themes[x]->examples[y]->sense}}"
+            },
+            "conjugations": {
+              "template_name": "text/liste_exemples",
+              "items": [
+                {
+                  "template_name": "text/definition",
+                  "text": "<strong>{{themes[x]->examples[y]->conjugation[z]->pronoun}}</strong>: {{themes[x]->examples[y]->conjugation[z]->form}} ({{themes[x]->examples[y]->conjugation[z]->meaning}})"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "themes[x]->examples[y]->conjugation[z]->pronoun": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes pédagogiques avec des exemples verbaux illustrant les différentes formes conjuguées, incluant l'infinitif, les pronoms associés et le sens de chaque conjugaison."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->label}}",
+        "description": {
+          "template_name": "text/sous_titre",
+          "text": "{{themes[x]->description}}"
+        },
+        "examples": [
+          {
+            "template_name": "conceptual/concept",
+            "title": "{{themes[x]->examples[y]->infinitive}}",
+            "description": {
+              "template_name": "text/description_courte",
+              "text": "{{themes[x]->examples[y]->sense}}"
+            },
+            "conjugations": {
+              "template_name": "text/liste_exemples",
+              "items": [
+                {
+                  "template_name": "text/definition",
+                  "text": "<strong>{{themes[x]->examples[y]->conjugation[z]->pronoun}}</strong>: {{themes[x]->examples[y]->conjugation[z]->form}} ({{themes[x]->examples[y]->conjugation[z]->meaning}})"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "themes[x]->examples[y]->conjugation[z]->form": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes pédagogiques avec des exemples verbaux illustrant les différentes formes conjuguées, incluant l'infinitif, les pronoms associés et le sens de chaque conjugaison."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->label}}",
+        "description": {
+          "template_name": "text/sous_titre",
+          "text": "{{themes[x]->description}}"
+        },
+        "examples": [
+          {
+            "template_name": "conceptual/concept",
+            "title": "{{themes[x]->examples[y]->infinitive}}",
+            "description": {
+              "template_name": "text/description_courte",
+              "text": "{{themes[x]->examples[y]->sense}}"
+            },
+            "conjugations": {
+              "template_name": "text/liste_exemples",
+              "items": [
+                {
+                  "template_name": "text/definition",
+                  "text": "<strong>{{themes[x]->examples[y]->conjugation[z]->pronoun}}</strong>: {{themes[x]->examples[y]->conjugation[z]->form}} ({{themes[x]->examples[y]->conjugation[z]->meaning}})"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "themes[x]->label": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes pédagogiques avec des exemples verbaux illustrant les différentes formes conjuguées, incluant l'infinitif, les pronoms associés et le sens de chaque conjugaison."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->label}}",
+        "description": {
+          "template_name": "text/sous_titre",
+          "text": "{{themes[x]->description}}"
+        },
+        "examples": [
+          {
+            "template_name": "conceptual/concept",
+            "title": "{{themes[x]->examples[y]->infinitive}}",
+            "description": {
+              "template_name": "text/description_courte",
+              "text": "{{themes[x]->examples[y]->sense}}"
+            },
+            "conjugations": {
+              "template_name": "text/liste_exemples",
+              "items": [
+                {
+                  "template_name": "text/definition",
+                  "text": "<strong>{{themes[x]->examples[y]->conjugation[z]->pronoun}}</strong>: {{themes[x]->examples[y]->conjugation[z]->form}} ({{themes[x]->examples[y]->conjugation[z]->meaning}})"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "themes[x]->description": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes pédagogiques avec des exemples verbaux illustrant les différentes formes conjuguées, incluant l'infinitif, les pronoms associés et le sens de chaque conjugaison."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->label}}",
+        "description": {
+          "template_name": "text/sous_titre",
+          "text": "{{themes[x]->description}}"
+        },
+        "examples": [
+          {
+            "template_name": "conceptual/concept",
+            "title": "{{themes[x]->examples[y]->infinitive}}",
+            "description": {
+              "template_name": "text/description_courte",
+              "text": "{{themes[x]->examples[y]->sense}}"
+            },
+            "conjugations": {
+              "template_name": "text/liste_exemples",
+              "items": [
+                {
+                  "template_name": "text/definition",
+                  "text": "<strong>{{themes[x]->examples[y]->conjugation[z]->pronoun}}</strong>: {{themes[x]->examples[y]->conjugation[z]->form}} ({{themes[x]->examples[y]->conjugation[z]->meaning}})"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "themes[x]->examples[y]->sense": {
+    "template_name": "conceptual/concept",
+    "title": "Thèmes avec exemples conjugués",
+    "description": {
+      "template_name": "text/description_longue",
+      "text": "Exploration des thèmes pédagogiques avec des exemples verbaux illustrant les différentes formes conjuguées, incluant l'infinitif, les pronoms associés et le sens de chaque conjugaison."
+    },
+    "items": [
+      {
+        "template_name": "conceptual/concept",
+        "title": "{{themes[x]->label}}",
+        "description": {
+          "template_name": "text/sous_titre",
+          "text": "{{themes[x]->description}}"
+        },
+        "examples": [
+          {
+            "template_name": "conceptual/concept",
+            "title": "{{themes[x]->examples[y]->infinitive}}",
+            "description": {
+              "template_name": "text/description_courte",
+              "text": "{{themes[x]->examples[y]->sense}}"
+            },
+            "conjugations": {
+              "template_name": "text/liste_exemples",
+              "items": [
+                {
+                  "template_name": "text/definition",
+                  "text": "<strong>{{themes[x]->examples[y]->conjugation[z]->pronoun}}</strong>: {{themes[x]->examples[y]->conjugation[z]->form}} ({{themes[x]->examples[y]->conjugation[z]->meaning}})"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "themes[x]->groups[y]->explanation": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->groups[y]->label}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison - {{themes[x]->groups[y]->label}}",
+          "header1": "Personne",
+          "header2": "Forme conjuguée",
+          "header3": "Explication",
+          "row1_col1": "1ère personne",
+          "row1_col2": "{{themes[x]->groups[y]->ending}}",
+          "row1_col3": "{{themes[x]->groups[y]->explanation}}",
+          "row2_col1": "2ème personne",
+          "row2_col2": "{{themes[x]->groups[y]->ending}}",
+          "row2_col3": "{{themes[x]->groups[y]->explanation}}",
+          "row3_col1": "3ème personne",
+          "row3_col2": "{{themes[x]->groups[y]->ending}}",
+          "row3_col3": "{{themes[x]->groups[y]->explanation}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]->ending": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->groups[y]->label}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison - {{themes[x]->groups[y]->label}}",
+          "header1": "Personne",
+          "header2": "Forme conjuguée",
+          "header3": "Explication",
+          "row1_col1": "1ère personne",
+          "row1_col2": "{{themes[x]->groups[y]->ending}}",
+          "row1_col3": "{{themes[x]->groups[y]->explanation}}",
+          "row2_col1": "2ème personne",
+          "row2_col2": "{{themes[x]->groups[y]->ending}}",
+          "row2_col3": "{{themes[x]->groups[y]->explanation}}",
+          "row3_col1": "3ème personne",
+          "row3_col2": "{{themes[x]->groups[y]->ending}}",
+          "row3_col3": "{{themes[x]->groups[y]->explanation}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]->label": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->groups[y]->label}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison - {{themes[x]->groups[y]->label}}",
+          "header1": "Personne",
+          "header2": "Forme conjuguée",
+          "header3": "Explication",
+          "row1_col1": "1ère personne",
+          "row1_col2": "{{themes[x]->groups[y]->ending}}",
+          "row1_col3": "{{themes[x]->groups[y]->explanation}}",
+          "row2_col1": "2ème personne",
+          "row2_col2": "{{themes[x]->groups[y]->ending}}",
+          "row2_col3": "{{themes[x]->groups[y]->explanation}}",
+          "row3_col1": "3ème personne",
+          "row3_col2": "{{themes[x]->groups[y]->ending}}",
+          "row3_col3": "{{themes[x]->groups[y]->explanation}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]->conjugationTable[z]->translation": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{text/nom_categorie}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison systématique",
+          "header1": "Personne",
+          "header2": "Pronom",
+          "header3": "Forme conjuguée",
+          "row1_col1": "{{themes[x]->groups[y]->conjugationTable[z]->person}}",
+          "row1_col2": "{{themes[x]->groups[y]->conjugationTable[z]->pronoun}}",
+          "row1_col3": "{{themes[x]->groups[y]->conjugationTable[z]->form}}",
+          "row2_col1": "{{themes[x]->groups[y]->conjugationTable[z]->meaning}}",
+          "row2_col2": "Traduction",
+          "row2_col3": "{{themes[x]->groups[y]->conjugationTable[z]->translation}}",
+          "row3_col1": "Groupe",
+          "row3_col2": "Contexte",
+          "row3_col3": "Usage régulier"
+        }
+      },
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Phrases d'exemple",
+        "content": {
+          "template_name": "text/liste_puces",
+          "items": "{{themes[x]->groups[y]->exampleSentences[z]}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]->exampleSentences[z]": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{text/nom_categorie}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison systématique",
+          "header1": "Personne",
+          "header2": "Pronom",
+          "header3": "Forme conjuguée",
+          "row1_col1": "{{themes[x]->groups[y]->conjugationTable[z]->person}}",
+          "row1_col2": "{{themes[x]->groups[y]->conjugationTable[z]->pronoun}}",
+          "row1_col3": "{{themes[x]->groups[y]->conjugationTable[z]->form}}",
+          "row2_col1": "{{themes[x]->groups[y]->conjugationTable[z]->meaning}}",
+          "row2_col2": "Traduction",
+          "row2_col3": "{{themes[x]->groups[y]->conjugationTable[z]->translation}}",
+          "row3_col1": "Groupe",
+          "row3_col2": "Contexte",
+          "row3_col3": "Usage régulier"
+        }
+      },
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Phrases d'exemple",
+        "content": {
+          "template_name": "text/liste_puces",
+          "items": "{{themes[x]->groups[y]->exampleSentences[z]}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]->conjugationTable[z]->form": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{text/nom_categorie}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison systématique",
+          "header1": "Personne",
+          "header2": "Pronom",
+          "header3": "Forme conjuguée",
+          "row1_col1": "{{themes[x]->groups[y]->conjugationTable[z]->person}}",
+          "row1_col2": "{{themes[x]->groups[y]->conjugationTable[z]->pronoun}}",
+          "row1_col3": "{{themes[x]->groups[y]->conjugationTable[z]->form}}",
+          "row2_col1": "{{themes[x]->groups[y]->conjugationTable[z]->meaning}}",
+          "row2_col2": "Traduction",
+          "row2_col3": "{{themes[x]->groups[y]->conjugationTable[z]->translation}}",
+          "row3_col1": "Groupe",
+          "row3_col2": "Contexte",
+          "row3_col3": "Usage régulier"
+        }
+      },
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Phrases d'exemple",
+        "content": {
+          "template_name": "text/liste_puces",
+          "items": "{{themes[x]->groups[y]->exampleSentences[z]}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]->conjugationTable[z]->meaning": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{text/nom_categorie}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison systématique",
+          "header1": "Personne",
+          "header2": "Pronom",
+          "header3": "Forme conjuguée",
+          "row1_col1": "{{themes[x]->groups[y]->conjugationTable[z]->person}}",
+          "row1_col2": "{{themes[x]->groups[y]->conjugationTable[z]->pronoun}}",
+          "row1_col3": "{{themes[x]->groups[y]->conjugationTable[z]->form}}",
+          "row2_col1": "{{themes[x]->groups[y]->conjugationTable[z]->meaning}}",
+          "row2_col2": "Traduction",
+          "row2_col3": "{{themes[x]->groups[y]->conjugationTable[z]->translation}}",
+          "row3_col1": "Groupe",
+          "row3_col2": "Contexte",
+          "row3_col3": "Usage régulier"
+        }
+      },
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Phrases d'exemple",
+        "content": {
+          "template_name": "text/liste_puces",
+          "items": "{{themes[x]->groups[y]->exampleSentences[z]}}"
+        }
+      }
+    ]
+  },
+  "text/nom_categorie": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{text/nom_categorie}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison systématique",
+          "header1": "Personne",
+          "header2": "Pronom",
+          "header3": "Forme conjuguée",
+          "row1_col1": "{{themes[x]->groups[y]->conjugationTable[z]->person}}",
+          "row1_col2": "{{themes[x]->groups[y]->conjugationTable[z]->pronoun}}",
+          "row1_col3": "{{themes[x]->groups[y]->conjugationTable[z]->form}}",
+          "row2_col1": "{{themes[x]->groups[y]->conjugationTable[z]->meaning}}",
+          "row2_col2": "Traduction",
+          "row2_col3": "{{themes[x]->groups[y]->conjugationTable[z]->translation}}",
+          "row3_col1": "Groupe",
+          "row3_col2": "Contexte",
+          "row3_col3": "Usage régulier"
+        }
+      },
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Phrases d'exemple",
+        "content": {
+          "template_name": "text/liste_puces",
+          "items": "{{themes[x]->groups[y]->exampleSentences[z]}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]->conjugationTable[z]->pronoun": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{text/nom_categorie}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison systématique",
+          "header1": "Personne",
+          "header2": "Pronom",
+          "header3": "Forme conjuguée",
+          "row1_col1": "{{themes[x]->groups[y]->conjugationTable[z]->person}}",
+          "row1_col2": "{{themes[x]->groups[y]->conjugationTable[z]->pronoun}}",
+          "row1_col3": "{{themes[x]->groups[y]->conjugationTable[z]->form}}",
+          "row2_col1": "{{themes[x]->groups[y]->conjugationTable[z]->meaning}}",
+          "row2_col2": "Traduction",
+          "row2_col3": "{{themes[x]->groups[y]->conjugationTable[z]->translation}}",
+          "row3_col1": "Groupe",
+          "row3_col2": "Contexte",
+          "row3_col3": "Usage régulier"
+        }
+      },
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Phrases d'exemple",
+        "content": {
+          "template_name": "text/liste_puces",
+          "items": "{{themes[x]->groups[y]->exampleSentences[z]}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->groups[y]->conjugationTable[z]->person": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{text/nom_categorie}}",
+        "content": {
+          "template_name": "tableaux/tableau_decisionnel",
+          "title": "Tableau de conjugaison systématique",
+          "header1": "Personne",
+          "header2": "Pronom",
+          "header3": "Forme conjuguée",
+          "row1_col1": "{{themes[x]->groups[y]->conjugationTable[z]->person}}",
+          "row1_col2": "{{themes[x]->groups[y]->conjugationTable[z]->pronoun}}",
+          "row1_col3": "{{themes[x]->groups[y]->conjugationTable[z]->form}}",
+          "row2_col1": "{{themes[x]->groups[y]->conjugationTable[z]->meaning}}",
+          "row2_col2": "Traduction",
+          "row2_col3": "{{themes[x]->groups[y]->conjugationTable[z]->translation}}",
+          "row3_col1": "Groupe",
+          "row3_col2": "Contexte",
+          "row3_col3": "Usage régulier"
+        }
+      },
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "Phrases d'exemple",
+        "content": {
+          "template_name": "text/liste_puces",
+          "items": "{{themes[x]->groups[y]->exampleSentences[z]}}"
+        }
+      }
+    ]
+  },
+  "media->videos[x]": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "text/nom_categorie",
+        "text": "Images"
+      },
+      {
+        "template_name": "layouts/grid/container",
+        "items": "{{media->images[x]}}"
+      },
+      {
+        "template_name": "text/nom_categorie",
+        "text": "Vidéos"
+      },
+      {
+        "template_name": "layouts/grid/container",
+        "items": "{{media->videos[x]}}"
+      }
+    ]
+  },
+  "media->images[x]": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "text/nom_categorie",
+        "text": "Images"
+      },
+      {
+        "template_name": "layouts/grid/container",
+        "items": "{{media->images[x]}}"
+      },
+      {
+        "template_name": "text/nom_categorie",
+        "text": "Vidéos"
+      },
+      {
+        "template_name": "layouts/grid/container",
+        "items": "{{media->videos[x]}}"
+      }
+    ]
+  },
+  "themes[x]->examples[y]": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->examples[y]}}",
+        "content": {
+          "template_name": "text/liste_exemples",
+          "items": "{{themes[x]->examples[y]->conjugation[z]}}"
+        }
+      }
+    ]
+  },
+  "themes[x]->examples[y]->conjugation[z]": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]->examples[y]}}",
+        "content": {
+          "template_name": "text/liste_exemples",
+          "items": "{{themes[x]->examples[y]->conjugation[z]}}"
+        }
+      }
+    ]
+  },
+  "glossary[x]": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "text/nom_categorie",
+        "text": "Glossary"
+      },
+      {
+        "template_name": "layouts/vertical_column/container",
+        "items": "{{glossary[x]}}"
+      }
+    ]
+  },
+  "themes[x]": {
+    "template_name": "layouts/vertical_column/container",
+    "items": [
+      {
+        "template_name": "layouts/vertical_column/item",
+        "title": "{{themes[x]}}",
+        "content": "{{themes[x]}}"
+      }
+    ]
+  }
+}

@@ -79,6 +79,7 @@ class TemplateStructureResponse(BaseModel):
     success: bool
     template_structure: Dict[str, Any]
     prompt: str
+    debug_info: Optional[Dict[str, Any]] = None
 
 
 @utils_router.post("/generate-template-structure", response_model=TemplateStructureResponse)
@@ -152,7 +153,8 @@ async def generate_template_structure(
         return TemplateStructureResponse(
             success=True,
             template_structure=result["template_structure"],
-            prompt=result["prompt"]
+            prompt=result["prompt"],
+            debug_info=result.get("debug_info")
         )
     except Exception as e:
         return TemplateStructureResponse(

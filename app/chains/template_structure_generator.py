@@ -1362,6 +1362,234 @@ Exemple INCORRECT (à NE JAMAIS faire):
 
         return resolved_map
 
+    def _build_final_json_incremental(
+        self,
+        path_to_value_map: Dict[str, Any],
+        group_jsons_map: Dict[str, Any],
+        verbose: bool = True
+    ) -> List[Any]:
+        """
+        Construit le final_json de manière incrémentale à partir de path_to_value_map et group_jsons_map.
+
+        Args:
+            path_to_value_map: Dictionnaire plat avec chemins -> valeurs
+            group_jsons_map: Dictionnaire avec chemins (avec variables) -> templates JSON
+            verbose: Si True, affiche les logs de progression
+
+        Returns:
+            Liste de templates JSON résolus (final_json)
+        """
+        import re
+        import copy
+        import json
+
+        final_json = []
+        templates_seen = {}  # Cache: (template_id, var_mapping_tuple) -> template_instance
+        template_ids = {}    # Cache: path_with_vars -> template_id (hash du template JSON)
+
+        total_paths = len(path_to_value_map)
+        processed = 0
+
+        if verbose:
+            print(f"Total de chemins à traiter: {total_paths}\n")
+
+        for path_with_indices, value in path_to_value_map.items():
+            processed += 1
+
+            if verbose:
+                print(f"\n[{processed}/{total_paths}] Traitement: {path_with_indices}")
+                print(f"  Valeur: {value if len(str(value)) < 80 else str(value)[:77] + '...'}")
+
+            # ÉTAPE 1: Convertir indices → variables
+            path_with_vars, var_mapping = self._convert_indices_to_variables(path_with_indices)
+
+            if verbose:
+                print(f"  Chemin avec variables: {path_with_vars}")
+                if var_mapping:
+                    print(f"  Mapping des variables: {var_mapping}")
+
+            # ÉTAPE 2: Chercher le template correspondant
+            if path_with_vars not in group_jsons_map:
+                if verbose:
+                    print(f"  ⊘ SKIP: Aucun template trouvé pour '{path_with_vars}'")
+                continue
+
+            template = group_jsons_map[path_with_vars]
+
+            # ÉTAPE 2.5: Identifier le template de manière unique (par son contenu JSON)
+            # Si plusieurs chemins pointent vers le même template (même structure),
+            # ils doivent partager la même instance
+            if path_with_vars not in template_ids:
+                template_id = json.dumps(template, sort_keys=True)
+                template_ids[path_with_vars] = template_id
+            else:
+                template_id = template_ids[path_with_vars]
+
+            # ÉTAPE 3: Vérifier si on doit créer une nouvelle instance ou réutiliser
+            # La clé de cache combine le template_id ET les indices des variables
+            cache_key = (template_id, tuple(sorted(var_mapping.items())))
+
+            if cache_key in templates_seen:
+                # Réutiliser l'instance existante
+                template_instance = templates_seen[cache_key]
+                if verbose:
+                    print(f"  ♻️  Réutilisation du template existant")
+            else:
+                # Créer une nouvelle instance
+                template_instance = copy.deepcopy(template)
+                templates_seen[cache_key] = template_instance
+                final_json.append(template_instance)
+                if verbose:
+                    print(f"  ✓ Nouveau template créé et ajouté à final_json (position {len(final_json) - 1})")
+
+            # ÉTAPE 4: Transformer les variables en indices réels dans les placeholders
+            # On ne résout PAS les placeholders, on remplace juste x,y,z par les indices réels
+            if var_mapping:
+                placeholders = self._find_all_placeholders(template_instance)
+
+                if verbose and placeholders:
+                    print(f"  Placeholders trouvés: {len(placeholders)} - substitution des variables...")
+
+                for placeholder in placeholders:
+                    # Extraire le chemin du placeholder
+                    placeholder_path = self._extract_placeholder_path(placeholder)
+
+                    # Substituer les variables par les indices réels
+                    resolved_path = self._substitute_variables_in_path(placeholder_path, var_mapping)
+
+                    # Créer le nouveau placeholder avec indices réels
+                    new_placeholder = "{{" + resolved_path + "}}"
+
+                    # Remplacer l'ancien placeholder par le nouveau
+                    self._replace_in_template(template_instance, placeholder, new_placeholder)
+
+                    if verbose:
+                        print(f"    • {placeholder} → {new_placeholder}")
+
+            # ÉTAPE 5: Affichage incrémental
+            if verbose:
+                print(f"\n  📦 Taille actuelle de final_json: {len(final_json)} templates")
+
+        if verbose:
+            print("\n" + "=" * 80)
+            print(f"✅ CONSTRUCTION TERMINÉE: {len(final_json)} templates créés")
+            print("=" * 80)
+
+        return final_json
+
+    def _convert_indices_to_variables(self, path_with_indices: str) -> tuple:
+        """
+        Convertit un chemin avec indices en chemin avec variables.
+
+        Args:
+            path_with_indices: Chemin avec indices réels (ex: "themes[0]->groups[1]->label")
+
+        Returns:
+            Tuple de (chemin_avec_variables, mapping_variables)
+            Ex: ("themes[x]->groups[y]->label", {"x": 0, "y": 1})
+        """
+        import re
+
+        var_mapping = {}
+        var_names = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's', 'r', 'q']
+        var_index = 0
+
+        def replace_index(match):
+            nonlocal var_index
+            index_value = int(match.group(1))
+            var_name = var_names[var_index]
+            var_mapping[var_name] = index_value
+            var_index += 1
+            return f"[{var_name}]"
+
+        # Remplacer tous les [nombre] par [variable]
+        path_with_vars = re.sub(r'\[(\d+)\]', replace_index, path_with_indices)
+
+        return path_with_vars, var_mapping
+
+    def _find_all_placeholders(self, obj: Any) -> List[str]:
+        """
+        Trouve tous les placeholders {{...}} dans un objet JSON (récursif).
+
+        Args:
+            obj: Objet JSON (dict, list, str, etc.)
+
+        Returns:
+            Liste de tous les placeholders trouvés
+        """
+        import re
+
+        placeholders = []
+
+        if isinstance(obj, str):
+            # Chercher tous les {{...}} dans la chaîne
+            matches = re.findall(r'\{\{[^}]+\}\}', obj)
+            placeholders.extend(matches)
+        elif isinstance(obj, dict):
+            for value in obj.values():
+                placeholders.extend(self._find_all_placeholders(value))
+        elif isinstance(obj, list):
+            for item in obj:
+                placeholders.extend(self._find_all_placeholders(item))
+
+        return placeholders
+
+    def _extract_placeholder_path(self, placeholder: str) -> str:
+        """
+        Extrait le chemin à l'intérieur d'un placeholder.
+
+        Args:
+            placeholder: Placeholder (ex: "{{themes[x]->groups[y]->label}}")
+
+        Returns:
+            Chemin extrait (ex: "themes[x]->groups[y]->label")
+        """
+        # Enlever {{ et }}
+        return placeholder.strip('{}').strip()
+
+    def _substitute_variables_in_path(self, path: str, var_mapping: Dict[str, int]) -> str:
+        """
+        Substitue les variables par leurs valeurs dans un chemin.
+
+        Args:
+            path: Chemin avec variables (ex: "themes[x]->groups[y]->label")
+            var_mapping: Mapping des variables (ex: {"x": 0, "y": 1})
+
+        Returns:
+            Chemin avec indices réels (ex: "themes[0]->groups[1]->label")
+        """
+        result = path
+        for var_name, index_value in var_mapping.items():
+            result = result.replace(f"[{var_name}]", f"[{index_value}]")
+        return result
+
+    def _replace_in_template(self, obj: Any, placeholder: str, value: Any) -> Any:
+        """
+        Remplace toutes les occurrences d'un placeholder par une valeur dans un objet (récursif, in-place).
+
+        Args:
+            obj: Objet JSON à modifier
+            placeholder: Placeholder à remplacer (ex: "{{themes[0]->groups[1]->label}}")
+            value: Valeur de remplacement
+
+        Returns:
+            Objet modifié (modification in-place)
+        """
+        if isinstance(obj, str):
+            # Si la chaîne EST exactement le placeholder, on retourne la valeur
+            if obj == placeholder:
+                return value
+            # Sinon on remplace le placeholder dans la chaîne
+            return obj.replace(placeholder, str(value))
+        elif isinstance(obj, dict):
+            for key in obj:
+                obj[key] = self._replace_in_template(obj[key], placeholder, value)
+        elif isinstance(obj, list):
+            for i in range(len(obj)):
+                obj[i] = self._replace_in_template(obj[i], placeholder, value)
+
+        return obj
+
     def _build_path_to_value_map(self, source_json: Dict[str, Any]) -> Dict[str, Any]:
         """
         Construit un dictionnaire qui mappe chaque chemin concret vers sa valeur.
@@ -2041,29 +2269,21 @@ Exemple INCORRECT (à NE JAMAIS faire):
         # Résoudre les références de groupes imbriqués
         resolved_jsons_map = self._resolve_group_references(group_jsons_map, path_to_value_map)
 
-        # Étape 7: Résoudre les valeurs pour chaque groupe (expansion)
-        final_resolved_jsons_map = {}
-        for ref, group_json in resolved_jsons_map.items():
-            final_group = self._resolve_group_json(group_json, path_to_value_map)
-            final_resolved_jsons_map[ref] = final_group
+        # Étape 7: Construire le final_json de manière incrémentale
+        # Au lieu de résoudre puis combiner, on construit progressivement le JSON
+        # en parcourant le path_to_value_map une seule fois
+        print("\n" + "=" * 80)
+        print("CONSTRUCTION INCRÉMENTALE DU FINAL_JSON")
+        print("=" * 80)
 
-        # Identifier le(s) groupe(s) racine(s) (ceux qui ne sont pas référencés par d'autres)
-        # Pour simplifier, on prend les groupes avec le moins de variables
-        import re
-        root_groups = []
-        min_vars = float('inf')
+        final_json_list = self._build_final_json_incremental(
+            path_to_value_map=path_to_value_map,
+            group_jsons_map=resolved_jsons_map,
+            verbose=True  # Afficher les détails de construction
+        )
 
-        for ref, json_data in final_resolved_jsons_map.items():
-            num_vars = len(re.findall(r'\[[x-z]\]', ref))
-            if num_vars < min_vars:
-                min_vars = num_vars
-                root_groups = [(ref, json_data)]
-            elif num_vars == min_vars:
-                root_groups.append((ref, json_data))
-
-        # Combiner les groupes racines
-        root_jsons = [json_data for _, json_data in root_groups]
-        final_json = self._combine_group_jsons(group_jsons=root_jsons)
+        # Wrapper la liste de templates dans un container approprié
+        final_json = self._combine_group_jsons(final_json_list)
 
         # Construire le dictionnaire de retour avec toutes les informations de débogage
         debug_info = {
@@ -2073,7 +2293,6 @@ Exemple INCORRECT (à NE JAMAIS faire):
             "group_jsons_map": group_jsons_map,
             "resolved_jsons_map": resolved_jsons_map,
             "path_to_value_map": path_to_value_map,
-            "final_resolved_jsons_map": final_resolved_jsons_map
         }
 
         # Pour la compatibilité avec l'ancienne interface, on retourne aussi un dict vide pour destination_mappings

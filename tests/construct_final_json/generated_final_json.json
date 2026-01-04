@@ -87,16 +87,6 @@
                   }
                 ]
               }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[0]->exampleSentences[0]}}"
-                ]
-              }
             }
           ]
         }
@@ -136,16 +126,6 @@
                       ]
                     }
                   }
-                ]
-              }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[0]->exampleSentences[1]}}"
                 ]
               }
             }
@@ -189,16 +169,6 @@
                   }
                 ]
               }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[0]->exampleSentences[2]}}"
-                ]
-              }
             }
           ]
         }
@@ -238,16 +208,6 @@
                       ]
                     }
                   }
-                ]
-              }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[0]->exampleSentences[3]}}"
                 ]
               }
             }
@@ -291,16 +251,6 @@
                   }
                 ]
               }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[0]->exampleSentences[4]}}"
-                ]
-              }
             }
           ]
         }
@@ -342,21 +292,31 @@
                   }
                 ]
               }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[0]->exampleSentences[5]}}"
-                ]
-              }
             }
           ]
         }
       }
     ]
+  },
+  {
+    "template_name": "layouts/vertical_column/item",
+    "title": "Phrases d'exemple",
+    "content": {
+      "template_name": "text/liste_exemples",
+      "items": [
+        "{{themes[0]->groups[0]->exampleSentences[0]}}"
+      ]
+    }
+  },
+  {
+    "template_name": "layouts/vertical_column/item",
+    "title": "Phrases d'exemple",
+    "content": {
+      "template_name": "text/liste_exemples",
+      "items": [
+        "{{themes[0]->groups[0]->exampleSentences[1]}}"
+      ]
+    }
   },
   {
     "template_name": "layouts/vertical_column/container",
@@ -420,16 +380,6 @@
                   }
                 ]
               }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[1]->exampleSentences[0]}}"
-                ]
-              }
             }
           ]
         }
@@ -469,16 +419,6 @@
                       ]
                     }
                   }
-                ]
-              }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[1]->exampleSentences[1]}}"
                 ]
               }
             }
@@ -522,16 +462,6 @@
                   }
                 ]
               }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[1]->exampleSentences[2]}}"
-                ]
-              }
             }
           ]
         }
@@ -571,16 +501,6 @@
                       ]
                     }
                   }
-                ]
-              }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[1]->exampleSentences[3]}}"
                 ]
               }
             }
@@ -624,16 +544,6 @@
                   }
                 ]
               }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[1]->exampleSentences[4]}}"
-                ]
-              }
             }
           ]
         }
@@ -675,20 +585,30 @@
                   }
                 ]
               }
-            },
-            {
-              "template_name": "layouts/vertical_column/item",
-              "title": "Phrases d'exemple",
-              "content": {
-                "template_name": "text/liste_exemples",
-                "items": [
-                  "{{themes[0]->groups[1]->exampleSentences[5]}}"
-                ]
-              }
             }
           ]
         }
       }
     ]
+  },
+  {
+    "template_name": "layouts/vertical_column/item",
+    "title": "Phrases d'exemple",
+    "content": {
+      "template_name": "text/liste_exemples",
+      "items": [
+        "{{themes[0]->groups[1]->exampleSentences[0]}}"
+      ]
+    }
+  },
+  {
+    "template_name": "layouts/vertical_column/item",
+    "title": "Phrases d'exemple",
+    "content": {
+      "template_name": "text/liste_exemples",
+      "items": [
+        "{{themes[0]->groups[1]->exampleSentences[1]}}"
+      ]
+    }
   }
 ]

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Header, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
+from typing import Optional
 import uuid
 from celery.result import AsyncResult
 
@@ -42,15 +43,15 @@ class CourseMaterialResponse(BaseModel):
     supports: list
     templates_used: int
     prompt: str
-    pedagogical_json: dict = None
-    destination_mappings: dict = None
-    json_paths_with_variables: list = None
-    path_groups: list = None
-    group_jsons_list: list = None
-    group_jsons_map: dict = None
-    resolved_jsons_map: dict = None
-    path_to_value_map: dict = None
-    final_resolved_jsons_map: dict = None
+    pedagogical_json: Optional[dict] = None
+    destination_mappings: Optional[dict] = None
+    json_paths_with_variables: Optional[list] = None
+    path_groups: Optional[list] = None
+    group_jsons_list: Optional[list] = None
+    group_jsons_map: Optional[dict] = None
+    resolved_jsons_map: Optional[dict] = None
+    path_to_value_map: Optional[dict] = None
+    final_resolved_jsons_map: Optional[dict] = None
 
     class Config:
         json_schema_extra = {

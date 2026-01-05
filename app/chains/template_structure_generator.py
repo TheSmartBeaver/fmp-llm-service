@@ -2516,8 +2516,15 @@ RÈGLES CRITIQUES:
 2. **Regroupement par préfixe COMPLET**:
    - Les chemins avec la même profondeur DOIVENT aussi avoir le même préfixe jusqu'à la dernière variable
 3. **Description du format**:
-   - ⚠️ Utilise des phrases COURTE pour décrire le format, pour chaque chemin tu dois dire comment il sera représenté
-   - Sois CONCRET et DESCRIPTIF (évite les termes génériques)
+   - ⚠️ RÈGLE STRICTE: Décris le format de CHAQUE chemin individuellement
+   - Format obligatoire: "chemin1 aura le format de XXX / chemin2 aura le format de YYY / ..."
+   - Exemples CORRECTS:
+     * "media->videos[x]->url aura le format d'une URL / media->videos[x]->startTime aura le format d'un timestamp / media->videos[x]->label aura le format d'un titre"
+     * "glossary[x]->term aura le format d'un mot-clé / glossary[x]->definition aura le format d'une définition"
+     * "corePrinciples[x]->acronym aura le format d'un panneau / corePrinciples[x]->examples[y] aura le format d'une liste d'exemples"
+   - Exemples INTERDITS (descriptions globales vagues):
+     * "Vidéos avec métadonnées" ❌
+     * "Glossaire de termes" ❌
 
 
 RETOURNE un JSON avec le format exact suivant (UNIQUEMENT le JSON, sans explication):

@@ -1,4 +1,5 @@
 from typing import List, Dict, Any
+import json
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 from langchain_core.prompts import ChatPromptTemplate
@@ -1204,65 +1205,28 @@ Exemple INCORRECT (à NE JAMAIS faire):
         path_to_value_map: Dict[str, Any],
     ) -> Dict[str, Dict[str, Any]]:
         """
-        Résout les références de groupes imbriqués en remplaçant les placeholders.
+        NE résout PLUS les références de groupes pour éviter les duplications récursives.
 
-        Les références de type {{chemin[x]sous_chemin[y]}} (qui se terminent par une variable)
-        sont remplacées par le JSON du groupe correspondant.
+        Les placeholders restent inchangés et seront traités dans _build_final_json_incremental.
+        Cette fonction retourne simplement group_jsons_map sans modification, mais effectue
+        une vérification de couverture des clés.
 
         Args:
             group_jsons_map: Dictionnaire {clé_de_référence: json_du_groupe}
             path_to_value_map: Dictionnaire {chemin_concret: valeur} pour vérifier les clés nécessaires
 
         Returns:
-            Dictionnaire avec les références résolues
+            Dictionnaire inchangé (pas de résolution)
         """
-        import re
         import json
 
-        def is_group_reference(ref_string: str) -> bool:
-            """
-            Vérifie si une string de référence {{...}} pointe vers un groupe.
-            Un groupe se termine par une variable sans champ après: {{chemin[x]}} ou {{chemin[x]sous[y]}}
-            """
-            # Extraire le contenu entre {{ et }}
-            match = re.match(r'^\{\{(.+)\}\}$', ref_string.strip())
-            if not match:
-                return False
+        # On retourne directement group_jsons_map SANS résoudre les références
+        # Cela évite les duplications récursives où un template contient une référence à lui-même
+        resolved_map = group_jsons_map
 
-            content = match.group(1)
-
-            # Vérifier si c'est une clé de groupe connue
-            return content in group_jsons_map
-
-        def resolve_in_value(value: Any) -> Any:
-            """Résout récursivement les références dans une valeur."""
-            if isinstance(value, str):
-                # Vérifier si c'est une référence de groupe
-                if is_group_reference(value):
-                    # Extraire le contenu entre {{ et }}
-                    content = re.match(r'^\{\{(.+)\}\}$', value.strip()).group(1)
-
-                    # Retourner directement le JSON du groupe
-                    if content in group_jsons_map:
-                        return group_jsons_map[content]
-
-                return value
-
-            elif isinstance(value, dict):
-                # Résoudre récursivement dans les dictionnaires
-                return {k: resolve_in_value(v) for k, v in value.items()}
-
-            elif isinstance(value, list):
-                # Résoudre récursivement dans les listes
-                return [resolve_in_value(item) for item in value]
-
-            else:
-                return value
-
-        # Résoudre les références dans tous les groupes
-        resolved_map = {}
-        for key, group_json in group_jsons_map.items():
-            resolved_map[key] = resolve_in_value(group_json)
+        print("\n" + "=" * 80)
+        print("ℹ️  _resolve_group_references: AUCUNE résolution effectuée (évite les duplications)")
+        print("=" * 80 + "\n")
 
         # Vérification: Extraire toutes les clés présentes dans resolved_map et comparer avec path_to_value_map
         def extract_all_keys(obj, keys_set=None):
@@ -1326,7 +1290,6 @@ Exemple INCORRECT (à NE JAMAIS faire):
 
         final_json = []
         templates_seen = {}  # Cache: (template_id, var_mapping_tuple) -> template_instance
-        template_ids = {}    # Cache: path_with_vars -> template_id (hash du template JSON)
 
         total_paths = len(path_to_value_map)
         processed = 0
@@ -1360,11 +1323,7 @@ Exemple INCORRECT (à NE JAMAIS faire):
             # ÉTAPE 2.5: Identifier le template de manière unique (par son contenu JSON)
             # Si plusieurs chemins pointent vers le même template (même structure),
             # ils doivent partager la même instance
-            if path_with_vars not in template_ids:
-                template_id = json.dumps(template, sort_keys=True)
-                template_ids[path_with_vars] = template_id
-            else:
-                template_id = template_ids[path_with_vars]
+            template_id = json.dumps(template, sort_keys=True)
 
             # ÉTAPE 3: Vérifier si on doit créer une nouvelle instance ou réutiliser
             # La clé de cache combine le template_id ET les indices des variables
@@ -1409,7 +1368,8 @@ Exemple INCORRECT (à NE JAMAIS faire):
 
             # ÉTAPE 4.5: Transformer tous les placeholders {{chemin}} en {-{chemin}-}
             # Récupérer tous les placeholders restants dans le template
-            all_placeholders = self._find_all_placeholders(template_instance)
+            #all_placeholders = self._find_all_placeholders(template_instance)
+            all_placeholders = []
 
             if verbose and all_placeholders:
                 print(f"  Transformation des placeholders {{{{chemin}}}} → {{-{{chemin}}-}}: {len(all_placeholders)} trouvés")

@@ -1399,7 +1399,7 @@ Exemple INCORRECT (à NE JAMAIS faire):
                     resolved_path = self._substitute_variables_in_path(placeholder_path, var_mapping)
 
                     # Créer le nouveau placeholder avec indices réels
-                    new_placeholder = "{{" + resolved_path + "}}"
+                    new_placeholder = "{-{" + resolved_path + "}-}"
 
                     # Remplacer l'ancien placeholder par le nouveau
                     self._replace_in_template(template_instance, placeholder, new_placeholder)

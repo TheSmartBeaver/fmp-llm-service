@@ -42,7 +42,7 @@ class TemplateStructureGenerator:
         """
         self.db = db_session
         self.embedding_model = embedding_model
-        self.llm = OpenAiO3MiniLlm().get_llm()
+        self.llm = ClaudeHaiku45Llm().get_llm()
         # Utiliser un modèle plus puissant (O3-mini avec raisonnement) pour les corrections
         self.correction_llm = OpenAiO3MiniLlm().get_llm()
 
@@ -2516,7 +2516,7 @@ RÈGLES CRITIQUES:
 2. **Regroupement par préfixe COMPLET**:
    - Les chemins avec la même profondeur DOIVENT aussi avoir le même préfixe jusqu'à la dernière variable
 3. **Description du format**:
-   - Utilise une phrase COURTE pour décrire le format
+   - ⚠️ Utilise des phrases COURTE pour décrire le format, pour chaque chemin tu dois dire comment il sera représenté
    - Sois CONCRET et DESCRIPTIF (évite les termes génériques)
 
 

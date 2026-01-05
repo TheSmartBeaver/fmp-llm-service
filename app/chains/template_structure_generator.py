@@ -2517,6 +2517,7 @@ RÈGLES CRITIQUES:
    - Les chemins avec la même profondeur DOIVENT aussi avoir le même préfixe jusqu'à la dernière variable
 3. **Description du format**:
    - ⚠️ RÈGLE STRICTE: Décris le format de CHAQUE chemin individuellement avec des formats élémentaires
+   - ✅ Tu as le droit d'associer plusieurs chemins à un même format si ils partagent la même nature
    - Format obligatoire: "chemin1 aura le format de XXX / chemin2 aura le format de YYY / ..."
    - Exemples CORRECTS:
      * "media->videos[x]->url aura le format d'une URL / media->videos[x]->startTime aura le format d'un XXX / media->videos[x]->label aura le format d'un XXX"

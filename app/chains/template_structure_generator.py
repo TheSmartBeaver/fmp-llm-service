@@ -42,7 +42,7 @@ class TemplateStructureGenerator:
         """
         self.db = db_session
         self.embedding_model = embedding_model
-        self.llm = ClaudeHaiku45Llm().get_llm()
+        self.llm = OpenAiO3MiniLlm().get_llm()
         # Utiliser un modèle plus puissant (O3-mini avec raisonnement) pour les corrections
         self.correction_llm = OpenAiO3MiniLlm().get_llm()
 

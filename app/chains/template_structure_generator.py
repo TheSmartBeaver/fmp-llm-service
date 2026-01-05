@@ -1368,8 +1368,8 @@ Exemple INCORRECT (à NE JAMAIS faire):
 
             # ÉTAPE 4.5: Transformer tous les placeholders {{chemin}} en {-{chemin}-}
             # Récupérer tous les placeholders restants dans le template
-            #all_placeholders = self._find_all_placeholders(template_instance)
-            all_placeholders = []
+            all_placeholders = self._find_all_placeholders(template_instance)
+            #all_placeholders = []
 
             if verbose and all_placeholders:
                 print(f"  Transformation des placeholders {{{{chemin}}}} → {{-{{chemin}}-}}: {len(all_placeholders)} trouvés")

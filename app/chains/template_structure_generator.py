@@ -1399,13 +1399,33 @@ Exemple INCORRECT (à NE JAMAIS faire):
                     resolved_path = self._substitute_variables_in_path(placeholder_path, var_mapping)
 
                     # Créer le nouveau placeholder avec indices réels
-                    new_placeholder = "{-{" + resolved_path + "}-}"
+                    new_placeholder = "{{" + resolved_path + "}}"
 
                     # Remplacer l'ancien placeholder par le nouveau
                     self._replace_in_template(template_instance, placeholder, new_placeholder)
 
                     if verbose:
                         print(f"    • {placeholder} → {new_placeholder}")
+
+            # ÉTAPE 4.5: Transformer tous les placeholders {{chemin}} en {-{chemin}-}
+            # Récupérer tous les placeholders restants dans le template
+            all_placeholders = self._find_all_placeholders(template_instance)
+
+            if verbose and all_placeholders:
+                print(f"  Transformation des placeholders {{{{chemin}}}} → {{-{{chemin}}-}}: {len(all_placeholders)} trouvés")
+
+            for placeholder in all_placeholders:
+                # Extraire le chemin du placeholder (sans les {{ }})
+                placeholder_path = self._extract_placeholder_path(placeholder)
+
+                # Créer le nouveau placeholder au format {-{chemin}-}
+                new_placeholder = "{-{" + placeholder_path + "}-}"
+
+                # Remplacer l'ancien placeholder par le nouveau
+                self._replace_in_template(template_instance, placeholder, new_placeholder)
+
+                if verbose:
+                    print(f"    • {placeholder} → {new_placeholder}")
 
             # ÉTAPE 5: Affichage incrémental
             if verbose:
@@ -1464,7 +1484,8 @@ Exemple INCORRECT (à NE JAMAIS faire):
 
         if isinstance(obj, str):
             # Chercher tous les {{...}} dans la chaîne
-            matches = re.findall(r'\{\{[^}]+\}\}', obj)
+            # Utilise .+? (non-greedy) pour capturer tout jusqu'à }}
+            matches = re.findall(r'\{\{.+?\}\}', obj)
             placeholders.extend(matches)
         elif isinstance(obj, dict):
             for value in obj.values():

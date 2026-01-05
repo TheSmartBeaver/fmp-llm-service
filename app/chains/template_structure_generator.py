@@ -2156,7 +2156,7 @@ Exemple INCORRECT (à NE JAMAIS faire):
             group_templates = fetch_similar_templates(
                 self.db,
                 format_embedding,
-                top_k=8,  # Limiter à 8 templates par groupe pour ne pas surcharger le prompt
+                top_k=15,  # Limiter à 8 templates par groupe pour ne pas surcharger le prompt
                 include_full_data=False,
             )
 

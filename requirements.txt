@@ -3,6 +3,7 @@ uvicorn
 langchain
 langchain-openai
 langchain-anthropic
+langchain-google-genai
 anthropic
 pydantic
 celery

@@ -1429,7 +1429,10 @@ Exemple INCORRECT (à NE JAMAIS faire):
 
             # ÉTAPE 5: Affichage incrémental
             if verbose:
-                print(f"\n  📦 Taille actuelle de final_json: {len(final_json)} templates")
+                # print(f"\n  📦 Taille actuelle de final_json: {len(final_json)} templates")
+                print("\n" + "=" * 80)
+                print(f"{json.dumps(final_json, indent=1, ensure_ascii=False)}")
+                print("\n" + "=" * 80)
 
         if verbose:
             print("\n" + "=" * 80)

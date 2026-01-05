@@ -99,20 +99,20 @@ class CourseMaterialGeneratorV2:
             # Par défaut: peu de layouts, plus de contenu conceptuel
             category_quotas = {"layouts/": 2, "text/": 0}
 
-        # structure_result = (
-        #     await self.template_structure_generator.generate_template_structure(
-        #         source_json=pedagogical_json,
-        #         context_description=context_description,
-        #         category_quotas=category_quotas,
-        #     )
-        # )
+        structure_result = (
+            await self.template_structure_generator.generate_template_structure(
+                source_json=pedagogical_json,
+                context_description=context_description,
+                category_quotas=category_quotas,
+            )
+        )
 
-        structure_result = {
-            "template_structure": shit_test_3,
-            "prompt": "SHIT",
-            "destination_mappings": {},
-            "debug_info": {},
-        }
+        # structure_result = {
+        #     "template_structure": shit_test_3,
+        #     "prompt": "SHIT",
+        #     "destination_mappings": {},
+        #     "debug_info": {},
+        # }
 
         template_structure = structure_result["template_structure"]
         structure_prompt = structure_result["prompt"]

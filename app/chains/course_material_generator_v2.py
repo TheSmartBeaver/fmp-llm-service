@@ -7,6 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
 from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
+from app.chains.llm.open_ai_gpt52_llm import OpenAiGPT52Llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.template_structure_generator import TemplateStructureGenerator
@@ -42,7 +43,7 @@ class CourseMaterialGeneratorV2:
         """
         self.db = db_session
         self.embedding_model = embedding_model
-        self.llm = ClaudeHaiku45Llm().get_llm()
+        self.llm = OpenAiGPT52Llm().get_llm()
         self.template_structure_generator = TemplateStructureGenerator(
             db_session=db_session, embedding_model=embedding_model
         )

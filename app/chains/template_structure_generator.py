@@ -2516,12 +2516,12 @@ RÈGLES CRITIQUES:
 2. **Regroupement par préfixe COMPLET**:
    - Les chemins avec la même profondeur DOIVENT aussi avoir le même préfixe jusqu'à la dernière variable
 3. **Description du format**:
-   - ⚠️ RÈGLE STRICTE: Décris le format de CHAQUE chemin individuellement
+   - ⚠️ RÈGLE STRICTE: Décris le format de CHAQUE chemin individuellement avec des formats élémentaires
    - Format obligatoire: "chemin1 aura le format de XXX / chemin2 aura le format de YYY / ..."
    - Exemples CORRECTS:
-     * "media->videos[x]->url aura le format d'une URL / media->videos[x]->startTime aura le format d'un timestamp / media->videos[x]->label aura le format d'un titre"
-     * "glossary[x]->term aura le format d'un mot-clé / glossary[x]->definition aura le format d'une définition"
-     * "corePrinciples[x]->acronym aura le format d'un panneau / corePrinciples[x]->examples[y] aura le format d'une liste d'exemples"
+     * "media->videos[x]->url aura le format d'une URL / media->videos[x]->startTime aura le format d'un XXX / media->videos[x]->label aura le format d'un XXX"
+     * "glossary[x]->term aura le format d'un XXX / glossary[x]->definition aura le format d'une XXX"
+     * "corePrinciples[x]->acronym aura le format d'un XXX / corePrinciples[x]->examples[y] aura le format d'une XXX"
    - Exemples INTERDITS (descriptions globales vagues):
      * "Vidéos avec métadonnées" ❌
      * "Glossaire de termes" ❌

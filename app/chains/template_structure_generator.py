@@ -283,19 +283,19 @@ Tu DOIS retourner un JSON structuré avec:
 EXEMPLE DE SORTIE ATTENDUE:
 {{
   "template_name": "XXXX",
-  "items": [
+  "XXXX": [
     {{
       "template_name": "XXXX",
-      "title": "XXXX",
-      "content": "{{{{XXXX[x]->XXXX}}}}"
+      "XXXX": "XXXX",
+      "XXXX": "{{{{XXXX[x]->XXXX}}}}"
     }},
     {{
       "template_name": "XXXX",
-      "title": "XXXX",
-      "content": {{
+      "XXXX": "XXXX",
+      "XXXX": {{
         "template_name": "XXXX",
-        "title": "XXXX {{{{XXXX[x]->XXXX}}}}",
-        "description": "{{{{XXXX[x]->XXXX->XXXX}}}}"
+        "XXXX": "XXXX {{{{XXXX[x]->XXXX}}}}",
+        "XXXX": "{{{{XXXX[x]->XXXX->XXXX}}}}"
       }}
     }}
   ]
@@ -379,18 +379,6 @@ RÈGLE CRITIQUE:
 - ❌ N'invente PAS de propriétés après la référence (comme ->term, ->definition, ->label, etc.)
 - ✅ Utilise SEULEMENT la référence telle quelle
 
-Exemple CORRECT pour glossary[x]:
-{
-  "template_name": "layouts/vertical_column/container",
-  "items": "{{glossary[x]}}"
-}
-
-Exemple INCORRECT (à NE JAMAIS faire):
-{
-  "template_name": "text/definition",
-  "term": "{{glossary[x]->term}}",  ❌ N'invente PAS de propriétés!
-  "definition": "{{glossary[x]->definition}}"
-}
 """
 
         params = {

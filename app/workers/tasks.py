@@ -199,6 +199,9 @@ def generate_course_material_task(
             f"{result_v2['prompts']['step2_template_structure']}"
         )
 
+        # Extraire les informations de débogage
+        debug_info = result_v2.get("debug_info", {})
+
         # Adapter le format de retour pour compatibilité avec le système existant
         result = {
             "success": True,
@@ -206,6 +209,14 @@ def generate_course_material_task(
             "templates_used": top_k,
             "prompt": full_prompt,
             "pedagogical_json": result_v2.get("pedagogical_json"),
+            "destination_mappings": result_v2.get("destination_mappings"),
+            "json_paths_with_variables": debug_info.get("json_paths_with_variables"),
+            "path_groups": debug_info.get("path_groups"),
+            "group_jsons_list": debug_info.get("group_jsons_list"),
+            "group_jsons_map": debug_info.get("group_jsons_map"),
+            "resolved_jsons_map": debug_info.get("resolved_jsons_map"),
+            "path_to_value_map": debug_info.get("path_to_value_map"),
+            "final_resolved_jsons_map": debug_info.get("final_resolved_jsons_map"),
         }
 
         print(f"📥 Course material generation V2 completed for task {task_id}")
@@ -273,12 +284,7 @@ def generate_course_material_task(
 
         print(f"📥 Celery task ended for {task_id}")
 
-        return {
-            "success": True,
-            "supports": result["supports"],
-            "templates_used": top_k,
-            "prompt": result["prompt"],
-        }
+        return result
 
     except Exception as e:
         print(f"❌ Error generating course material for task {task_id}: {str(e)}")

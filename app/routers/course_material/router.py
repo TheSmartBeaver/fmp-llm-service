@@ -189,7 +189,7 @@ async def generate_course_material_sync(
     )
 
 
-@course_material_router.get("/result/{task_id}")
+@course_material_router.get("/result/{task_id}", response_model=CourseMaterialResponse)
 async def get_course_material_result(task_id: str):
     """
     Récupère le résultat d'une tâche de génération de supports de cours via son task_id.
@@ -198,13 +198,11 @@ async def get_course_material_result(task_id: str):
         task_id: ID unique de la tâche Celery
 
     Returns:
-        - Si PENDING: {"status": "PENDING", "task_id": "..."}
-        - Si SUCCESS: {"status": "SUCCESS", "result": {...}}
-        - Si FAILURE: {"status": "FAILURE", "error": "..."}
+        CourseMaterialResponse avec tous les champs de débogage (identique à /generate_v2)
 
     Raises:
-        HTTPException 404: Si la tâche n'existe pas
-        HTTPException 500: Si une erreur interne se produit
+        HTTPException 202: Si la tâche est en cours (PENDING)
+        HTTPException 500: Si la tâche a échoué (FAILURE) ou erreur interne
     """
     try:
         # Récupérer le résultat de la tâche depuis Celery
@@ -216,35 +214,58 @@ async def get_course_material_result(task_id: str):
         print(f"🔍 Task {task_id} - Successful: {task_result.successful() if task_result.ready() else 'N/A'}")
 
         if task_result.state == "PENDING":
-            return {
-                "status": "PENDING",
-                "task_id": task_id,
-                "message": "La génération est en cours..."
-            }
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "status": "PENDING",
+                    "task_id": task_id,
+                    "message": "La génération est en cours..."
+                }
+            )
 
         elif task_result.state == "SUCCESS":
             result = task_result.result
-            return {
-                "status": "SUCCESS",
-                "task_id": task_id,
-                "result": result
-            }
+
+            # Transformer le résultat en CourseMaterialResponse
+            return CourseMaterialResponse(
+                success=result.get("success", True),
+                supports=result.get("supports", []),
+                templates_used=result.get("templates_used", 0),
+                prompt=result.get("prompt", ""),
+                pedagogical_json=result.get("pedagogical_json"),
+                destination_mappings=result.get("destination_mappings"),
+                json_paths_with_variables=result.get("json_paths_with_variables"),
+                path_groups=result.get("path_groups"),
+                group_jsons_list=result.get("group_jsons_list"),
+                group_jsons_map=result.get("group_jsons_map"),
+                resolved_jsons_map=result.get("resolved_jsons_map"),
+                path_to_value_map=result.get("path_to_value_map"),
+                final_resolved_jsons_map=result.get("final_resolved_jsons_map")
+            )
 
         elif task_result.state == "FAILURE":
-            return {
-                "status": "FAILURE",
-                "task_id": task_id,
-                "error": str(task_result.info)
-            }
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "status": "FAILURE",
+                    "task_id": task_id,
+                    "error": str(task_result.info)
+                }
+            )
 
         else:
             # États intermédiaires (STARTED, RETRY, etc.)
-            return {
-                "status": task_result.state,
-                "task_id": task_id,
-                "message": f"État actuel: {task_result.state}"
-            }
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "status": task_result.state,
+                    "task_id": task_id,
+                    "message": f"État actuel: {task_result.state}"
+                }
+            )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500,

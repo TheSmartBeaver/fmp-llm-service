@@ -1,13 +1,18 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
+import os
+import httpx
+from dotenv import find_dotenv, load_dotenv
 
 from app.utils.structure_process import extract_json_structure
 from app.chains.template_structure_generator import TemplateStructureGenerator
 from app.utils.template_substitution import substitute_template_values
 from app.database import get_db
+
+load_dotenv(find_dotenv())
 
 utils_router = APIRouter(prefix="/api/utils", tags=["utils"])
 
@@ -314,3 +319,138 @@ async def substitute_template(request: TemplateSubstitutionRequest):
             result={},
             error=f"Error: {str(e)}"
         )
+
+
+class CodexMessage(BaseModel):
+    """Message pour l'API Codex"""
+    role: str
+    content: str
+
+
+class CodexRequest(BaseModel):
+    """Request model pour GPT-5.1-codex"""
+    messages: List[CodexMessage]
+    model: Optional[str] = "gpt-5.1-codex"
+    temperature: Optional[float] = 0.0
+    max_tokens: Optional[int] = 2048
+
+
+class CodexResponse(BaseModel):
+    """Response model pour GPT-5.1-codex"""
+    success: bool
+    response: Optional[str] = None
+    error: Optional[str] = None
+    raw_response: Optional[Dict[str, Any]] = None
+
+
+@utils_router.post("/codex", response_model=CodexResponse)
+async def call_codex(request: CodexRequest):
+    """
+    Appelle directement GPT-5.1-codex via l'API OpenAI /v1/responses.
+
+    Cette route utilise l'endpoint /v1/responses qui est spécifique aux modèles Codex
+    et aux modèles de raisonnement (O-series), car ils ne sont pas compatibles avec
+    l'endpoint standard /v1/chat/completions utilisé par LangChain.
+
+    Example:
+        Request:
+        {
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a Python expert."
+                },
+                {
+                    "role": "user",
+                    "content": "Write a function to calculate fibonacci numbers"
+                }
+            ],
+            "model": "gpt-5.1-codex",
+            "temperature": 0.0,
+            "max_tokens": 2048
+        }
+
+        Response:
+        {
+            "success": true,
+            "response": "def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    ...",
+            "error": null,
+            "raw_response": {...}
+        }
+    """
+    try:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
+
+        # Convertir les messages en format API OpenAI
+        messages_dict = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+
+        # Construire le payload pour l'API /v1/responses
+        # Note: L'API /v1/responses utilise 'input' au lieu de 'messages'
+        # Les modèles Codex et O-series n'acceptent ni 'max_tokens' ni 'temperature'
+        payload = {
+            "model": request.model,
+            "input": messages_dict,
+        }
+
+        # Appel direct à l'API OpenAI /v1/responses
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(
+                "https://api.openai.com/v1/responses",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+
+            if response.status_code != 200:
+                error_detail = response.text
+                try:
+                    error_json = response.json()
+                    error_detail = error_json.get("error", {}).get("message", response.text)
+                except:
+                    pass
+
+                return CodexResponse(
+                    success=False,
+                    response=None,
+                    error=f"API Error {response.status_code}: {error_detail}",
+                    raw_response=None
+                )
+
+            result = response.json()
+
+            # Extraire la réponse du modèle
+            # Le format peut varier selon l'endpoint, adapter si nécessaire
+            response_text = None
+            if "choices" in result and len(result["choices"]) > 0:
+                choice = result["choices"][0]
+                if "message" in choice:
+                    response_text = choice["message"].get("content", "")
+                elif "text" in choice:
+                    response_text = choice["text"]
+
+            return CodexResponse(
+                success=True,
+                response=response_text,
+                error=None,
+                raw_response=result
+            )
+
+    except httpx.TimeoutException:
+        return CodexResponse(
+            success=False,
+            response=None,
+            error="Request timeout",
+            raw_response=None
+        )
+    except Exception as e:
+        return CodexResponse(
+            success=False,
+            response=None,
+            error=f"Error: {str(e)}",
+            raw_response=None
+        )
+

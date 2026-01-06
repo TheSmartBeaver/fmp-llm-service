@@ -5,7 +5,7 @@ from app.chains.llm.anthropic_llm import AnthropicLLM
 from app.chains.llm.openai_llm import OpenAILLM
 from app.chains.llm.google_llm import GoogleLLM
 from app.chains.llm.openai_reasoning_llm import OpenAIReasoningLLM
-from app.chains.llm.openai_codex_llm import OpenAICodexLLM
+# from app.chains.llm.openai_codex_llm import OpenAICodexLLM  # Non utilisé - modèles Codex désactivés
 
 
 class LLMModel(str, Enum):
@@ -29,12 +29,13 @@ class LLMModel(str, Enum):
     GPT_5_1_CHAT_LATEST = "gpt-5.1-chat-latest"
     GPT_5_CHAT_LATEST = "gpt-5-chat-latest"
 
-    # GPT-5 Codex
-    GPT_5_1_CODEX_MAX = "gpt-5.1-codex-max"
-    GPT_5_1_CODEX = "gpt-5.1-codex"
-    GPT_5_CODEX = "gpt-5-codex"
-    GPT_5_1_CODEX_MINI = "gpt-5.1-codex-mini"
-    CODEX_MINI_LATEST = "codex-mini-latest"
+    # GPT-5 Codex - ⚠️ DÉSACTIVÉS : Ces modèles utilisent /v1/responses au lieu de /v1/chat/completions
+    # Ils ne sont pas compatibles avec ChatOpenAI de LangChain
+    # GPT_5_1_CODEX_MAX = "gpt-5.1-codex-max"
+    # GPT_5_1_CODEX = "gpt-5.1-codex"
+    # GPT_5_CODEX = "gpt-5-codex"
+    # GPT_5_1_CODEX_MINI = "gpt-5.1-codex-mini"
+    # CODEX_MINI_LATEST = "codex-mini-latest"
 
     # GPT-4 series
     GPT_4_1 = "gpt-4.1"
@@ -48,13 +49,14 @@ class LLMModel(str, Enum):
     GPT_REALTIME_MINI = "gpt-realtime-mini"
     GPT_4O_MINI_REALTIME_PREVIEW = "gpt-4o-mini-realtime-preview"
 
-    # O-series (reasoning models)
-    O3 = "o3"
-    O3_DEEP_RESEARCH = "o3-deep-research"
-    O4_MINI = "o4-mini"
-    O4_MINI_DEEP_RESEARCH = "o4-mini-deep-research"
-    O3_MINI = "o3-mini"
-    O1_MINI = "o1-mini"
+    # O-series (reasoning models) - ⚠️ DÉSACTIVÉS : Ces modèles utilisent /v1/responses au lieu de /v1/chat/completions
+    # Ils ne sont pas compatibles avec ChatOpenAI de LangChain
+    # O3 = "o3"
+    # O3_DEEP_RESEARCH = "o3-deep-research"
+    # O4_MINI = "o4-mini"
+    # O4_MINI_DEEP_RESEARCH = "o4-mini-deep-research"
+    # O3_MINI = "o3-mini"
+    O1_MINI = "o1-mini"  # ✅ o1-mini fonctionne avec chat/completions
 
     # Search models
     GPT_5_SEARCH_API = "gpt-5-search-api"
@@ -108,21 +110,12 @@ class LLMModelFactory:
     }
 
     _OPENAI_REASONING_MODELS = {
-        LLMModel.O3,
-        LLMModel.O3_DEEP_RESEARCH,
-        LLMModel.O4_MINI,
-        LLMModel.O4_MINI_DEEP_RESEARCH,
-        LLMModel.O3_MINI,
+        # Seul o1-mini est compatible avec chat/completions
         LLMModel.O1_MINI,
     }
 
-    _OPENAI_CODEX_MODELS = {
-        LLMModel.GPT_5_1_CODEX_MAX,
-        LLMModel.GPT_5_1_CODEX,
-        LLMModel.GPT_5_CODEX,
-        LLMModel.GPT_5_1_CODEX_MINI,
-        LLMModel.CODEX_MINI_LATEST,
-    }
+    # _OPENAI_CODEX_MODELS est désactivé car ces modèles ne sont pas compatibles
+    # _OPENAI_CODEX_MODELS = {}
 
     # Tous les autres modèles sont OpenAI standard par défaut
 
@@ -146,11 +139,8 @@ class LLMModelFactory:
         elif model in LLMModelFactory._GOOGLE_MODELS:
             return GoogleLLM(model.value).get_llm()
         elif model in LLMModelFactory._OPENAI_REASONING_MODELS:
-            # Modèles de raisonnement O-series avec configuration spéciale
+            # Modèles de raisonnement O-series avec configuration spéciale (o1-mini uniquement)
             return OpenAIReasoningLLM(model.value).get_llm()
-        elif model in LLMModelFactory._OPENAI_CODEX_MODELS:
-            # Modèles Codex avec configuration optimisée pour le code
-            return OpenAICodexLLM(model.value).get_llm()
         else:
             # Par défaut, OpenAI standard (pour tous les GPT, Search, Realtime, etc.)
             return OpenAILLM(model.value).get_llm()

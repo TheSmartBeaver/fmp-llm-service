@@ -19,13 +19,27 @@ Cette fonctionnalité permet de sélectionner dynamiquement les modèles LLM uti
 - **[app/chains/llm/google_llm.py](app/chains/llm/google_llm.py)** : Wrapper générique pour Google
   - `GoogleLLM` : Classe qui accepte n'importe quel nom de modèle Gemini
 
+- **[app/chains/llm/universal_llm.py](app/chains/llm/universal_llm.py)** : ✨ **Nouveau** - Wrapper universel
+  - `UniversalLLM` : Classe qui supporte **TOUS** les modèles (LangChain + Codex + O-series)
+  - `create_universal_llm()` : Helper pour créer facilement un UniversalLLM
+  - Détecte automatiquement le type de modèle et route vers le bon endpoint
+
+- **[app/models/dto/llm_config/all_llm_models.py](app/models/dto/llm_config/all_llm_models.py)** : ✨ **Nouveau** - Enum complet
+  - `AllLLMModels` : Enum avec **TOUS** les 45 modèles disponibles
+  - `is_codex_model()` : Fonction pour vérifier si un modèle nécessite la route Codex
+  - `CODEX_MODELS` : Set des 10 modèles Codex/O-series
+  - Permet l'auto-complétion et la validation dans FastAPI
+
 - **[app/models/dto/llm_config/llm_config_dto.py](app/models/dto/llm_config/llm_config_dto.py)** : DTO de configuration
   - `LLMConfigDto` : Permet de spécifier 3 modèles différents
+  - Accepte `AllLLMModels` enum, `LLMModel` enum, ou strings
 
 ### 2. Fichiers modifiés
 
-- **[app/chains/course_material_generator_v2.py](app/chains/course_material_generator_v2.py)** : Accepte `llm_config` dans le constructeur
-- **[app/chains/template_structure_generator.py](app/chains/template_structure_generator.py)** : Accepte `llm_config` dans le constructeur
+- **[app/chains/course_material_generator_v2.py](app/chains/course_material_generator_v2.py)** : ✨ **Mis à jour** - Utilise `create_universal_llm()` au lieu de `LLMModelFactory.get_llm()`
+  - Supporte maintenant **TOUS** les modèles incluant Codex et O-series
+- **[app/chains/template_structure_generator.py](app/chains/template_structure_generator.py)** : ✨ **Mis à jour** - Utilise `create_universal_llm()` pour `group_json_llm` et `path_groups_llm`
+  - Supporte maintenant **TOUS** les modèles incluant Codex et O-series
 - **[app/routers/course_material/router.py](app/routers/course_material/router.py)** : Routes `/generate_v2` et `/generate_CELERY` acceptent `llm_config`
 - **[app/workers/tasks.py](app/workers/tasks.py)** : Tâche Celery supporte la configuration LLM
 
@@ -49,12 +63,26 @@ Cette fonctionnalité permet de sélectionner dynamiquement les modèles LLM uti
 - `gpt-5-chat-latest` → GPT-5 Chat Latest
 
 ### OpenAI - GPT-5 Codex (5 modèles)
-⚠️ **Note**: Modèles optimisés pour le code (temperature=0.0, max_tokens=2048)
+✨ **MAINTENANT SUPPORTÉS VIA UniversalLLM** : Ces modèles utilisent `/v1/responses` au lieu de `/v1/chat/completions` et ne sont pas compatibles avec LangChain's ChatOpenAI standard. Grâce à `UniversalLLM`, ils sont maintenant **utilisables dans CourseMaterialGeneratorV2 et TemplateStructureGenerator** !
+
+**Modèles disponibles** :
 - `gpt-5.1-codex-max` → GPT-5.1 Codex Max
-- `gpt-5.1-codex` → GPT-5.1 Codex
+- `gpt-5.1-codex` → GPT-5.1 Codex ⭐ **Recommandé**
 - `gpt-5-codex` → GPT-5 Codex
 - `gpt-5.1-codex-mini` → GPT-5.1 Codex Mini
 - `codex-mini-latest` → Codex Mini Latest
+
+**Usage** :
+```python
+# Dans LLMConfigDto
+llm_config = LLMConfigDto(
+    pedagogical_json_model="gpt-5.1-codex",  # ✅ Fonctionne maintenant !
+    group_json_model=LLMModel.GEMINI_2_5_FLASH,
+    path_groups_model=LLMModel.CLAUDE_HAIKU_4_5_20251001
+)
+```
+
+**Documentation complète** : Voir [README_UNIVERSAL_LLM.md](README_UNIVERSAL_LLM.md), [UNIVERSAL_LLM_GUIDE.md](UNIVERSAL_LLM_GUIDE.md), [CODEX_ROUTE.md](CODEX_ROUTE.md)
 
 ### OpenAI - GPT-4 Series (6 modèles)
 - `gpt-4.1` → GPT-4.1
@@ -69,13 +97,29 @@ Cette fonctionnalité permet de sélectionner dynamiquement les modèles LLM uti
 - `gpt-4o-mini-realtime-preview` → GPT-4o Mini Realtime Preview
 
 ### OpenAI - O-Series / Reasoning Models (6 modèles)
-⚠️ **Note**: Ces modèles utilisent une configuration spéciale (pas de temperature, pas de streaming)
-- `o3` → O3
+✨ **MAINTENANT SUPPORTÉS VIA UniversalLLM** : La plupart des modèles O-series utilisent `/v1/responses` et ne sont pas compatibles avec LangChain's ChatOpenAI standard. Grâce à `UniversalLLM`, ils sont maintenant **tous utilisables** !
+
+**Modèles supportés via LangChain standard** :
+- `o1-mini` → O1 Mini ✅ (Compatible avec `/v1/chat/completions`)
+
+**Modèles supportés via UniversalLLM (route Codex)** :
+- `o3` → O3 (raisonnement avancé)
+- `o3-mini` → O3 Mini
 - `o3-deep-research` → O3 Deep Research
 - `o4-mini` → O4 Mini
 - `o4-mini-deep-research` → O4 Mini Deep Research
-- `o3-mini` → O3 Mini
-- `o1-mini` → O1 Mini
+
+**Usage** :
+```python
+# Tous les modèles O-series sont maintenant utilisables
+llm_config = LLMConfigDto(
+    pedagogical_json_model="o3-mini",  # ✅ Fonctionne maintenant !
+    group_json_model=LLMModel.O1_MINI,  # ✅ Aussi disponible
+    path_groups_model=LLMModel.GEMINI_2_5_FLASH
+)
+```
+
+**Documentation complète** : Voir [README_UNIVERSAL_LLM.md](README_UNIVERSAL_LLM.md), [UNIVERSAL_LLM_GUIDE.md](UNIVERSAL_LLM_GUIDE.md), [CODEX_ROUTE.md](CODEX_ROUTE.md)
 
 ### OpenAI - Search Models (3 modèles)
 - `gpt-5-search-api` → GPT-5 Search API
@@ -96,7 +140,11 @@ Cette fonctionnalité permet de sélectionner dynamiquement les modèles LLM uti
 - `claude-sonnet-4-5-20250929` → Claude Sonnet 4.5
 - `claude-opus-4-5` → Claude Opus 4.5
 
-**Total : 45+ modèles disponibles**
+**Total : 44 modèles disponibles**
+- **34 modèles** via LangChain (factory LLM standard)
+- **10 modèles supplémentaires** via UniversalLLM (5 Codex + 5 O-series)
+
+✨ **Tous les 44 modèles sont maintenant utilisables dans `CourseMaterialGeneratorV2` et `TemplateStructureGenerator`** grâce à `UniversalLLM` qui détecte automatiquement le type de modèle et route vers le bon endpoint.
 
 ## Les 3 fonctions configurables
 
@@ -112,6 +160,8 @@ Cette fonctionnalité permet de sélectionner dynamiquement les modèles LLM uti
 ## Utilisation
 
 ### Route `/generate_v2` (Synchrone)
+
+#### Exemple 1 : Avec modèles LangChain (enum)
 
 ```bash
 curl -X POST "http://localhost:8000/course_material/generate_v2" \
@@ -132,6 +182,34 @@ curl -X POST "http://localhost:8000/course_material/generate_v2" \
       {
         "order": 1,
         "text_blocs": ["Contenu du cours..."]
+      }
+    ],
+    "img_entry": [],
+    "video_entry": []
+  }'
+```
+
+#### Exemple 2 : ✨ Avec modèles Codex et O-series (string)
+
+```bash
+curl -X POST "http://localhost:8000/course_material/generate_v2" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Uid: user123" \
+  -d '{
+    "llm_config": {
+      "pedagogical_json_model": "gpt-5.1-codex",
+      "group_json_model": "o3-mini",
+      "path_groups_model": "gemini-2.5-flash"
+    },
+    "context_entry": {
+      "course": "Python avancé",
+      "topic_path": "Programmation > Design Patterns"
+    },
+    "book_scan_entry": [],
+    "diction_entry": [
+      {
+        "order": 1,
+        "text_blocs": ["Factory, Singleton, Observer..."]
       }
     ],
     "img_entry": [],

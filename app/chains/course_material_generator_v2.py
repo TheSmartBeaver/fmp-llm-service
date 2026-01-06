@@ -13,8 +13,8 @@ from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.template_structure_generator import TemplateStructureGenerator
 from app.utils.test import shit_test2, shit_test_3
-from app.chains.llm.llm_factory import LLMModelFactory
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
+from app.chains.llm.universal_llm import create_universal_llm
 
 
 class CourseMaterialGeneratorV2:
@@ -51,9 +51,9 @@ class CourseMaterialGeneratorV2:
         self.llm_config = llm_config or LLMConfigDto()
 
         # LLM pour la génération du JSON pédagogique
-        self.pedagogical_llm = LLMModelFactory.get_llm(
-            self.llm_config.get_pedagogical_json_model()
-        )
+        # ✅ Utilise UniversalLLM pour supporter TOUS les modèles (LangChain + Codex + O-series)
+        pedagogical_model = self.llm_config.get_pedagogical_json_model()
+        self.pedagogical_llm = create_universal_llm(pedagogical_model)
 
         # Créer le TemplateStructureGenerator avec la config LLM
         self.template_structure_generator = TemplateStructureGenerator(
@@ -99,7 +99,7 @@ class CourseMaterialGeneratorV2:
             - prompts: Dict avec les prompts de chaque étape
         """
         # Étape 1: Générer le JSON pédagogique enrichi
-        pedagogical_json, pedagogical_prompt = self._generate_pedagogical_json(user_entry)
+        pedagogical_json, pedagogical_prompt = await self._generate_pedagogical_json(user_entry)
         
         # pedagogical_json = shit_test2
         # pedagogical_prompt = "string"
@@ -251,7 +251,7 @@ class CourseMaterialGeneratorV2:
 
         return "\n".join(formatted_parts)
 
-    def _generate_pedagogical_json(
+    async def _generate_pedagogical_json(
         self, user_entry: UserEntryDto
     ) -> tuple[Dict[str, Any], str]:
         """
@@ -329,8 +329,8 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
             text=aggregated_content["text"],
         )
 
-        # Exécuter la chaîne
-        result = chain.invoke(
+        # Exécuter la chaîne (async pour supporter les modèles Codex)
+        result = await chain.ainvoke(
             {
                 "course": aggregated_content["context"]["course"],
                 "topic_path": aggregated_content["context"]["topic_path"],

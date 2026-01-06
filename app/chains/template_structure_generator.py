@@ -14,6 +14,7 @@ from app.validation.path_group_validator import validate_path_groups
 from app.utils.test import shit_path_group
 from app.chains.llm.llm_factory import LLMModelFactory
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
+from app.chains.llm.universal_llm import create_universal_llm
 
 
 class TemplateStructureGenerator:
@@ -49,14 +50,14 @@ class TemplateStructureGenerator:
         self.llm_config = llm_config or LLMConfigDto()
 
         # LLM pour la génération des JSONs de groupe
-        self.group_json_llm = LLMModelFactory.get_llm(
-            self.llm_config.get_group_json_model()
-        )
+        # ✅ Utilise UniversalLLM pour supporter TOUS les modèles
+        group_model = self.llm_config.get_group_json_model()
+        self.group_json_llm = create_universal_llm(group_model)
 
         # LLM pour la génération des groupes de chemins
-        self.path_groups_llm = LLMModelFactory.get_llm(
-            self.llm_config.get_path_groups_model()
-        )
+        # ✅ Utilise UniversalLLM pour supporter TOUS les modèles
+        path_groups_model = self.llm_config.get_path_groups_model()
+        self.path_groups_llm = create_universal_llm(path_groups_model)
 
         # Utiliser un modèle plus puissant (O3-mini avec raisonnement) pour les corrections
         self.correction_llm = OpenAiO3MiniLlm().get_llm()

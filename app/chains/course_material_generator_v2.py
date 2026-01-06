@@ -1,6 +1,6 @@
 import json
 import asyncio
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Optional
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 from langchain_core.prompts import ChatPromptTemplate
@@ -13,6 +13,8 @@ from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.template_structure_generator import TemplateStructureGenerator
 from app.utils.test import shit_test2, shit_test_3
+from app.chains.llm.llm_factory import LLMModelFactory
+from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 
 
 class CourseMaterialGeneratorV2:
@@ -36,17 +38,28 @@ class CourseMaterialGeneratorV2:
         self,
         db_session: Session,
         embedding_model: SentenceTransformer,
+        llm_config: Optional[LLMConfigDto] = None,
     ):
         """
         Args:
             db_session: Session SQLAlchemy pour accéder à la DB
             embedding_model: Modèle sentence-transformers pour les embeddings
+            llm_config: Configuration optionnelle des modèles LLM à utiliser
         """
         self.db = db_session
         self.embedding_model = embedding_model
-        self.llm = Gemini2_5_FlashLlm().get_llm()
+        self.llm_config = llm_config or LLMConfigDto()
+
+        # LLM pour la génération du JSON pédagogique
+        self.pedagogical_llm = LLMModelFactory.get_llm(
+            self.llm_config.get_pedagogical_json_model()
+        )
+
+        # Créer le TemplateStructureGenerator avec la config LLM
         self.template_structure_generator = TemplateStructureGenerator(
-            db_session=db_session, embedding_model=embedding_model
+            db_session=db_session,
+            embedding_model=embedding_model,
+            llm_config=self.llm_config,
         )
 
     def generate_course_material(
@@ -305,8 +318,8 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
             [("system", system_prompt), ("human", user_prompt)]
         )
 
-        # Créer la chaîne avec parser JSON
-        chain = prompt | self.llm | JsonOutputParser()
+        # Créer la chaîne avec parser JSON (utilise self.pedagogical_llm)
+        chain = prompt | self.pedagogical_llm | JsonOutputParser()
 
         # Préparer le prompt complet pour le retour
         full_prompt = prompt.format(

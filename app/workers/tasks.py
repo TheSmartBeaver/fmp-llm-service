@@ -12,6 +12,7 @@ from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
+from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 from app.models.db.fmp_models import AppUsers, DeviceTokens
 
 from .celery_app import celery
@@ -147,7 +148,7 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
 
 @celery.task(name="generate.course_material")
 def generate_course_material_task(
-    task_id: str, user_entry_dict: dict, auth_uid: str, top_k: int = 20
+    task_id: str, user_entry_dict: dict, auth_uid: str, llm_config_dict: dict = None, top_k: int = 20
 ):
     """
     Tâche Celery pour générer un support de cours avec CourseMaterialGeneratorV2 et envoyer une notification FCM.
@@ -161,6 +162,7 @@ def generate_course_material_task(
         task_id: Identifiant unique de la tâche
         user_entry_dict: Dictionnaire UserEntryDto contenant le contexte, le contenu et les médias
         auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+        llm_config_dict: Dictionnaire LLMConfigDto optionnel pour la configuration des modèles LLM
         top_k: Nombre de templates à utiliser (défaut: 20)
 
     Returns:
@@ -178,10 +180,15 @@ def generate_course_material_task(
         user_entry = UserEntryDto(**user_entry_dict)
         print(f"📥 UserEntryDto reconstructed: {user_entry}")
 
-        # Create course material generator V2
+        # Reconstruct LLMConfigDto from dict (if provided)
+        llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else None
+        print(f"📥 LLMConfigDto reconstructed: {llm_config}")
+
+        # Create course material generator V2 with LLM configuration
         generator = CourseMaterialGeneratorV2(
             db_session=db,
-            embedding_model=embedding_model
+            embedding_model=embedding_model,
+            llm_config=llm_config
         )
 
         # Generate course material

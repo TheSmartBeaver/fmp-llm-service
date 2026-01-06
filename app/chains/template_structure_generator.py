@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
@@ -12,6 +12,8 @@ from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
 from app.chains.llm.open_ai_o3_mini_llm import OpenAiO3MiniLlm
 from app.validation.path_group_validator import validate_path_groups
 from app.utils.test import shit_path_group
+from app.chains.llm.llm_factory import LLMModelFactory
+from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 
 
 class TemplateStructureGenerator:
@@ -34,15 +36,28 @@ class TemplateStructureGenerator:
         self,
         db_session: Session,
         embedding_model: SentenceTransformer,
+        llm_config: Optional[LLMConfigDto] = None,
     ):
         """
         Args:
             db_session: Session SQLAlchemy pour accéder à la DB
             embedding_model: Modèle sentence-transformers pour les embeddings
+            llm_config: Configuration optionnelle des modèles LLM à utiliser
         """
         self.db = db_session
         self.embedding_model = embedding_model
-        self.llm = ClaudeHaiku45Llm().get_llm()
+        self.llm_config = llm_config or LLMConfigDto()
+
+        # LLM pour la génération des JSONs de groupe
+        self.group_json_llm = LLMModelFactory.get_llm(
+            self.llm_config.get_group_json_model()
+        )
+
+        # LLM pour la génération des groupes de chemins
+        self.path_groups_llm = LLMModelFactory.get_llm(
+            self.llm_config.get_path_groups_model()
+        )
+
         # Utiliser un modèle plus puissant (O3-mini avec raisonnement) pour les corrections
         self.correction_llm = OpenAiO3MiniLlm().get_llm()
 
@@ -412,9 +427,9 @@ RÈGLE CRITIQUE:
         """
         prompt, params = self._build_json_generation_prompt(group, templates, path_to_value_map)
 
-        # Créer la chaîne LLM avec parser JSON
+        # Créer la chaîne LLM avec parser JSON (utilise self.group_json_llm)
         parser = JsonOutputParser()
-        chain = prompt | self.llm | parser
+        chain = prompt | self.group_json_llm | parser
 
         # Appeler le LLM de manière asynchrone
         result = await chain.ainvoke(params)
@@ -2540,9 +2555,9 @@ Génère les groupes avec leurs formats.""",
         # Préparer les données pour le prompt
         source_paths_formatted = "\n".join([f"  - {path}" for path in source_paths])
 
-        # Créer la chaîne LLM avec parser JSON
+        # Créer la chaîne LLM avec parser JSON (utilise self.path_groups_llm)
         parser = JsonOutputParser()
-        chain = prompt | self.llm | parser
+        chain = prompt | self.path_groups_llm | parser
 
         # Appeler le LLM
         result = chain.invoke(

@@ -7,6 +7,7 @@ import uuid
 from celery.result import AsyncResult
 
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
+from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 from app.workers.tasks import generate_course_material_task
 from app.workers.celery_app import celery
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
@@ -75,6 +76,7 @@ class CourseMaterialResponse(BaseModel):
 @course_material_router.post("/generate_CELERY", response_model=CourseMaterialTaskResponse)
 async def generate_course_material(
     request: UserEntryDto,
+    llm_config: Optional[LLMConfigDto] = None,
     auth_uid: str = Header(..., alias="X-Auth-Uid")
 ):
     """
@@ -82,6 +84,7 @@ async def generate_course_material(
 
     Args:
         request: UserEntryDto contenant le contexte, le contenu textuel et les médias
+        llm_config: Configuration optionnelle des modèles LLM à utiliser
         auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
 
     Returns:
@@ -93,9 +96,12 @@ async def generate_course_material(
     # Générer un ID unique pour cette tâche
     task_id = str(uuid.uuid4())
 
-    # Lancer la tâche Celery de manière asynchrone avec l'auth_uid
+    # Sérialiser la configuration LLM
+    llm_config_dict = llm_config.model_dump() if llm_config else None
+
+    # Lancer la tâche Celery de manière asynchrone avec l'auth_uid et la config LLM
     generate_course_material_task.apply_async(
-        args=[task_id, request.model_dump(), auth_uid],
+        args=[task_id, request.model_dump(), auth_uid, llm_config_dict],
         task_id=task_id
     )
 
@@ -276,6 +282,7 @@ async def get_course_material_result(task_id: str):
 @course_material_router.post("/generate_v2", response_model=CourseMaterialResponse)
 async def generate_course_material_v2(
     request: UserEntryDto,
+    llm_config: Optional[LLMConfigDto] = None,
     db: Session = Depends(get_db),
     auth_uid: str = Header(..., alias="X-Auth-Uid"),
     top_k: int = 20
@@ -290,6 +297,7 @@ async def generate_course_material_v2(
 
     Args:
         request: UserEntryDto contenant le contexte, le contenu textuel et les médias
+        llm_config: Configuration optionnelle des modèles LLM à utiliser
         db: Session de base de données
         auth_uid: AuthentUid de l'utilisateur (pour compatibilité future)
         top_k: Nombre de templates à utiliser (par défaut: 20)
@@ -300,10 +308,11 @@ async def generate_course_material_v2(
     Note:
         Cette version est synchrone et retourne directement le résultat.
     """
-    # Créer le générateur V2
+    # Créer le générateur V2 avec la configuration LLM
     generator = CourseMaterialGeneratorV2(
         db_session=db,
-        embedding_model=embedding_model
+        embedding_model=embedding_model,
+        llm_config=llm_config
     )
 
     # Générer le support de cours (utiliser la version async)

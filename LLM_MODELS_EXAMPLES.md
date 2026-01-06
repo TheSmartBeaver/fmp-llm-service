@@ -98,14 +98,16 @@ Optimisée pour les cours de programmation et documentation technique.
 
 ### 5. Configuration raisonnement profond (O-Series)
 
+⚠️ **Note importante** : Les modèles O-series utilisent une configuration spéciale et peuvent être plus lents (timeout augmenté à 5 minutes).
+
 Utilisation de modèles de raisonnement pour des sujets complexes.
 
 ```json
 {
   "llm_config": {
-    "pedagogical_json_model": "o3",
-    "group_json_model": "o3-deep-research",
-    "path_groups_model": "o4-mini"
+    "pedagogical_json_model": "o3-mini",
+    "group_json_model": "o1-mini",
+    "path_groups_model": "o3-mini"
   }
 }
 ```
@@ -114,8 +116,14 @@ Utilisation de modèles de raisonnement pour des sujets complexes.
 - Raisonnement approfondi
 - Analyse en profondeur
 - Connexions conceptuelles avancées
+- Excellent pour les problèmes complexes
 
-**Cas d'usage :** Mathématiques avancées, physique, philosophie
+**Inconvénients :**
+- Plus lents que les modèles standards
+- Plus coûteux
+- Pas de contrôle de température
+
+**Cas d'usage :** Mathématiques avancées, physique théorique, philosophie, problèmes de logique
 
 ---
 
@@ -231,11 +239,12 @@ Chaque modèle est choisi pour ses forces spécifiques.
 ### Cours de sciences (Mathématiques, Physique, Chimie)
 ```json
 {
-  "pedagogical_json_model": "o3-deep-research",
+  "pedagogical_json_model": "o3-mini",
   "group_json_model": "gpt-5.2",
-  "path_groups_model": "o4-mini"
+  "path_groups_model": "o1-mini"
 }
 ```
+⚠️ **Note**: Les modèles O-series sont plus lents mais excellent pour le raisonnement mathématique.
 
 ### Cours de langues
 ```json

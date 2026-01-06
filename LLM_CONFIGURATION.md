@@ -49,6 +49,7 @@ Cette fonctionnalité permet de sélectionner dynamiquement les modèles LLM uti
 - `gpt-5-chat-latest` → GPT-5 Chat Latest
 
 ### OpenAI - GPT-5 Codex (5 modèles)
+⚠️ **Note**: Modèles optimisés pour le code (temperature=0.0, max_tokens=2048)
 - `gpt-5.1-codex-max` → GPT-5.1 Codex Max
 - `gpt-5.1-codex` → GPT-5.1 Codex
 - `gpt-5-codex` → GPT-5 Codex
@@ -68,6 +69,7 @@ Cette fonctionnalité permet de sélectionner dynamiquement les modèles LLM uti
 - `gpt-4o-mini-realtime-preview` → GPT-4o Mini Realtime Preview
 
 ### OpenAI - O-Series / Reasoning Models (6 modèles)
+⚠️ **Note**: Ces modèles utilisent une configuration spéciale (pas de temperature, pas de streaming)
 - `o3` → O3
 - `o3-deep-research` → O3 Deep Research
 - `o4-mini` → O4 Mini

@@ -4,6 +4,8 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from app.chains.llm.anthropic_llm import AnthropicLLM
 from app.chains.llm.openai_llm import OpenAILLM
 from app.chains.llm.google_llm import GoogleLLM
+from app.chains.llm.openai_reasoning_llm import OpenAIReasoningLLM
+from app.chains.llm.openai_codex_llm import OpenAICodexLLM
 
 
 class LLMModel(str, Enum):
@@ -105,7 +107,24 @@ class LLMModelFactory:
         LLMModel.GEMINI_2_0_FLASH_LITE,
     }
 
-    # Tous les autres modèles sont OpenAI par défaut
+    _OPENAI_REASONING_MODELS = {
+        LLMModel.O3,
+        LLMModel.O3_DEEP_RESEARCH,
+        LLMModel.O4_MINI,
+        LLMModel.O4_MINI_DEEP_RESEARCH,
+        LLMModel.O3_MINI,
+        LLMModel.O1_MINI,
+    }
+
+    _OPENAI_CODEX_MODELS = {
+        LLMModel.GPT_5_1_CODEX_MAX,
+        LLMModel.GPT_5_1_CODEX,
+        LLMModel.GPT_5_CODEX,
+        LLMModel.GPT_5_1_CODEX_MINI,
+        LLMModel.CODEX_MINI_LATEST,
+    }
+
+    # Tous les autres modèles sont OpenAI standard par défaut
 
     @staticmethod
     def get_llm(model: LLMModel) -> BaseChatModel:
@@ -126,8 +145,14 @@ class LLMModelFactory:
             return AnthropicLLM(model.value).get_llm()
         elif model in LLMModelFactory._GOOGLE_MODELS:
             return GoogleLLM(model.value).get_llm()
+        elif model in LLMModelFactory._OPENAI_REASONING_MODELS:
+            # Modèles de raisonnement O-series avec configuration spéciale
+            return OpenAIReasoningLLM(model.value).get_llm()
+        elif model in LLMModelFactory._OPENAI_CODEX_MODELS:
+            # Modèles Codex avec configuration optimisée pour le code
+            return OpenAICodexLLM(model.value).get_llm()
         else:
-            # Par défaut, OpenAI (pour tous les GPT, O-series, etc.)
+            # Par défaut, OpenAI standard (pour tous les GPT, Search, Realtime, etc.)
             return OpenAILLM(model.value).get_llm()
 
     @staticmethod

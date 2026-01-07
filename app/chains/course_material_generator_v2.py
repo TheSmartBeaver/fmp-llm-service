@@ -19,6 +19,7 @@ from app.chains.correctors import CorrectorRegistry, processSeriesOfCorrections
 from app.chains.correctors.implementations import (
     LayoutSpacingCorrector,
     DuplicateBlockRemoverCorrector,
+    ListeExemplesHoistCorrector,
 )
 
 
@@ -446,6 +447,7 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
         # Enregistrer tous les correcteurs disponibles
         registry.register(LayoutSpacingCorrector())
         registry.register(DuplicateBlockRemoverCorrector())
+        registry.register(ListeExemplesHoistCorrector())
         # Ajouter ici d'autres correcteurs au fur et à mesure :
         # registry.register(TextOpacityCorrector())
         # registry.register(OtherCorrector())

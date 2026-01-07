@@ -10,8 +10,12 @@ from app.chains.correctors.implementations.layout_spacing_corrector import (
 from app.chains.correctors.implementations.duplicate_block_remover_corrector import (
     DuplicateBlockRemoverCorrector,
 )
+from app.chains.correctors.implementations.liste_exemples_hoist_corrector import (
+    ListeExemplesHoistCorrector,
+)
 
 __all__ = [
     "LayoutSpacingCorrector",
     "DuplicateBlockRemoverCorrector",
+    "ListeExemplesHoistCorrector",
 ]

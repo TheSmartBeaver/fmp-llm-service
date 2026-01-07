@@ -318,26 +318,38 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
             [("system", system_prompt), ("human", user_prompt)]
         )
 
-        # Créer la chaîne avec parser JSON (utilise self.pedagogical_llm)
-        chain = prompt | self.pedagogical_llm | JsonOutputParser()
+        # Préparer les inputs
+        inputs = {
+            "course": aggregated_content["context"]["course"],
+            "topic_path": aggregated_content["context"]["topic_path"],
+            "media_description": media_description,
+            "text": aggregated_content["text"],
+        }
 
         # Préparer le prompt complet pour le retour
-        full_prompt = prompt.format(
-            course=aggregated_content["context"]["course"],
-            topic_path=aggregated_content["context"]["topic_path"],
-            media_description=media_description,
-            text=aggregated_content["text"],
-        )
+        full_prompt = prompt.format(**inputs)
 
-        # Exécuter la chaîne (async pour supporter les modèles Codex)
-        result = await chain.ainvoke(
-            {
-                "course": aggregated_content["context"]["course"],
-                "topic_path": aggregated_content["context"]["topic_path"],
-                "media_description": media_description,
-                "text": aggregated_content["text"],
-            }
-        )
+        # Pour les modèles Codex, on ne peut pas utiliser le chain operator avec JsonOutputParser
+        # car il appelle la méthode sync en interne. On appelle directement le LLM.
+        from app.chains.llm.universal_llm import UniversalLLM
+
+        if isinstance(self.pedagogical_llm, UniversalLLM) and self.pedagogical_llm.use_codex_route:
+            # Appel direct pour Codex (pas de chain)
+            messages = prompt.format_messages(**inputs)
+            response = await self.pedagogical_llm.ainvoke(messages)
+
+            # Parser manuellement le JSON de la réponse
+            import json
+            if hasattr(response, 'content'):
+                json_text = response.content
+            else:
+                json_text = str(response)
+
+            result = json.loads(json_text)
+        else:
+            # Pour les autres modèles, utiliser la chaîne normale
+            chain = prompt | self.pedagogical_llm | JsonOutputParser()
+            result = await chain.ainvoke(inputs)
 
         return result, full_prompt
 

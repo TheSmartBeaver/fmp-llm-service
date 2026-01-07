@@ -428,18 +428,34 @@ RÈGLE CRITIQUE:
         """
         prompt, params = self._build_json_generation_prompt(group, templates, path_to_value_map)
 
-        # Créer la chaîne LLM avec parser JSON (utilise self.group_json_llm)
-        parser = JsonOutputParser()
-        chain = prompt | self.group_json_llm | parser
+        # Formater le prompt pour le retourner
+        formatted_prompt = prompt.format(**params)
 
-        # Appeler le LLM de manière asynchrone
-        result = await chain.ainvoke(params)
+        # Pour les modèles Codex, on ne peut pas utiliser le chain operator avec JsonOutputParser
+        # car il appelle la méthode sync en interne. On appelle directement le LLM.
+        from app.chains.llm.universal_llm import UniversalLLM
+
+        if isinstance(self.group_json_llm, UniversalLLM) and self.group_json_llm.use_codex_route:
+            # Appel direct pour Codex (pas de chain)
+            messages = prompt.format_messages(**params)
+            response = await self.group_json_llm.ainvoke(messages)
+
+            # Parser manuellement le JSON de la réponse
+            import json
+            if hasattr(response, 'content'):
+                json_text = response.content
+            else:
+                json_text = str(response)
+
+            result = json.loads(json_text)
+        else:
+            # Pour les autres modèles, utiliser la chaîne normale
+            parser = JsonOutputParser()
+            chain = prompt | self.group_json_llm | parser
+            result = await chain.ainvoke(params)
 
         # VALIDATION: Vérifier que le LLM n'a pas inventé de clés fictives
         self._validate_group_json_references(result, group)
-
-        # Formater le prompt pour le retourner
-        formatted_prompt = prompt.format(**params)
 
         return {
             "json": result,
@@ -2086,7 +2102,7 @@ RÈGLE CRITIQUE:
 
         if not_shit:
             # NOUVELLE APPROCHE: Générer les groupes de chemins avec formats
-            path_groups = self._generate_path_groups_with_llm(
+            path_groups = await self._generate_path_groups_with_llm(
                 source_paths=json_paths_with_variables,
                 context_description=context_description,
             )
@@ -2476,7 +2492,7 @@ Template {i}:
             )
         return "\n".join(formatted)
 
-    def _generate_path_groups_with_llm(
+    async def _generate_path_groups_with_llm(
         self,
         source_paths: List[str],
         context_description: str = "",
@@ -2556,17 +2572,34 @@ Génère les groupes avec leurs formats.""",
         # Préparer les données pour le prompt
         source_paths_formatted = "\n".join([f"  - {path}" for path in source_paths])
 
-        # Créer la chaîne LLM avec parser JSON (utilise self.path_groups_llm)
-        parser = JsonOutputParser()
-        chain = prompt | self.path_groups_llm | parser
+        # Préparer les inputs
+        inputs = {
+            "context": context_description or "Aucun contexte spécifique fourni",
+            "source_paths": source_paths_formatted,
+        }
 
-        # Appeler le LLM
-        result = chain.invoke(
-            {
-                "context": context_description or "Aucun contexte spécifique fourni",
-                "source_paths": source_paths_formatted,
-            }
-        )
+        # Pour les modèles Codex, on ne peut pas utiliser le chain operator avec JsonOutputParser
+        # car il appelle la méthode sync en interne. On appelle directement le LLM.
+        from app.chains.llm.universal_llm import UniversalLLM
+
+        if isinstance(self.path_groups_llm, UniversalLLM) and self.path_groups_llm.use_codex_route:
+            # Appel direct pour Codex (pas de chain)
+            messages = prompt.format_messages(**inputs)
+            response = await self.path_groups_llm.ainvoke(messages)
+
+            # Parser manuellement le JSON de la réponse
+            import json
+            if hasattr(response, 'content'):
+                json_text = response.content
+            else:
+                json_text = str(response)
+
+            result = json.loads(json_text)
+        else:
+            # Pour les autres modèles, utiliser la chaîne normale
+            parser = JsonOutputParser()
+            chain = prompt | self.path_groups_llm | parser
+            result = await chain.ainvoke(inputs)
 
         return result
 

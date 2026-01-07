@@ -140,6 +140,14 @@ class UniversalLLM(BaseChatModel):
             return f"universal_codex_{self.model_name}"
         return f"universal_langchain_{self.model_name}"
 
+    @property
+    def _identifying_params(self) -> dict:
+        """Return identifying parameters for the LLM."""
+        return {
+            "model_name": self.model_name,
+            "use_codex_route": self.use_codex_route,
+        }
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -151,29 +159,23 @@ class UniversalLLM(BaseChatModel):
         Génération synchrone.
 
         Pour les modèles LangChain, délègue à l'implémentation du modèle sous-jacent.
-        Pour Codex, vérifie si on est dans un contexte async et lève une erreur explicite.
+        Pour Codex, cette méthode ne devrait pas être appelée - utilisez ainvoke() à la place.
+
+        Note: Cette méthode synchrone ne fonctionne pas avec les modèles Codex car ils
+        nécessitent des appels HTTP async. Utilisez toujours ainvoke() pour les modèles Codex.
         """
         if not self.use_codex_route:
             # Pour les modèles LangChain, déléguer au LLM sous-jacent
             return self.llm._generate(messages, stop, run_manager, **kwargs)
         else:
-            # Pour Codex, vérifier si on est dans un event loop actif
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    raise RuntimeError(
-                        f"Cannot use synchronous invoke() with Codex model '{self.model_name}' "
-                        f"inside an async context (like FastAPI routes). "
-                        f"Please use ainvoke() instead, or use _generate_pedagogical_json_async() "
-                        f"instead of _generate_pedagogical_json() in CourseMaterialGeneratorV2."
-                    )
-            except RuntimeError as e:
-                # Si get_event_loop() lève une RuntimeError, on n'est pas dans une boucle
-                if "no running event loop" not in str(e).lower():
-                    raise
-
-            # Si on arrive ici, pas de boucle active, on peut utiliser asyncio.run
-            return asyncio.run(self._agenerate(messages, stop, run_manager, **kwargs))
+            # Pour Codex, lever une erreur claire
+            raise RuntimeError(
+                f"Cannot use synchronous invoke() with Codex model '{self.model_name}'. "
+                f"Codex models require async HTTP calls to OpenAI API. "
+                f"Use 'await llm.ainvoke(messages)' instead of 'llm.invoke(messages)'. "
+                f"If using in a LangChain chain with JsonOutputParser, call the LLM directly "
+                f"instead of using the chain operator (see CourseMaterialGeneratorV2._generate_pedagogical_json for example)."
+            )
 
     async def _agenerate(
         self,

@@ -15,6 +15,11 @@ from app.chains.template_structure_generator import TemplateStructureGenerator
 from app.utils.test import shit_test2, shit_test_3
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 from app.chains.llm.universal_llm import create_universal_llm
+from app.chains.correctors import CorrectorRegistry, processSeriesOfCorrections
+from app.chains.correctors.implementations import (
+    LayoutSpacingCorrector,
+    DuplicateBlockRemoverCorrector,
+)
 
 
 class CourseMaterialGeneratorV2:
@@ -61,6 +66,9 @@ class CourseMaterialGeneratorV2:
             embedding_model=embedding_model,
             llm_config=self.llm_config,
         )
+
+        # Initialiser le registre de correcteurs
+        self.corrector_registry = self._initialize_corrector_registry()
 
     def generate_course_material(
         self,
@@ -133,6 +141,16 @@ class CourseMaterialGeneratorV2:
         structure_prompt = structure_result["prompt"]
         destination_mappings = structure_result["destination_mappings"]
         debug_info = structure_result.get("debug_info", {})
+
+        # Appliquer les corrections sur la structure de templates
+        template_structure, correction_stats = processSeriesOfCorrections(
+            template_structure, self.corrector_registry
+        )
+
+        # Ajouter les statistiques de correction aux debug_info
+        debug_info["correction_stats"] = correction_stats
+
+
 
         # Étape 3: Le JSON final est déjà construit par TemplateStructureGenerator
         # Il contient la structure avec les valeurs hydratées
@@ -412,3 +430,24 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
                 if self._contains_template_name(item):
                     return True
         return False
+
+    def _initialize_corrector_registry(self) -> CorrectorRegistry:
+        """
+        Crée et configure le registre de correcteurs.
+
+        Cette méthode enregistre tous les correcteurs disponibles
+        dans le système.
+
+        Returns:
+            Registre de correcteurs configuré
+        """
+        registry = CorrectorRegistry()
+
+        # Enregistrer tous les correcteurs disponibles
+        registry.register(LayoutSpacingCorrector())
+        registry.register(DuplicateBlockRemoverCorrector())
+        # Ajouter ici d'autres correcteurs au fur et à mesure :
+        # registry.register(TextOpacityCorrector())
+        # registry.register(OtherCorrector())
+
+        return registry

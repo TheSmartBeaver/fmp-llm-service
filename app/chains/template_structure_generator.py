@@ -363,8 +363,11 @@ EXEMPLE DE SORTIE ATTENDUE:
    - Utilise la notation {{{{chemin}}}} pour référencer les données source
    - TOUJOURS utiliser le séparateur -> entre les parties du chemin
    - ⚠️ RÈGLE CRITIQUE pour les variables de tableau:
-     * ✅ TOUJOURS utiliser les variables génériques [x], [y], [z] exactement comme dans les chemins source
+     * ✅ Tu DOIS utiliser UNIQUEMENT les variables qui apparaissent dans les chemins source fournis
+     * ✅ Si les chemins source montrent [x], utilise [x]. Si les chemins montrent [x] et [y], utilise [x] et [y]
+     * ❌ N'INVENTE JAMAIS de nouvelles variables ([y], [z]) si elles n'apparaissent pas dans les chemins source
      * ❌ N'utilise JAMAIS d'indices numériques [0], [1], [2], etc.
+     * Exemple: Si seul "learningObjectives[x]->description" est fourni, utilise UNIQUEMENT [x], JAMAIS [y] ou [z]
    - ⚠️ RÈGLE CRITIQUE pour le suffixe * (références INTERMÉDIAIRES):
      * Si un chemin se termine par *, c'est une référence INTERMÉDIAIRE (contient des sous-propriétés)
      * ❌ N'utilise JAMAIS une référence * seule dans le JSON
@@ -409,8 +412,13 @@ Chemins source disponibles pour les références {{{{chemin}}}}:
   * Si type = "B", "I", "R", "D" → crée un objet ou tableau d'objets imbriqué avec template_name
   * Respecte la grammaire pour l'imbrication (ex: un champ de type I ne peut contenir que B, L, M ou R)
 
-⚠️ RAPPEL IMPORTANT: Utilise UNIQUEMENT les chemins ci-dessus avec leurs variables [x], [y], [z] EXACTEMENT comme indiqué.
-N'utilise JAMAIS d'indices numériques [0], [1], [2] dans tes références.
+⚠️ RAPPEL IMPORTANT SUR LES VARIABLES:
+- Tu DOIS utiliser UNIQUEMENT les chemins listés ci-dessus
+- Tu DOIS utiliser UNIQUEMENT les variables qui apparaissent dans ces chemins ([x], [y], [z], etc.)
+- ❌ N'INVENTE JAMAIS de variables qui n'existent pas dans les chemins source
+- ❌ Si seul learningObjectives[x] existe, tu NE PEUX PAS utiliser learningObjectives[y] ou learningObjectives[z]
+- ❌ Si seul themes[x]->groups[y] existe, tu NE PEUX PAS inventer themes[x]->groups[z]
+- N'utilise JAMAIS d'indices numériques [0], [1], [2] dans tes références.
 
 Génère maintenant le JSON structuré.""",
                 ),

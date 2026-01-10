@@ -306,9 +306,12 @@ CONTEXTE PÉDAGOGIQUE:
 MÉDIAS DISPONIBLES:
 {media_description}
 
-TEMPLATES DISPONIBLES:
-Les templates suivants sont disponibles pour la présentation du contenu. Tu dois structurer le JSON pédagogique
-en pensant à ces catégories pour faciliter le mapping ultérieur:
+TEMPLATES DISPONIBLES (POUR RÉFÉRENCE UNIQUEMENT):
+Les templates suivants sont disponibles pour la présentation du contenu. Cette liste te permet de comprendre
+les catégories sémantiques disponibles, MAIS tu NE dois JAMAIS utiliser ces noms directement dans ton JSON.
+
+⚠️ ATTENTION: Ces noms de templates sont fournis UNIQUEMENT pour ta compréhension des catégories disponibles.
+Tu dois créer un JSON purement sémantique et pédagogique, SANS aucune référence aux noms de templates.
 
 Comparaison: comparison/alternatives, comparison/avantages, comparison/benchmark, comparison/choix,
 comparison/comparaison_simple, comparison/differences, comparison/inconvenients, comparison/pour_contre,

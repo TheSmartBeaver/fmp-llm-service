@@ -525,25 +525,21 @@ Template {i}:
         Returns:
             String contenant un exemple de structure JSON
         """
-        # Parser le TemplateFieldsUsage pour extraire les noms de champs
-        # Format attendu: "field_1: description, field_2: description, ..."
-        fields_usage = template.get('fields_usage', '')
+        # fields_usage est maintenant un dictionnaire {field_name: description}
+        fields_usage = template.get('fields_usage', {})
 
-        # Essayer d'extraire les noms de champs (avant le ':' ou la première espace)
-        import re
-        field_matches = re.findall(r'(\w+)\s*:', fields_usage)
-
-        if field_matches:
+        # Vérifier que fields_usage est bien un dictionnaire
+        if isinstance(fields_usage, dict) and fields_usage:
             # Créer un exemple JSON avec les vrais noms de champs
             example_fields = []
-            for field_name in field_matches[:3]:  # Limiter à 3 champs pour la lisibilité
+            for field_name in list(fields_usage.keys())[:3]:  # Limiter à 3 champs pour la lisibilité
                 example_fields.append(f'    "{field_name}": "valeur du contenu pédagogique"')
 
             example = "{\n" + f'    "template_name": "{template["template_name"]}",\n'
             example += ",\n".join(example_fields)
             example += "\n  }"
         else:
-            # Fallback si on ne peut pas parser
+            # Fallback si fields_usage n'est pas un dict ou est vide
             example = "{\n" + f'    "template_name": "{template["template_name"]}",\n'
             example += '    "voir_usage_des_champs_ci_dessus": "..."\n  }'
 

@@ -303,19 +303,21 @@ Tu DOIS respecter la grammaire suivante pour imbriquer les templates:
   B → B | L | M | R
   R → B | L
   D → B | L
-  L → ∅
-  M → ∅
+  L → ∅  (∅ signifie: contenu textuel uniquement, pas de template_name imbriqué)
+  M → ∅  (∅ signifie: contenu textuel uniquement, pas de template_name imbriqué)
 
 Explication:
-- C (Container) peut contenir des I (Items)
-- I (Item) peut contenir des B (Blocks), L (Leafs), M (Media) ou R (Relations)
-- B (Block) peut contenir d'autres B, L, M ou R
-- R (Relation) peut contenir B ou L
-- D (Decorator) peut contenir B ou L
-- L (Leaf) et M (Media) sont terminaux (pas d'enfants)
+- C (Container) peut contenir des I (Items) avec template_name
+- I (Item) peut contenir des B (Blocks), L (Leafs), M (Media) ou R (Relations) avec template_name
+- B (Block) peut contenir d'autres B, L, M ou R avec template_name
+- R (Relation) peut contenir B ou L avec template_name
+- D (Decorator) peut contenir B ou L avec template_name
+- L (Leaf) et M (Media) peuvent contenir du TEXTE ou des VALEURS SIMPLES, mais PAS d'objets avec template_name
+  * Ces champs contiennent directement du texte, des nombres, ou des références {{{{chemin}}}}
+  * Ils ne doivent JAMAIS contenir d'objets imbriqués avec un champ "template_name"
 
-Exemple valide: C contient I, I contient B, B contient L
-Exemple invalide: L ne peut pas contenir d'autres templates
+Exemple valide: C contient I, I contient B, B contient L avec texte
+Exemple invalide: L contenant un objet avec template_name
 
 ⚠️ FORMAT DE SORTIE:
 Tu DOIS retourner un JSON structuré avec:

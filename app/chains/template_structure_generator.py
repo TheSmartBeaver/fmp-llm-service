@@ -52,7 +52,8 @@ class TemplateStructureGenerator:
         # LLM pour la génération des JSONs de groupe
         # ✅ Utilise UniversalLLM pour supporter TOUS les modèles
         group_model = self.llm_config.get_group_json_model()
-        self.group_json_llm = create_universal_llm(group_model)
+        # Timeout augmenté à 300 secondes (5 minutes) pour les appels parallèles
+        self.group_json_llm = create_universal_llm(group_model, timeout=300)
 
         # LLM pour la génération des groupes de chemins
         # ✅ Utilise UniversalLLM pour supporter TOUS les modèles

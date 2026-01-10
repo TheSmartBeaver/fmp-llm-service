@@ -121,7 +121,7 @@ class CourseMaterialGeneratorV2:
 
         if category_quotas is None:
             # Par défaut: peu de layouts, plus de contenu conceptuel
-            category_quotas = {"C": 2, "I": 4, "B": 2, "L": 3, "D": 2, "R": 3}
+            category_quotas = {"C": 1, "I": 2, "B": 1, "L": 1, "D": 1, "R": 1}
 
         structure_result = (
             await self.template_structure_generator.generate_template_structure(
@@ -306,64 +306,6 @@ CONTEXTE PÉDAGOGIQUE:
 MÉDIAS DISPONIBLES:
 {media_description}
 
-TEMPLATES DISPONIBLES (POUR RÉFÉRENCE UNIQUEMENT):
-Les templates suivants sont disponibles pour la présentation du contenu. Cette liste te permet de comprendre
-les catégories sémantiques disponibles, MAIS tu NE dois JAMAIS utiliser ces noms directement dans ton JSON.
-
-⚠️ ATTENTION: Ces noms de templates sont fournis UNIQUEMENT pour ta compréhension des catégories disponibles.
-Tu dois créer un JSON purement sémantique et pédagogique, SANS aucune référence aux noms de templates.
-
-Comparaison: comparison/alternatives, comparison/avantages, comparison/benchmark, comparison/choix,
-comparison/comparaison_simple, comparison/differences, comparison/inconvenients, comparison/pour_contre,
-comparison/similarites, comparison/trade_off
-
-Conceptuel: conceptual/axiome, conceptual/concept, conceptual/hypothese, conceptual/idee_cle, conceptual/loi,
-conceptual/postulat, conceptual/principe, conceptual/theorie, conceptual/valeur, conceptual/vision
-
-Langage: langage/dialog_item, langage/vocabulary
-
-Layouts: layouts/grid/container, layouts/grid/item, layouts/horizontal_line/container, layouts/horizontal_line/item,
-layouts/timeline_vertical/container, layouts/timeline_vertical/item, layouts/tree_left_right/container,
-layouts/tree_left_right/item, layouts/vertical_column/container, layouts/vertical_column/item
-
-Relations logiques: logical_relations/car, logical_relations/cause, logical_relations/condition,
-logical_relations/consequence, logical_relations/donc, logical_relations/effet, logical_relations/exception,
-logical_relations/hypothese_conclusion, logical_relations/mais, logical_relations/si_alors
-
-Procédural: procedural/algorithme, procedural/etape_bloquante, procedural/etape_conditionnelle,
-procedural/etape_finale, procedural/etape_intermediaire, procedural/etape_numerotee, procedural/etape_optionnelle,
-procedural/etape_repetable, procedural/etape_simple, procedural/etat_bloque, procedural/etat_en_cours,
-procedural/etat_final, procedural/etat_initial, procedural/etat_intermediaire, procedural/etat_rejete,
-procedural/etat_termine, procedural/etat_valide, procedural/methode, procedural/pipeline, procedural/plan_action,
-procedural/procedure, procedural/processus_cyclique, procedural/processus_lineaire, procedural/routine,
-procedural/strategie, procedural/workflow
-
-Quantitatif: quantitative/indicateur, quantitative/intervalle, quantitative/kpi, quantitative/mesure,
-quantitative/pourcentage, quantitative/ratio, quantitative/score, quantitative/seuil, quantitative/statistique,
-quantitative/valeur_numerique
-
-Tableaux: tableaux/ligne_cle_valeur, tableaux/matrice, tableaux/tableau_comparatif, tableaux/tableau_decisionnel,
-tableaux/tableau_mesures, tableaux/tableau_raci, tableaux/tableau_swot
-
-Temporel: temporal/avant_apres/container, temporal/avant_apres/item, temporal/chronologie/container,
-temporal/chronologie/item, temporal/date/container, temporal/date/item, temporal/duree, temporal/futur/container,
-temporal/futur/item, temporal/heure/container, temporal/heure/item, temporal/jalons/container,
-temporal/jalons/item, temporal/passe/container, temporal/passe/item, temporal/periode/container,
-temporal/periode/item, temporal/present/container, temporal/present/item, temporal/timeline_vertical/container,
-temporal/timeline_vertical/item
-
-Texte: text/annotation, text/checklist, text/commentaire, text/contexte, text/definition, text/description_courte,
-text/description_longue, text/detail_technique, text/explication, text/label_court, text/label_long,
-text/liste_arguments, text/liste_contre_arguments, text/liste_exemples, text/liste_hierarchique,
-text/liste_mots_cles, text/liste_numerotee, text/liste_plate, text/liste_puces, text/liste_tags,
-text/nom_categorie, text/nom_concept, text/nom_etape, text/nom_regle, text/nom_variable, text/note,
-text/paragraph_display, text/paragraph_display/hidden, text/resume, text/sous_titre, text/titre_principal,
-text/titre_secondaire
-
-Médias: video/YT, img/icon50px_50px, img/standard_img
-
-Autres: programming/block_code, post-it, style/reveal-hidden, time/chronometer
-
 Ta mission : transformer des notes de cours brutes en un JSON structuré OPTIMAL pour l'apprentissage.
 
 RÈGLES CRITIQUES:
@@ -382,7 +324,6 @@ RÈGLES CRITIQUES:
     - ✅ CORRECT: {{"concepts": [{{"name": "Principe de responsabilité unique", "explanation": "..."}}]}}
     - ✅ CORRECT: {{"principles": [{{"acronym": "SRP", "definition": "..."}}]}}
     - Les clés doivent être des CATÉGORIES ou des RÔLES génériques, jamais des valeurs spécifiques
-11. ✅ Structure ton JSON en pensant aux catégories de templates disponibles ci-dessus pour faciliter le mapping
 """
 
         user_prompt = """Voici les notes de cours brutes à transformer en JSON pédagogique optimal:

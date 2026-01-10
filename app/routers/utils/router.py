@@ -77,6 +77,7 @@ class TemplateStructureRequest(BaseModel):
     context_description: Optional[str] = ""
     top_k: Optional[int] = 20
     category_quotas: Optional[Dict[str, int]] = None
+    hasRealDataRendered: Optional[bool] = False
 
 
 class TemplateStructureResponse(BaseModel):
@@ -152,7 +153,8 @@ async def generate_template_structure(
             source_json=request.source_json,
             context_description=request.context_description,
             top_k=request.top_k,
-            category_quotas=request.category_quotas
+            category_quotas=request.category_quotas,
+            hasRealDataRendered=request.hasRealDataRendered
         )
 
         return TemplateStructureResponse(

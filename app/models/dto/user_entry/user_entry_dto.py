@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 from app.models.dto.user_entry.book_scan_entry_dto import BookScanEntryDto
 from app.models.dto.user_entry.context_entry_dto import ContextEntryDto
 from app.models.dto.user_entry.diction_entry_dto import DictionEntryDto
@@ -13,3 +14,4 @@ class UserEntryDto(BaseModel):
     diction_entry: list[DictionEntryDto]
     img_entry: list[ImgEntryDto]
     video_entry: list[VideoEntryDto]
+    hasRealDataRendered: Optional[bool] = False

@@ -69,6 +69,7 @@ class TemplateStructureGenerator:
         context_description: str = "",
         top_k_per_packet: int = 12,
         category_quotas: Dict[str, int] = None,
+        hasRealDataRendered: bool = False,
     ) -> Dict[str, Any]:
         """
         Génère une structure de templates à partir d'un JSON source.
@@ -1322,7 +1323,8 @@ Génère maintenant le JSON structuré.""",
         self,
         path_to_value_map: Dict[str, Any],
         group_jsons_map: Dict[str, Any],
-        verbose: bool = True
+        verbose: bool = True,
+        hasRealDataRendered: bool = False
     ) -> List[Any]:
         """
         Construit le final_json de manière incrémentale à partir de path_to_value_map et group_jsons_map.
@@ -1417,26 +1419,52 @@ Génère maintenant le JSON structuré.""",
                     if verbose:
                         print(f"    • {placeholder} → {new_placeholder}")
 
-            # ÉTAPE 4.5: Transformer tous les placeholders {{chemin}} en {-{chemin}-}
+            # ÉTAPE 4.5: Transformer tous les placeholders {{chemin}}
+            # Si hasRealDataRendered=True: substituer par les valeurs réelles de path_to_value_map
+            # Sinon: transformer en {-{chemin}-}
             # Récupérer tous les placeholders restants dans le template
             all_placeholders = self._find_all_placeholders(template_instance)
             #all_placeholders = []
 
-            if verbose and all_placeholders:
-                print(f"  Transformation des placeholders {{{{chemin}}}} → {{-{{chemin}}-}}: {len(all_placeholders)} trouvés")
+            if hasRealDataRendered:
+                # Mode: substituer les placeholders par les valeurs réelles
+                if verbose and all_placeholders:
+                    print(f"  Substitution des placeholders {{{{chemin}}}} par les valeurs réelles: {len(all_placeholders)} trouvés")
 
-            for placeholder in all_placeholders:
-                # Extraire le chemin du placeholder (sans les {{ }})
-                placeholder_path = self._extract_placeholder_path(placeholder)
+                for placeholder in all_placeholders:
+                    # Extraire le chemin du placeholder (sans les {{ }})
+                    placeholder_path = self._extract_placeholder_path(placeholder)
 
-                # Créer le nouveau placeholder au format {-{chemin}-}
-                new_placeholder = "{-{" + placeholder_path + "}-}"
+                    # Chercher la valeur réelle dans path_to_value_map
+                    real_value = path_to_value_map.get(placeholder_path)
 
-                # Remplacer l'ancien placeholder par le nouveau
-                self._replace_in_template(template_instance, placeholder, new_placeholder)
+                    if real_value is not None:
+                        # Remplacer le placeholder par la valeur réelle
+                        self._replace_in_template(template_instance, placeholder, real_value)
 
-                if verbose:
-                    print(f"    • {placeholder} → {new_placeholder}")
+                        if verbose:
+                            print(f"    • {placeholder} → {real_value}")
+                    else:
+                        # Si la valeur n'est pas trouvée, garder le placeholder tel quel
+                        if verbose:
+                            print(f"    ⚠️  {placeholder} → valeur non trouvée dans path_to_value_map")
+            else:
+                # Mode: transformer en {-{chemin}-}
+                if verbose and all_placeholders:
+                    print(f"  Transformation des placeholders {{{{chemin}}}} → {{-{{chemin}}-}}: {len(all_placeholders)} trouvés")
+
+                for placeholder in all_placeholders:
+                    # Extraire le chemin du placeholder (sans les {{ }})
+                    placeholder_path = self._extract_placeholder_path(placeholder)
+
+                    # Créer le nouveau placeholder au format {-{chemin}-}
+                    new_placeholder = "{-{" + placeholder_path + "}-}"
+
+                    # Remplacer l'ancien placeholder par le nouveau
+                    self._replace_in_template(template_instance, placeholder, new_placeholder)
+
+                    if verbose:
+                        print(f"    • {placeholder} → {new_placeholder}")
 
             # ÉTAPE 5: Affichage incrémental
             if verbose:
@@ -2269,7 +2297,8 @@ Génère maintenant le JSON structuré.""",
         final_json_list = self._build_final_json_incremental(
             path_to_value_map=path_to_value_map,
             group_jsons_map=resolved_jsons_map,
-            verbose=True  # Afficher les détails de construction
+            verbose=True,  # Afficher les détails de construction
+            hasRealDataRendered=hasRealDataRendered
         )
 
         # Wrapper la liste de templates dans un container approprié

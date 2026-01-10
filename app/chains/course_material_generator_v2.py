@@ -128,6 +128,7 @@ class CourseMaterialGeneratorV2:
                 source_json=pedagogical_json,
                 context_description=context_description,
                 category_quotas=category_quotas,
+                hasRealDataRendered=user_entry.hasRealDataRendered,
             )
         )
 

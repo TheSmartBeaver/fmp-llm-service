@@ -2138,14 +2138,24 @@ Génère maintenant le JSON structuré.""",
         # Étape 4: Ajouter les références manquantes (création de groupes parents si nécessaire)
         path_groups = self._add_missing_nested_references(path_groups)
 
-        # Étape 5: Pour chaque groupe, demander au LLM de déterminer les formats
-        print(f"\n🔍 Détermination des formats pour {len(path_groups)} groupe(s)...")
-        for group in path_groups:
-            formats = await self._determine_formats_for_group(
+        # Étape 5: Pour chaque groupe, demander au LLM de déterminer les formats (en parallèle)
+        print(f"\n🔍 Détermination des formats pour {len(path_groups)} groupe(s) en parallèle...")
+
+        # Créer les tâches pour tous les groupes
+        format_tasks = [
+            self._determine_formats_for_group(
                 group_keys=group["keys"],
                 path_to_value_map=path_to_value_map,
                 context_description=context_description,
             )
+            for group in path_groups
+        ]
+
+        # Exécuter toutes les tâches en parallèle
+        formats_results = await asyncio.gather(*format_tasks)
+
+        # Assigner les résultats aux groupes
+        for group, formats in zip(path_groups, formats_results):
             group["format"] = formats
 
         # Étape 6: Valider les groupes

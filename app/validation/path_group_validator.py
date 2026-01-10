@@ -34,8 +34,10 @@ def validate_path_groups(path_groups: List[Dict[str, Any]]) -> List[str]:
         
         # Si mélange de clés avec et sans variables
         if keys_with_vars and keys_without_vars:
+            # Identifier le groupe par ses premières clés
+            group_identifier = f"[{', '.join(keys[:2])}...]" if len(keys) > 2 else f"[{', '.join(keys)}]"
             warnings.append(
-                f"⚠️ Groupe '{group['group_name']}' mélange des clés avec et sans variables:\n"
+                f"⚠️ Groupe {group_identifier} mélange des clés avec et sans variables:\n"
                 f"  Avec variables: {keys_with_vars}\n"
                 f"  Sans variables: {keys_without_vars}\n"
                 f"  → Les clés sans variables devraient être dans un groupe séparé."
@@ -57,7 +59,9 @@ def validate_path_groups(path_groups: List[Dict[str, Any]]) -> List[str]:
             
             # Si profondeurs différentes
             if len(variable_depths) > 1:
-                warning_msg = f"⚠️ Groupe '{group['group_name']}' contient des clés avec profondeurs de variables différentes:\n"
+                # Identifier le groupe par ses premières clés
+                group_identifier = f"[{', '.join(keys[:2])}...]" if len(keys) > 2 else f"[{', '.join(keys)}]"
+                warning_msg = f"⚠️ Groupe {group_identifier} contient des clés avec profondeurs de variables différentes:\n"
                 for depth, keys_at_depth in variable_depths.items():
                     warning_msg += f"  Profondeur {depth}: {keys_at_depth}\n"
                 warning_msg += (

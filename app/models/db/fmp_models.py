@@ -2,7 +2,7 @@ from typing import Any, Optional
 import datetime
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, Double, ForeignKeyConstraint, Index, Integer, LargeBinary, PrimaryKeyConstraint, String, Table, Text, Uuid, text
+from sqlalchemy import Boolean, CHAR, Column, DateTime, Double, ForeignKeyConstraint, Index, Integer, LargeBinary, PrimaryKeyConstraint, String, Table, Text, Uuid, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import NullType
 
@@ -29,7 +29,6 @@ class AppUsers(Base):
     Cards: Mapped[list['Cards']] = relationship('Cards', back_populates='AppUsers_')
     Topics: Mapped[list['Topics']] = relationship('Topics', back_populates='AppUsers_')
     DeviceTokens: Mapped[list['DeviceTokens']] = relationship('DeviceTokens', back_populates='AppUsers_')
-
 
 class HumanProofs(Base):
     __tablename__ = 'HumanProofs'
@@ -86,6 +85,7 @@ class CardTemplates(Base):
     FullSemanticRepresentation: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
     ShortSemanticRepresentation: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''::text"))
     IsEnabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    GrammarStructure: Mapped[str] = mapped_column(CHAR(1), nullable=False, server_default=text("' '::bpchar"))
     Embedding: Mapped[Optional[bytes]] = mapped_column(NullType)
 
     AppUsers_: Mapped['AppUsers'] = relationship('AppUsers', back_populates='CardTemplates')
@@ -278,7 +278,6 @@ class Topics(Base):
     Courses_: Mapped[Optional['Courses']] = relationship('Courses', back_populates='Topics')
     Topics: Mapped[Optional['Topics']] = relationship('Topics', remote_side=[SKU], back_populates='Topics_reverse')
     Topics_reverse: Mapped[list['Topics']] = relationship('Topics', remote_side=[ParentSKU], back_populates='Topics')
-
 
 class DeviceTokens(Base):
     __tablename__ = 'DeviceTokens'

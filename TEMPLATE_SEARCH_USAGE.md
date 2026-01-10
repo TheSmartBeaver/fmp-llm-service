@@ -23,8 +23,9 @@ def fetch_similar_templates(
 - **db**: Session SQLAlchemy pour accéder à la base de données
 - **embedding**: Vecteur d'embedding de dimension 384
 - **top_k**: Nombre total de templates à retourner
-- **category_quotas** (optionnel): Dictionnaire `{catégorie: quota}` où la catégorie correspond au début du `Path`
-  - Exemple: `{"Basic": 3, "Advanced": 5}`
+- **category_quotas** (optionnel): Dictionnaire `{type_grammatical: quota}` où type_grammatical correspond à `GrammarStructure`
+  - Types possibles: `C` (Container), `I` (Item), `B` (Block), `L` (Leaf), `M` (Media), `R` (Relation), `D` (Decorator)
+  - Exemple: `{"C": 2, "I": 4, "B": 2, "L": 3}`
   - Le reste des templates sera: `top_k - somme(quotas)`
 - **include_full_data** (optionnel): Si `True`, inclut les champs `sku` et `template` (nécessaire pour l'API)
 
@@ -54,7 +55,7 @@ templates = fetch_similar_templates(
 )
 ```
 
-### 2. Avec quotas par catégorie
+### 2. Avec quotas par type grammatical
 
 ```python
 templates = fetch_similar_templates(
@@ -62,12 +63,13 @@ templates = fetch_similar_templates(
     embedding=embedding,
     top_k=15,
     category_quotas={
-        "Basic": 3,
-        "Advanced": 5,
-        "Interactive": 2
+        "C": 2,  # Container
+        "I": 4,  # Item
+        "B": 2,  # Block
+        "L": 3   # Leaf
     }
 )
-# Résultat: 3 Basic + 5 Advanced + 2 Interactive + 5 autres = 15 templates
+# Résultat: 2 Container + 4 Item + 2 Block + 3 Leaf + 4 autres = 15 templates
 ```
 
 ### 3. API `/search-similar` avec quotas
@@ -80,8 +82,9 @@ templates = fetch_similar_templates(
   "top_n": 10,
   "app_user_sku": "123e4567-e89b-12d3-a456-426614174000",
   "category_quotas": {
-    "Basic": 3,
-    "Advanced": 2
+    "C": 2,
+    "I": 3,
+    "L": 2
   },
   "include_full_data": false
 }
@@ -90,7 +93,7 @@ templates = fetch_similar_templates(
 **Paramètres**:
 - `include_full_data` (optionnel, défaut: `false`): Si `true`, inclut les champs `sku` et `template` dans la réponse
 
-**Résultat**: 3 templates Basic + 2 templates Advanced + 5 autres = 10 templates au total
+**Résultat**: 2 templates Container + 3 templates Item + 2 templates Leaf + 3 autres = 10 templates au total
 
 #### Réponse avec `include_full_data=false` (par défaut)
 ```json
@@ -128,12 +131,12 @@ templates = fetch_similar_templates(
 
 Le système effectue **plusieurs requêtes SQL** pour optimiser la recherche:
 
-1. **Une requête par catégorie spécifiée** dans `category_quotas`
-   - Filtre: `Path LIKE 'Basic%'`
-   - Limite: quota de la catégorie
+1. **Une requête par type grammatical spécifié** dans `category_quotas`
+   - Filtre: `GrammarStructure = 'C'` (ou 'I', 'B', 'L', etc.)
+   - Limite: quota du type grammatical
 
 2. **Une requête pour les templates "autres"**
-   - Filtre: exclusion de toutes les catégories spécifiées
+   - Filtre: exclusion de tous les types grammaticaux spécifiés
    - Limite: `top_k - somme(quotas)`
 
 ## Fichiers modifiés
@@ -144,14 +147,18 @@ Le système effectue **plusieurs requêtes SQL** pour optimiser la recherche:
 - **app/routers/embedding/router.py**: Utilise `fetch_similar_templates` avec support des quotas
 - **app/models/dto/embedding/search_similar_dto.py**: Ajout du champ `category_quotas`
 
-## Exemples de catégories
+## Types grammaticaux disponibles
 
-Les catégories correspondent au **début du Path** dans la base de données. Exemples:
+Les types grammaticaux correspondent au champ **GrammarStructure** dans la base de données:
 
-- `Basic/SimpleText`
-- `Basic/ImageWithCaption`
-- `Advanced/InteractiveQuiz`
-- `Advanced/VideoPlayer`
-- `Interactive/DragAndDrop`
+| Code | Type | Description |
+|------|------|-------------|
+| `C` | Container | Conteneur structurel |
+| `I` | Item | Élément individuel |
+| `B` | Block | Bloc de contenu |
+| `L` | Leaf | Élément feuille (terminal) |
+| `M` | Media | Contenu média |
+| `R` | Relation | Élément de relation |
+| `D` | Decorator | Décorateur visuel |
 
-Pour cibler tous les templates "Basic", utilisez: `{"Basic": 5}`
+Pour cibler tous les templates de type Container, utilisez: `{"C": 5}`

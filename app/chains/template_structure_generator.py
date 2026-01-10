@@ -267,6 +267,7 @@ class TemplateStructureGenerator:
 
         # Formater les chemins source avec des exemples de valeurs
         source_paths_lines = []
+
         for path in group["keys"]:
             # Récupérer des échantillons de valeurs pour ce chemin
             sample_values = self._get_sample_values_for_path(path, path_to_value_map)
@@ -281,6 +282,9 @@ class TemplateStructureGenerator:
 
         source_paths_formatted = "\n".join(source_paths_lines)
 
+        # Récupérer la description du format (maintenant une string simple)
+        format_description = group.get("format", "Format non spécifié")
+
         # Construire le prompt
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -290,10 +294,34 @@ class TemplateStructureGenerator:
 Ta tâche est de créer un JSON structuré qui utilise des templates HTML/pédagogiques imbriqués
 pour représenter des données de cartes mentales.
 
+⚠️ GRAMMAIRE DE COMPOSITION:
+Tu DOIS respecter la grammaire suivante pour imbriquer les templates:
+  C → I
+  I → B | L | M | R
+  B → B | L | M | R
+  R → B | L
+  D → B | L
+  L → ∅
+  M → ∅
+
+Explication:
+- C (Container) peut contenir des I (Items)
+- I (Item) peut contenir des B (Blocks), L (Leafs), M (Media) ou R (Relations)
+- B (Block) peut contenir d'autres B, L, M ou R
+- R (Relation) peut contenir B ou L
+- D (Decorator) peut contenir B ou L
+- L (Leaf) et M (Media) sont terminaux (pas d'enfants)
+
+Exemple valide: C contient I, I contient B, B contient L
+Exemple invalide: L ne peut pas contenir d'autres templates
+
 ⚠️ FORMAT DE SORTIE:
 Tu DOIS retourner un JSON structuré avec:
 - Un champ "template_name" obligatoire pour chaque objet
-- Les champs définis dans "Usage des champs" du template
+  * ⚠️ COPIE EXACTEMENT le template_name depuis la liste des templates disponibles
+  * Format: #LETTRE#chemin (ex: "#B#conceptual/postulat", "#I#text/simple")
+  * Ne modifie JAMAIS le template_name, ne le reconstitue JAMAIS, COPIE-LE tel quel
+- Les champs définis dans "fields_usage" du template avec leur type grammatical
 - Des références aux données source au format {{{{chemin}}}} (ex: {{{{conjugation_patterns[x]->group}}}})
 
 EXEMPLE DE SORTIE ATTENDUE:
@@ -320,7 +348,7 @@ EXEMPLE DE SORTIE ATTENDUE:
 ⚠️ RÈGLES CRITIQUES:
 
 1. **Champs autorisés**:
-   - Tu NE PEUX utiliser QUE les champs définis dans "Usage des champs" du template
+   - Tu NE PEUX utiliser QUE les champs définis dans "fields_usage" du template
 
 2. **Structure des objets**:
    - Chaque objet DOIT avoir un champ "template_name"
@@ -336,8 +364,6 @@ EXEMPLE DE SORTIE ATTENDUE:
    - ⚠️ RÈGLE CRITIQUE pour les variables de tableau:
      * ✅ TOUJOURS utiliser les variables génériques [x], [y], [z] exactement comme dans les chemins source
      * ❌ N'utilise JAMAIS d'indices numériques [0], [1], [2], etc.
-     * Si le chemin source est "media->videos[x]->label", tu DOIS écrire {{{{media->videos[x]->label}}}}
-     * ❌ INTERDIT: {{{{media->videos[0]->label}}}}, {{{{media->videos[1]->label}}}}
    - ⚠️ RÈGLE CRITIQUE pour le suffixe * (références INTERMÉDIAIRES):
      * Si un chemin se termine par *, c'est une référence INTERMÉDIAIRE (contient des sous-propriétés)
      * ❌ N'utilise JAMAIS une référence * seule dans le JSON
@@ -350,22 +376,17 @@ EXEMPLE DE SORTIE ATTENDUE:
      * {{{{media->videos[x]->label}}}} (avec variable [x] - CORRECT)
      * {{{{themes[x]->groups[y]->label}}}} (avec variables [x] et [y] - CORRECT)
    - Exemples INCORRECTS (à NE JAMAIS faire):
-     * {{{{media->videos[0]->label}}}} ❌ (utilise [x] pas [0])
      * {{{{themes[0]->groups[1]->label}}}} ❌ (utilise [x] et [y] pas [0] et [1])
      * {{{{themes[x]}}}} ❌ si themes[x]* est marqué comme intermédiaire (utilise les sous-propriétés)
 
-4. **Imbrication des templates**:
-   - Tu DOIS imbriquer plusieurs templates de manière sémantiquement cohérente
-   - Exemple: un container contient des items, chaque item peut contenir un concept, etc.
-
-5. **Utilisation complète des champs**:
+4. **Utilisation complète des champs**:
    - Quand tu choisis un template, tu DOIS remplir TOUS ses champs obligatoires
 
 RETOURNE UNIQUEMENT le JSON structuré, sans explication.""",
                 ),
                 (
                     "user",
-                    """Groupe à traiter: {group_name}
+                    """
 Format attendu: {format_description}
 
 Templates disponibles (sélectionnés par embedding):
@@ -374,7 +395,18 @@ Templates disponibles (sélectionnés par embedding):
 Chemins source disponibles pour les références {{{{chemin}}}}:
 {source_paths}
 
-{special_instructions}
+⚠️ RAPPEL GRAMMAIRE:
+- Respecte la grammaire de composition (C→I, I→B|L|M|R, B→B|L|M|R, R→B|L, D→B|L, L→∅, M→∅)
+- ⚠️ RÈGLE CRITIQUE: COPIE-COLLE le template_name EXACTEMENT depuis la liste ci-dessus
+  * ✅ CORRECT: "template_name": "#B#conceptual/postulat" (copié depuis la liste)
+  * ❌ INTERDIT: "template_name": "# #conceptual/postulat" (reconstruction manuelle)
+  * ❌ INTERDIT: "template_name": "conceptual/postulat" (sans préfixe)
+  * Le format est TOUJOURS: #LETTRE#chemin où LETTRE = C, I, B, L, M, R ou D
+- Pour chaque champ, vérifie son type dans fields_usage:
+  * Si type = "L" (Leaf) → utilise {{{{chemin}}}} (référence aux données source)
+  * Si type = "M" (Media) → utilise {{{{chemin}}}} (référence aux données source)
+  * Si type = "B", "I", "R", "D" → crée un objet ou tableau d'objets imbriqué avec template_name
+  * Respecte la grammaire pour l'imbrication (ex: un champ de type I ne peut contenir que B, L, M ou R)
 
 ⚠️ RAPPEL IMPORTANT: Utilise UNIQUEMENT les chemins ci-dessus avec leurs variables [x], [y], [z] EXACTEMENT comme indiqué.
 N'utilise JAMAIS d'indices numériques [0], [1], [2] dans tes références.
@@ -384,25 +416,10 @@ Génère maintenant le JSON structuré.""",
             ]
         )
 
-        # Ajouter des instructions spéciales pour les groupes de référence pure
-        special_instructions = ""
-        if group.get("is_reference_only", False):
-            special_instructions = """
-⚠️ ATTENTION SPÉCIALE: Ce groupe contient UNIQUEMENT une référence (ex: glossary[x], themes[x]).
-
-RÈGLE CRITIQUE:
-- Tu DOIS utiliser la référence EXACTEMENT comme fournie, SANS ajouter de propriétés
-- ❌ N'invente PAS de propriétés après la référence (comme ->term, ->definition, ->label, etc.)
-- ✅ Utilise SEULEMENT la référence telle quelle
-
-"""
-
         params = {
-            "group_name": group["group_name"],
-            "format_description": group["format"],
+            "format_description": format_description,
             "templates": templates_formatted,
             "source_paths": source_paths_formatted,
-            "special_instructions": special_instructions,
         }
 
         return prompt, params
@@ -588,15 +605,17 @@ RÈGLE CRITIQUE:
                 continue
 
             # Sinon, diviser le groupe en plusieurs groupes par profondeur
-            for depth, keys in sorted(depth_map.items()):
+            for keys in depth_map.values():
                 if not keys:
                     continue
 
                 # Créer un nouveau groupe pour cette profondeur
+                # Le format reste le même (c'est une description globale)
+                original_format = group.get("format", "")
+
                 new_group = {
-                    "group_name": self._generate_group_name_for_depth(group["group_name"], depth, keys[0]),
                     "keys": keys,
-                    "format": self._generate_format_for_depth(group["format"], depth)
+                    "format": original_format
                 }
                 new_groups.append(new_group)
 
@@ -613,7 +632,7 @@ RÈGLE CRITIQUE:
         groups: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """
-        Fusionne les groupes qui ont le même nom de base et la même profondeur.
+        Fusionne les groupes qui ont le même préfixe et la même profondeur.
 
         Args:
             groups: Liste des groupes
@@ -623,18 +642,22 @@ RÈGLE CRITIQUE:
         """
         import re
 
-        # Grouper par (nom_base, profondeur)
-        group_map = {}  # {(nom_base, profondeur): [groupes]}
+        # Grouper par (préfixe, profondeur)
+        group_map = {}  # {(préfixe, profondeur): [groupes]}
 
         for group in groups:
-            # Calculer la profondeur du groupe
+            # Calculer la profondeur et le préfixe du groupe
             if group["keys"]:
-                num_vars = len(re.findall(r'\[([x-z])\]', group["keys"][0]))
+                first_key = group["keys"][0]
+                num_vars = len(re.findall(r'\[([x-z])\]', first_key))
+                # Extraire le préfixe jusqu'à la dernière variable
+                prefix = self._extract_prefix_until_last_variable(first_key)
             else:
                 num_vars = 0
+                prefix = ""
 
-            # Utiliser le nom du groupe comme clé
-            key = (group["group_name"], num_vars)
+            # Utiliser le préfixe et la profondeur comme clé
+            key = (prefix, num_vars)
 
             if key not in group_map:
                 group_map[key] = []
@@ -643,14 +666,15 @@ RÈGLE CRITIQUE:
         # Fusionner les groupes dupliqués
         merged_groups = []
 
-        for (name, _depth), group_list in group_map.items():
+        for group_list in group_map.values():
             if len(group_list) == 1:
                 # Pas de duplication
                 merged_groups.append(group_list[0])
             else:
                 # Fusionner les clés
                 merged_keys = []
-                merged_format = group_list[0]["format"]
+                # Prendre le format du premier groupe (ils devraient être similaires)
+                merged_format = group_list[0].get("format", "")
 
                 for g in group_list:
                     for key in g["keys"]:
@@ -658,7 +682,6 @@ RÈGLE CRITIQUE:
                             merged_keys.append(key)
 
                 merged_group = {
-                    "group_name": name,
                     "keys": merged_keys,
                     "format": merged_format
                 }
@@ -703,16 +726,18 @@ RÈGLE CRITIQUE:
         Génère une description de format basée sur la profondeur.
 
         Args:
-            original_format: Format original
+            original_format: Description du format (string)
             depth: Profondeur (nombre de variables)
 
         Returns:
-            Nouveau format
+            Description du format (string)
         """
-        if depth == 0:
-            return "Groupe parent sans variable de tableau"
+        # Retourner le format tel quel
+        if isinstance(original_format, str):
+            return original_format
 
-        return original_format
+        # Fallback pour compatibilité
+        return ""
 
     def _move_no_var_keys_to_parents(
         self,
@@ -845,7 +870,8 @@ RÈGLE CRITIQUE:
 
             # Pour chaque autre groupe, vérifier s'il est un sous-groupe
             for other_group in path_groups:
-                if other_group["group_name"] == group["group_name"]:
+                # Éviter de comparer un groupe avec lui-même
+                if other_group is group:
                     continue
 
                 # Extraire le préfixe commun entre ce groupe et l'autre
@@ -1121,14 +1147,11 @@ RÈGLE CRITIQUE:
                     if key.startswith(parent_prefix) and not re.search(r'\[([x-z])\]', key) and key not in parent_keys:
                         parent_keys.append(key)
 
-        # Générer un nom de groupe
-        group_name = self._generate_group_name(parent_prefix)
-
-        # Générer un format générique
-        format_desc = f"Groupe parent pour {parent_prefix}"
+        # Générer un format générique pour le groupe parent
+        # Le format sera déterminé plus tard par le LLM
+        format_desc = ""
 
         return {
-            "group_name": group_name,
             "keys": parent_keys,
             "format": format_desc
         }
@@ -1208,9 +1231,8 @@ RÈGLE CRITIQUE:
                     merged_keys.extend(sg["keys"])
 
                 merged_group = {
-                    "group_name": self._generate_group_name(parent_prefix) if parent_prefix else "Root Media Group",
                     "keys": merged_keys,
-                    "format": f"Groupe parent pour {parent_prefix}" if parent_prefix else "Groupe racine"
+                    "format": ""  # Format sera déterminé plus tard par le LLM
                 }
                 other_groups.append(merged_group)
             else:
@@ -2097,29 +2119,36 @@ RÈGLE CRITIQUE:
             source_json, use_variables=True
         )
 
-        path_groups = []
-        not_shit = True
+        # Étape 3: Construire le mapping chemin → valeur AVANT la génération des groupes
+        # Cela permettra de passer des échantillons de valeurs au LLM pour déterminer les formats
+        path_to_value_map = self._build_path_to_value_map(source_json)
 
-        if not_shit:
-            # NOUVELLE APPROCHE: Générer les groupes de chemins avec formats
-            path_groups = await self._generate_path_groups_with_llm(
-                source_paths=json_paths_with_variables,
+        # NOUVELLE APPROCHE: Segmentation automatique par structure Python
+        # Étape 1: Générer les groupes de chemins basés sur la structure (profondeur + préfixe)
+        path_groups = self._generate_path_groups_by_structure(
+            source_paths=json_paths_with_variables,
+        )
+
+        # Étape 2: Ajouter les références aux groupes imbriqués
+        path_groups = self._add_nested_group_references(path_groups)
+
+        # Étape 3: Nettoyer et séparer les groupes par profondeur si nécessaire
+        path_groups = self._clean_and_separate_groups_by_depth(path_groups)
+
+        # Étape 4: Ajouter les références manquantes (création de groupes parents si nécessaire)
+        path_groups = self._add_missing_nested_references(path_groups)
+
+        # Étape 5: Pour chaque groupe, demander au LLM de déterminer les formats
+        print(f"\n🔍 Détermination des formats pour {len(path_groups)} groupe(s)...")
+        for group in path_groups:
+            formats = await self._determine_formats_for_group(
+                group_keys=group["keys"],
+                path_to_value_map=path_to_value_map,
                 context_description=context_description,
             )
+            group["format"] = formats
 
-            # Ajouter les références aux groupes imbriqués
-            path_groups_before = path_groups
-            path_groups = self._add_nested_group_references(path_groups)
-
-            path_groups = self._clean_and_separate_groups_by_depth(path_groups)
-
-            # Ajouter les références manquantes (création de groupes parents si nécessaire)
-            path_groups = self._add_missing_nested_references(path_groups)
-
-        else: 
-            path_groups = shit_path_group
-
-        # Valider les groupes (Étape 4)
+        # Étape 6: Valider les groupes
         validation_warnings = validate_path_groups(path_groups)
         if validation_warnings:
             print("\n=== WARNINGS DE VALIDATION DES PATH GROUPS ===")
@@ -2127,11 +2156,6 @@ RÈGLE CRITIQUE:
             print("=" * 50 + "\n")
             # Option: lever une exception si critique
             # raise ValueError("Path groups invalides")
-
-
-        # Étape 5: Construire le mapping chemin → valeur AVANT la génération des JSONs
-        # Cela permettra de passer des échantillons de valeurs au LLM
-        path_to_value_map = self._build_path_to_value_map(source_json)
 
         # Pour chaque groupe, récupérer les templates par embedding et générer le JSON
         # On crée un dictionnaire {clé_de_référence: json_du_groupe} pour faciliter la résolution
@@ -2154,7 +2178,9 @@ RÈGLE CRITIQUE:
         # Créer une fonction async pour traiter un groupe
         async def process_group_async(group):
             # Générer l'embedding à partir de la description du format
-            format_embedding = self._generate_embedding(group["format"])
+            # Le format est maintenant une simple string
+            format_text = group.get("format", "")
+            format_embedding = self._generate_embedding(format_text)
 
             # Récupérer les templates similaires
             group_templates = fetch_similar_templates(
@@ -2473,113 +2499,250 @@ RÈGLE CRITIQUE:
 
     def _format_templates_for_prompt(self, templates: List[Dict[str, Any]]) -> str:
         """
-        Formate les templates pour les inclure dans le prompt du LLM.
+        Formate les templates pour les inclure dans le prompt du LLM (format JSON).
 
         Args:
             templates: Liste des templates avec métadonnées
 
         Returns:
-            String formaté décrivant chaque template
+            String formaté décrivant chaque template en JSON
         """
+        import json
         formatted = []
         for i, tmpl in enumerate(templates, 1):
-            formatted.append(
-                f"""
-Template {i}:
-- Path (à utiliser EXACTEMENT comme template_name): "{tmpl['template_name']}"
-- Usage des champs: {tmpl['fields_usage']}
-"""
-            )
-        return "\n".join(formatted)
+            # Vérifier que fields_usage est bien un dict
+            if not isinstance(tmpl.get('fields_usage'), dict):
+                print(f"Warning: fields_usage is not a dict for {tmpl.get('template_name', 'unknown')}")
+                continue
 
-    async def _generate_path_groups_with_llm(
+            template_json = {
+                "template_name": tmpl['template_name'],
+                "fields_usage": tmpl['fields_usage']
+            }
+            formatted.append(f"Template {i}:\n{json.dumps(template_json, indent=2, ensure_ascii=False)}")
+        return "\n\n".join(formatted)
+
+    def _count_variables(self, path: str) -> int:
+        """
+        Compte le nombre de variables [x], [y], [z] dans un chemin.
+
+        Args:
+            path: Chemin avec variables (ex: "course_sections[x]lessons[y]title")
+
+        Returns:
+            Nombre de variables (ex: 2)
+        """
+        import re
+        return len(re.findall(r'\[[x-z]\]', path))
+
+    def _extract_prefix_until_last_variable(self, path: str) -> str:
+        """
+        Extrait le préfixe jusqu'à la dernière variable incluse.
+
+        Args:
+            path: Chemin avec variables (ex: "course_sections[x]lessons[y]title")
+
+        Returns:
+            Préfixe (ex: "course_sections[x]lessons[y]")
+            Si pas de variable, retourne chaîne vide
+        """
+        import re
+        match = re.match(r'(.*\[[x-z]\])', path)
+        return match.group(1) if match else ""
+
+    def _extract_example_values(
+        self,
+        path: str,
+        path_to_value_map: Dict[str, Any],
+        max_examples: int = 3
+    ) -> List[Any]:
+        """
+        Extrait 2-3 valeurs d'exemple pour un chemin depuis le mapping.
+        Gère les chemins avec variables [x], [y] en cherchant les chemins concrets.
+
+        Args:
+            path: Chemin avec variables (ex: "course_sections[x]title")
+            path_to_value_map: Dictionnaire {chemin_concret: valeur}
+            max_examples: Nombre maximum d'exemples à retourner
+
+        Returns:
+            Liste de valeurs d'exemple (max 3)
+        """
+        import re
+
+        examples = []
+
+        # Transformer le chemin avec variables en pattern regex
+        # Ex: "course_sections[x]title" → "course_sections\[\d+\]title"
+        pattern = re.escape(path)
+        pattern = pattern.replace(r'\[x\]', r'\[\d+\]')
+        pattern = pattern.replace(r'\[y\]', r'\[\d+\]')
+        pattern = pattern.replace(r'\[z\]', r'\[\d+\]')
+        pattern = pattern.replace(r'\[w\]', r'\[\d+\]')
+        pattern = pattern.replace(r'\[v\]', r'\[\d+\]')
+
+        # Chercher les chemins concrets qui matchent
+        for concrete_path, value in path_to_value_map.items():
+            if re.fullmatch(pattern, concrete_path):
+                examples.append(value)
+                if len(examples) >= max_examples:
+                    break
+
+        return examples
+
+    def _extract_semantic_prefix(self, path: str) -> str:
+        """
+        Extrait le préfixe sémantique d'un chemin (partie avant le dernier séparateur).
+
+        Pour les chemins sans variables:
+        - "courseMetadata->courseName" → "courseMetadata"
+        - "regularConjugationPatterns->tenseAndMood->explanation" → "regularConjugationPatterns->tenseAndMood"
+
+        Pour les chemins avec variables, retourne le préfixe jusqu'à la dernière variable.
+
+        Args:
+            path: Chemin (ex: "courseMetadata->courseName" ou "course_sections[x]title")
+
+        Returns:
+            Préfixe sémantique
+        """
+        import re
+
+        # Si le chemin contient des variables, utiliser le préfixe jusqu'à la dernière variable
+        if re.search(r'\[[x-z]\]', path):
+            return self._extract_prefix_until_last_variable(path)
+
+        # Pour les chemins sans variables, extraire le préfixe avant le dernier séparateur
+        # Gérer à la fois "->" et "." comme séparateurs
+        if '->' in path:
+            parts = path.rsplit('->', 1)
+            return parts[0] if len(parts) > 1 else ""
+        elif '.' in path:
+            parts = path.rsplit('.', 1)
+            return parts[0] if len(parts) > 1 else ""
+        else:
+            # Pas de séparateur, c'est un chemin racine
+            return ""
+
+    def _generate_path_groups_by_structure(
         self,
         source_paths: List[str],
-        context_description: str = "",
     ) -> List[Dict[str, Any]]:
         """
-        Génère des groupes de chemins avec description de format en utilisant le LLM.
+        Génère des groupes de chemins basés uniquement sur leur structure.
+        Regroupe par profondeur (nombre de variables) et préfixe commun.
 
-        Cette fonction demande au LLM de regrouper les chemins source selon leur nature
-        sémantique et de fournir une description de format pour chaque groupe.
+        Cette fonction remplace _generate_path_groups_with_llm pour la segmentation.
+        La segmentation est maintenant déterministe et basée sur des règles structurelles.
 
         Args:
             source_paths: Liste des chemins source avec variables (ex: ['learning_objective', 'course_sections[x]section_id'])
-            context_description: Description du contexte pour aider le LLM
 
         Returns:
             Liste de groupes au format:
             [
                 {
-                    "group_name": "informations_personnelles",
-                    "keys": ["personne.nom", "personne.age"],
-                    "format": "structure simple clé-valeur pour données personnelles"
+                    "keys": ["chemin1", "chemin2", ...],
+                    # "format" sera ajouté plus tard par _determine_formats_for_group
                 }
             ]
+        """
+        from collections import defaultdict
+
+        # Grouper par (profondeur, préfixe)
+        groups_dict = defaultdict(list)
+
+        for path in source_paths:
+            depth = self._count_variables(path)
+            prefix = self._extract_semantic_prefix(path)
+
+            # Clé de regroupement: tuple (profondeur, préfixe)
+            key = (depth, prefix)
+            groups_dict[key].append(path)
+
+        # Convertir en liste de dictionnaires
+        path_groups = []
+        for (depth, prefix), keys in groups_dict.items():
+            path_groups.append({
+                "keys": keys,
+                # Le champ "format" sera ajouté par _determine_formats_for_group
+            })
+
+        return path_groups
+
+    async def _determine_formats_for_group(
+        self,
+        group_keys: List[str],
+        path_to_value_map: Dict[str, Any],
+        context_description: str = "",
+    ) -> str:
+        """
+        Demande au LLM de déterminer une description de format globale pour le groupe.
+
+        Args:
+            group_keys: Liste des chemins du groupe
+            path_to_value_map: Dictionnaire {chemin_concret: valeur} pour donner des exemples
+            context_description: Description du contexte pour aider le LLM
+
+        Returns:
+            Description courte du format du groupe (string)
+            Exemple: "Métadonnées du cours avec titre, langue, niveau et thématique"
         """
         # Construire le prompt
         prompt = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
-                    """Tu es un expert en analyse de structures de données de cartes mentales.
-Ta tâche est de regrouper des chemins de données (source_paths) selon leur nature sémantique
-et de proposer le meilleur format pour représenter chaque groupe.
+                    """Tu es un expert en analyse de structures de données.
+Analyse le groupe de chemins fourni et détermine une DESCRIPTION COURTE du format global.
 
-RÈGLES CRITIQUES:
+RÈGLES:
+- Retourne UNE SEULE phrase courte décrivant la nature des données de ce groupe
+- Sois précis et concis (maximum 15 mots)
+- Analyse les valeurs d'exemple pour déterminer la nature des données
+- Si pas d'exemple, déduis du nom des chemins
 
-1. **Regroupement STRICT par niveau de profondeur de tableaux**:
-   ⚠️ RÈGLE ABSOLUE: TOUS les chemins d'un groupe DOIVENT avoir EXACTEMENT le même nombre de variables [x], [y], [z]
-   ❌ INTERDIT - Mélanger des profondeurs différentes
-   ✅ CORRECT - Séparer par profondeur
+Exemples de bonnes descriptions:
+- "Métadonnées du cours avec titre, langue et niveau"
+- "Vidéos avec URL, timestamp et label"
+- "Glossaire de termes avec définitions"
+- "Exemples de conjugaison avec personne et forme verbale"
 
-2. **Regroupement par préfixe COMPLET**:
-   - Les chemins avec la même profondeur DOIVENT aussi avoir le même préfixe jusqu'à la dernière variable
-3. **Description du format**:
-   - ⚠️ RÈGLE STRICTE: Décris le format de CHAQUE chemin individuellement avec des formats élémentaires
-   - ✅ Tu as le droit d'associer plusieurs chemins à un même format si ils partagent la même nature
-   - Format obligatoire: "chemin1 aura le format de XXX / chemin2 aura le format de YYY / ..."
-   - Exemples CORRECTS:
-     * "media->videos[x]->url aura le format d'une URL / media->videos[x]->startTime aura le format d'un XXX / media->videos[x]->label aura le format d'un XXX"
-     * "glossary[x]->term aura le format d'un XXX / glossary[x]->definition aura le format d'une XXX"
-     * "corePrinciples[x]->acronym aura le format d'un XXX / corePrinciples[x]->examples[y] aura le format d'une XXX"
-   - Exemples INTERDITS (descriptions globales vagues):
-     * "Vidéos avec métadonnées" ❌
-     * "Glossaire de termes" ❌
-
-
-RETOURNE un JSON avec le format exact suivant (UNIQUEMENT le JSON, sans explication):
-[
-  {{
-    "group_name": "nom_du_groupe",
-    "keys": ["chemin1", "chemin2", ...],
-    "format": "description courte du format"
-  }}
-]""",
+RETOURNE UNIQUEMENT la description (pas de JSON, juste le texte).""",
                 ),
                 (
                     "user",
                     """Contexte: {context}
 
-Chemins source à regrouper (morceaux de cartes mentales):
-{source_paths}
+Chemins à analyser (avec exemples de valeurs):
+{paths_with_examples}
 
-Génère les groupes avec leurs formats.""",
+Quelle est la description courte du format de ce groupe ?""",
                 ),
             ]
         )
 
-        # Préparer les données pour le prompt
-        source_paths_formatted = "\n".join([f"  - {path}" for path in source_paths])
+        # Formater les chemins avec leurs exemples
+        paths_lines = []
+        for path in group_keys:
+            examples = self._extract_example_values(path, path_to_value_map, max_examples=3)
+
+            if examples:
+                # Formater les exemples
+                examples_str = ", ".join([f'"{v}"' if isinstance(v, str) else str(v) for v in examples])
+                paths_lines.append(f"  - {path} : [{examples_str}]")
+            else:
+                paths_lines.append(f"  - {path} : (pas d'exemple disponible)")
+
+        paths_with_examples = "\n".join(paths_lines)
 
         # Préparer les inputs
         inputs = {
             "context": context_description or "Aucun contexte spécifique fourni",
-            "source_paths": source_paths_formatted,
+            "paths_with_examples": paths_with_examples,
         }
 
-        # Pour les modèles Codex, on ne peut pas utiliser le chain operator avec JsonOutputParser
-        # car il appelle la méthode sync en interne. On appelle directement le LLM.
+        # Appel du LLM (gestion des modèles Codex vs autres)
         from app.chains.llm.universal_llm import UniversalLLM
 
         if isinstance(self.path_groups_llm, UniversalLLM) and self.path_groups_llm.use_codex_route:
@@ -2587,19 +2750,21 @@ Génère les groupes avec leurs formats.""",
             messages = prompt.format_messages(**inputs)
             response = await self.path_groups_llm.ainvoke(messages)
 
-            # Parser manuellement le JSON de la réponse
-            import json
+            # Extraire le contenu texte
             if hasattr(response, 'content'):
-                json_text = response.content
+                result = response.content.strip()
             else:
-                json_text = str(response)
-
-            result = json.loads(json_text)
+                result = str(response).strip()
         else:
             # Pour les autres modèles, utiliser la chaîne normale
-            parser = JsonOutputParser()
-            chain = prompt | self.path_groups_llm | parser
-            result = await chain.ainvoke(inputs)
+            chain = prompt | self.path_groups_llm
+            response = await chain.ainvoke(inputs)
+
+            # Extraire le contenu texte
+            if hasattr(response, 'content'):
+                result = response.content.strip()
+            else:
+                result = str(response).strip()
 
         return result
 

@@ -123,7 +123,7 @@ class TemplateStructureGenerator:
         # Étape 3: Générer la structure via le LLM
         template_structure, prompt, destination_mappings, debug_info = (
             await self._generate_structure_with_llm(
-                source_json, templates, context_description
+                source_json, templates, context_description, hasRealDataRendered
             )
         )
 
@@ -2150,6 +2150,7 @@ Génère maintenant le JSON structuré.""",
         source_json: Dict[str, Any],
         templates: List[Dict[str, Any]],  # Gardé pour compatibilité mais non utilisé avec la nouvelle approche
         context_description: str,
+        hasRealDataRendered: bool = False,
     ):
         # Extraire les chemins source avec variables [x], [y], [z]
         json_paths_with_variables = self._extract_all_json_paths(

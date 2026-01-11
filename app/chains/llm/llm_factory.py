@@ -153,4 +153,4 @@ class LLMModelFactory:
         Returns:
             LLMModel: Le modèle par défaut (Gemini 2.5 Flash)
         """
-        return LLMModel.GEMINI_2_5_FLASH
+        return LLMModel.CLAUDE_HAIKU_4_5_20251001

@@ -66,20 +66,19 @@ class LLMConfigDto(BaseModel):
         json_schema_extra = {
             "examples": [
                 {
-                    "description": "Exemple avec modèles Codex et LangChain",
-                    "value": {
-                        "pedagogical_json_model": "gpt-5.1-codex",
-                        "group_json_model": "gemini-2.5-flash",
-                        "path_groups_model": "claude-haiku-4-5-20251001"
-                    }
+                    "pedagogical_json_model": "gpt-5.2",
+                    "group_json_model": "gemini-2.5-flash",
+                    "path_groups_model": "claude-haiku-4-5-20251001"
                 },
                 {
-                    "description": "Exemple avec modèles O-series",
-                    "value": {
-                        "pedagogical_json_model": "o3-mini",
-                        "group_json_model": "gpt-5-mini",
-                        "path_groups_model": "claude-sonnet-4-5-20250929"
-                    }
+                    "pedagogical_json_model": "o3-mini",
+                    "group_json_model": "gpt-5-mini",
+                    "path_groups_model": "claude-sonnet-4-5-20250929"
+                },
+                {
+                    "pedagogical_json_model": "claude-sonnet-4-5-20250929",
+                    "group_json_model": "gemini-3-flash-preview",
+                    "path_groups_model": "gpt-5-mini"
                 }
             ]
         }

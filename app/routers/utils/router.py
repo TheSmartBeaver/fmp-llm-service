@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from typing import Any, Dict, Optional, List
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 import os
 import httpx
 from dotenv import find_dotenv, load_dotenv
@@ -454,5 +456,91 @@ async def call_codex(request: CodexRequest):
             response=None,
             error=f"Error: {str(e)}",
             raw_response=None
+        )
+
+
+class TextDistanceRequest(BaseModel):
+    """Request model pour le calcul de distance entre deux textes"""
+    text1: str
+    text2: str
+    metric: Optional[str] = "cosine"
+
+
+class TextDistanceResponse(BaseModel):
+    """Response model pour le calcul de distance entre deux textes"""
+    success: bool
+    distance: Optional[float] = None
+    similarity: Optional[float] = None
+    metric: str
+    error: Optional[str] = None
+
+
+@utils_router.post("/text-distance", response_model=TextDistanceResponse)
+async def calculate_text_distance(request: TextDistanceRequest):
+    """
+    Calcule la distance sémantique entre deux textes en utilisant les embeddings.
+
+    Cette route utilise le même modèle d'embeddings (sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)
+    que celui utilisé pour la génération de templates. Elle calcule les embeddings des deux textes
+    et retourne la distance/similarité cosine entre eux.
+
+    Métriques supportées:
+    - cosine: Similarité cosine (valeur entre -1 et 1, plus proche de 1 = plus similaire)
+
+    Example:
+        Request:
+        {
+            "text1": "Le chat dort sur le canapé",
+            "text2": "Un félin se repose sur le sofa",
+            "metric": "cosine"
+        }
+
+        Response:
+        {
+            "success": true,
+            "distance": 0.123,
+            "similarity": 0.877,
+            "metric": "cosine",
+            "error": null
+        }
+    """
+    try:
+        # Valider la métrique
+        if request.metric not in ["cosine"]:
+            return TextDistanceResponse(
+                success=False,
+                distance=None,
+                similarity=None,
+                metric=request.metric,
+                error=f"Metric '{request.metric}' is not supported. Supported metrics: cosine"
+            )
+
+        # Calculer les embeddings pour les deux textes
+        embedding1 = embedding_model.encode([request.text1])[0]
+        embedding2 = embedding_model.encode([request.text2])[0]
+
+        # Calculer la similarité cosine
+        embedding1_reshaped = embedding1.reshape(1, -1)
+        embedding2_reshaped = embedding2.reshape(1, -1)
+        similarity = cosine_similarity(embedding1_reshaped, embedding2_reshaped)[0][0]
+
+        # La distance cosine est 1 - similarité
+        distance = 1.0 - similarity
+
+        return TextDistanceResponse(
+            success=True,
+            distance=float(distance),
+            similarity=float(similarity),
+            metric=request.metric,
+            error=None
+        )
+
+    except Exception as e:
+        return TextDistanceResponse(
+            success=False,
+            distance=None,
+            similarity=None,
+            metric=request.metric,
+            error=f"Error: {str(e)}"
         )
 

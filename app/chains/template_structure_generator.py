@@ -67,7 +67,7 @@ class TemplateStructureGenerator:
         self,
         source_json: Dict[str, Any],
         context_description: str = "",
-        top_k_per_packet: int = 12,
+        top_k_per_packet: int = 6,
         category_quotas: Dict[str, int] = None,
         hasRealDataRendered: bool = False,
     ) -> Dict[str, Any]:

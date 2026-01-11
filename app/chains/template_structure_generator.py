@@ -2746,15 +2746,7 @@ Analyse le groupe de chemins fourni et détermine une DESCRIPTION COURTE du form
 
 RÈGLES:
 - Retourne UNE SEULE phrase courte décrivant la nature des données de ce groupe
-- Sois précis et concis (maximum 15 mots)
-- Analyse les valeurs d'exemple pour déterminer la nature des données
-- Si pas d'exemple, déduis du nom des chemins
-
-Exemples de bonnes descriptions:
-- "Métadonnées du cours avec titre, langue et niveau"
-- "Vidéos avec URL, timestamp et label"
-- "Glossaire de termes avec définitions"
-- "Exemples de conjugaison avec personne et forme verbale"
+- Maximum 5 mots
 
 RETOURNE UNIQUEMENT la description (pas de JSON, juste le texte).""",
                 ),

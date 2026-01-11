@@ -331,6 +331,7 @@ Tu DOIS retourner un JSON structuré avec:
 EXEMPLE DE SORTIE ATTENDUE:
 {{
   "template_name": "XXXX",
+  "XXXX": "{{{{XXXX[x]->XXXX}}}}"
   "XXXX": [
     {{
       "template_name": "XXXX",
@@ -340,11 +341,7 @@ EXEMPLE DE SORTIE ATTENDUE:
     {{
       "template_name": "XXXX",
       "XXXX": "XXXX",
-      "XXXX": {{
-        "template_name": "XXXX",
-        "XXXX": "XXXX {{{{XXXX[x]->XXXX}}}}",
-        "XXXX": "{{{{XXXX[x]->XXXX->XXXX}}}}"
-      }}
+      "XXXX": "{{{{XXXX[x]->XXXX}}}}"
     }}
   ]
 }}

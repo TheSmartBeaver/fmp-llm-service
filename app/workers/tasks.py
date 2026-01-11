@@ -46,32 +46,129 @@ openai_llm = ClaudeHaiku45Llm().get_llm()
 
 
 @celery.task(name="generate.flashcard")
-def generate_flashcard_task(task_id: str, instructions: dict):
+def generate_flashcard_task(task_id: str, instructions: dict, auth_uid: str):
+    """
+    Tâche Celery pour générer une flashcard et envoyer une notification FCM.
+
+    Args:
+        task_id: Identifiant unique de la tâche
+        instructions: Dictionnaire UserEntryDto contenant les instructions
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+
+    Returns:
+        Dict contenant la flashcard générée
+    """
     redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
-    print("📥 Starting generation")
+    print(f"📥 Starting flashcard generation for task {task_id}")
 
-    # Reconstruct UserEntryDto from dict
-    instructions_dto = UserEntryDto(**instructions)
-    print(f"📥 UserEntryDto reconstructed: {instructions_dto}")
+    # Create database session
+    db = SessionLocal()
 
-    # Run async flashcard generator
-    flashcard = generate_flashcard(instructions_dto)
+    try:
+        # Reconstruct UserEntryDto from dict
+        instructions_dto = UserEntryDto(**instructions)
+        print(f"📥 UserEntryDto reconstructed: {instructions_dto}")
 
-    print("📥 Generation ended")
+        # Run async flashcard generator
+        flashcard = generate_flashcard(instructions_dto)
 
-    # Run async socket notification
+        print(f"📥 Flashcard generation completed for task {task_id}")
 
-    redis.publish(
-        "flashcard_events",
-        json.dumps(
-            {"event": "flashcard_generated", "task_id": task_id, "flashcard": flashcard}
-        ),
-    )
+        # Publish result to Redis
+        redis.publish(
+            "flashcard_events",
+            json.dumps(
+                {"event": "flashcard_generated", "task_id": task_id, "flashcard": flashcard}
+            ),
+        )
 
-    print("📥 Celery task ended")
+        # Send FCM notification
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(
+                    DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True
+                )
+                .all()
+            )
 
-    return flashcard
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+
+                # Send FCM notification
+                fcm_result = fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Flashcard générée",
+                    body="Votre flashcard a été générée avec succès",
+                    data={
+                        "task_id": task_id,
+                        "event": "flashcard_generated",
+                    },
+                    notification_id=task_id,
+                )
+
+                print(
+                    f"📱 FCM notifications sent: {fcm_result['success_count']} succeeded, {fcm_result['failure_count']} failed"
+                )
+            else:
+                print(f"⚠️ No active devices found for user {auth_uid}")
+        else:
+            print(f"⚠️ User not found with auth_uid: {auth_uid}")
+
+        print(f"📥 Celery task ended for {task_id}")
+
+        return flashcard
+
+    except Exception as e:
+        print(f"❌ Error generating flashcard for task {task_id}: {str(e)}")
+
+        # Publish error to Redis
+        redis.publish(
+            "flashcard_events",
+            json.dumps(
+                {"event": "flashcard_error", "task_id": task_id, "error": str(e)}
+            ),
+        )
+
+        # Send FCM error notification
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(
+                        DeviceTokens.AppUserSKU == user.SKU,
+                        DeviceTokens.IsActive == True,
+                    )
+                    .all()
+                )
+
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de génération",
+                        body="Une erreur s'est produite lors de la génération de la flashcard",
+                        data={
+                            "task_id": task_id,
+                            "event": "flashcard_error",
+                            "error": str(e),
+                        },
+                        notification_id=task_id,
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
+
+        raise
+
+    finally:
+        # Close database session
+        db.close()
 
 
 @celery.task(name="generate.mindmap")

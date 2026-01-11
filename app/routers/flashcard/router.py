@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 from redis import Redis
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.message import MessageRequest
@@ -20,9 +20,22 @@ async def ask_bot(request: UserEntryDto):
     return {"response": response}
 
 @flashcard_router.post("/generate_CELERY")
-async def generate_flashcard(instructions: UserEntryDto):
+async def generate_flashcard(
+    instructions: UserEntryDto,
+    auth_uid: str = Header(..., alias="X-Auth-Uid")
+):
+    """
+    Lance une génération asynchrone de flashcard via Celery.
+
+    Args:
+        instructions: UserEntryDto contenant les instructions pour la génération
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+
+    Returns:
+        Dict avec l'ID de la tâche et le statut
+    """
     task_id = str(uuid.uuid4())
-    result = generate_flashcard_task.delay(task_id, instructions.model_dump())
+    result = generate_flashcard_task.delay(task_id, instructions.model_dump(), auth_uid)
     # generate_flashcard_task(task_id+"aaaa", instructions)
     print("Job lancé ! ID:", result.id)
 

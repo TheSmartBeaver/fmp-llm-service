@@ -120,7 +120,7 @@ class CourseMaterialGeneratorV2:
 
         if category_quotas is None:
             # Par défaut: peu de layouts, plus de contenu conceptuel
-            category_quotas = {"C": 2, "I": 4, "B": 2, "L": 3, "D": 2, "R": 3}
+            category_quotas = {"C": 2, "I": 2, "B": 2, "L": 2, "D": 2, "R": 1}
 
         structure_result = (
             await self.template_structure_generator.generate_template_structure(

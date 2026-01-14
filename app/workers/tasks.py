@@ -288,7 +288,7 @@ def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, top
 
         # Publish result to Redis
         redis.publish(
-            "flashcard_from_pedag_events",
+            "mindmap_generated",
             json.dumps(
                 {
                     "event": "mindmap_generated",

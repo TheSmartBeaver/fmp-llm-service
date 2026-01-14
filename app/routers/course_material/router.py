@@ -13,6 +13,7 @@ from app.workers.celery_app import celery
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.course_material_generator import CourseMaterialGenerator
 from app.chains.course_material_generator_v2 import CourseMaterialGeneratorV2
+from app.chains.course_material_generator_v3 import CourseMaterialGeneratorV3
 from app.database import get_db
 
 
@@ -69,6 +70,34 @@ class CourseMaterialResponse(BaseModel):
                 "resolved_jsons_map": {},
                 "path_to_value_map": {},
                 "final_resolved_jsons_map": {}
+            }
+        }
+
+
+class CourseMaterialResponseV3(BaseModel):
+    """Réponse contenant les supports HTML générés par V3"""
+    success: bool
+    html_supports: dict
+    pedagogical_json: dict
+    debug_info: dict
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "html_supports": {
+                    "metadata": "<div style='...'>...</div>",
+                    "concepts": "<div style='...'>...</div>",
+                    "examples": "<div style='...'>...</div>"
+                },
+                "pedagogical_json": {},
+                "debug_info": {
+                    "pedagogical_prompt": "...",
+                    "path_to_value_map": {},
+                    "path_groups": ["metadata", "concepts", "examples"],
+                    "num_groups": 3,
+                    "num_paths": 15
+                }
             }
         }
 
@@ -348,6 +377,57 @@ async def generate_course_material_v2(
         resolved_jsons_map=debug_info.get("resolved_jsons_map"),
         path_to_value_map=debug_info.get("path_to_value_map"),
         final_resolved_jsons_map=debug_info.get("final_resolved_jsons_map")
+    )
+
+
+@course_material_router.post("/generate_v3", response_model=CourseMaterialResponseV3)
+async def generate_course_material_v3(
+    request: UserEntryDto,
+    llm_config: Optional[LLMConfigDto] = None,
+    db: Session = Depends(get_db),
+    auth_uid: str = Header(..., alias="X-Auth-Uid")
+):
+    """
+    Génère un support de cours avec le CourseMaterialGeneratorV3 (génération HTML par groupe).
+
+    Cette version améliore la V2 en:
+    - Créant d'abord un JSON pédagogique enrichi (identique à V2)
+    - Construisant un mapping chemin → valeur à partir du JSON pédagogique
+    - Groupant les chemins par préfixe
+    - Générant du HTML pour chaque groupe en parallèle via LLM
+    - Retournant des divs HTML avec CSS inline (pas de templates)
+
+    Args:
+        request: UserEntryDto contenant le contexte, le contenu textuel et les médias
+        llm_config: Configuration optionnelle des modèles LLM à utiliser
+        db: Session de base de données
+        auth_uid: AuthentUid de l'utilisateur (pour compatibilité future)
+
+    Returns:
+        CourseMaterialResponseV3 avec les supports HTML générés
+
+    Note:
+        - Cette version ne nécessite pas top_k car elle ne mappe pas vers des templates
+        - Le HTML généré contient du CSS inline dans les balises
+        - La génération HTML est faite en parallèle pour tous les groupes
+    """
+    # Créer le générateur V3 avec la configuration LLM
+    generator = CourseMaterialGeneratorV3(
+        db_session=db,
+        embedding_model=embedding_model,
+        llm_config=llm_config
+    )
+
+    # Générer le support de cours HTML (utiliser la version async)
+    result = await generator.generate_course_material_async(
+        user_entry=request
+    )
+
+    return CourseMaterialResponseV3(
+        success=True,
+        html_supports=result["htmlSupports"],
+        pedagogical_json=result["pedagogical_json"],
+        debug_info=result["debug_info"]
     )
 
 

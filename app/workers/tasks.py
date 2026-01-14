@@ -248,20 +248,19 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
 
 
 @celery.task(name="generate.flashcard_from_pedag")
-def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, top_k: int = 15):
+def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, auth_uid: str, top_k: int = 15):
     """
     Tâche Celery pour générer des flashcards à partir d'un JSON pédagogique.
 
     Args:
         task_id: Identifiant unique de la tâche
         pedag_entry_dict: Dictionnaire PedagogicalContextEntryDto contenant le contexte et le JSON pédagogique
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
         top_k: Nombre de templates à utiliser
 
     Returns:
         Dict contenant les flashcards générées
     """
-    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-
     print(f"📥 Starting flashcard from pedagogical JSON generation for task {task_id}")
 
     # Create database session
@@ -286,20 +285,41 @@ def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, top
 
         print(f"📥 Flashcard from pedagogical JSON generation completed for task {task_id}")
 
-        # Publish result to Redis
-        redis.publish(
-            "mindmap_generated",
-            json.dumps(
-                {
-                    "event": "mindmap_generated",
-                    "type": "message",
-                    "task_id": task_id,
-                    "templates_used": top_k,
-                    "data": result["mind_map"],
-                    "prompt": result["prompt"],
-                }
-            ),
-        )
+        # Send FCM notification
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(
+                    DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True
+                )
+                .all()
+            )
+
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+
+                # Send FCM notification with metadata only (app will fetch result using task_id)
+                fcm_result = fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Flashcards générées",
+                    body="Vos flashcards ont été générées avec succès",
+                    data={
+                        "task_id": task_id,
+                        "event": "flashcard_from_pedag_generated",
+                        "templates_used": str(top_k),
+                    },
+                    notification_id=task_id,
+                )
+
+                print(
+                    f"📱 FCM notifications sent: {fcm_result['success_count']} succeeded, {fcm_result['failure_count']} failed"
+                )
+            else:
+                print(f"⚠️ No active devices found for user {auth_uid}")
+        else:
+            print(f"⚠️ User not found with auth_uid: {auth_uid}")
 
         print(f"📥 Celery task ended for {task_id}")
 
@@ -313,11 +333,36 @@ def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, top
     except Exception as e:
         print(f"❌ Error generating flashcard from pedagogical JSON for task {task_id}: {str(e)}")
 
-        # Publish error to Redis
-        redis.publish(
-            "flashcard_from_pedag_events",
-            json.dumps({"event": "flashcard_from_pedag_error", "task_id": task_id, "error": str(e)}),
-        )
+        # Send FCM error notification
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(
+                        DeviceTokens.AppUserSKU == user.SKU,
+                        DeviceTokens.IsActive == True,
+                    )
+                    .all()
+                )
+
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de génération",
+                        body="Une erreur s'est produite lors de la génération des flashcards",
+                        data={
+                            "task_id": task_id,
+                            "event": "flashcard_from_pedag_error",
+                            "error": str(e),
+                        },
+                        notification_id=task_id,
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
 
         raise
 

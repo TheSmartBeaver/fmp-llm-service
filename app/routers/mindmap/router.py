@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 from pydantic import BaseModel
 from typing import Any, Dict
+from celery.result import AsyncResult
 import uuid
 
 from app.database import get_db
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.mind_map_generator import MindMapGenerator
 from app.workers.tasks import generate_mindmap_task, generate_flashcard_from_pedag_task
+from app.workers.celery_app import celery
 from app.models.dto.user_entry.context_entry_dto import ContextEntryDto
 from app.models.dto.user_entry.pedagogical_context_entry_dto import PedagogicalContextEntryDto
 
@@ -189,20 +191,22 @@ class FlashcardFromPedagRequest(BaseModel):
 
 @mindmap_router.post("/generate_flashcard_from_pedag_async", response_model=MindMapTaskResponse)
 async def generate_flashcard_from_pedag_async(
-    request: FlashcardFromPedagRequest
+    request: FlashcardFromPedagRequest,
+    auth_uid: str = Header(..., alias="X-Auth-Uid")
 ):
     """
     Lance une génération asynchrone de flashcards à partir d'un JSON pédagogique via Celery.
 
     Args:
         request: Contient context (ContextEntryDto), pedagogical_json (string JSON) et top_k
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
 
     Returns:
         MindMapTaskResponse avec l'ID de la tâche Celery
 
     Note:
-        Le résultat sera publié sur Redis (canal 'flashcard_from_pedag_events') une fois la génération terminée.
-        La génération utilise _generate_info_format_pairs avec le JSON pédagogique comme raw_data.
+        Une notification FCM sera envoyée une fois la génération terminée.
+        Le résultat peut être récupéré via le task_id.
     """
     # Générer un ID unique pour cette tâche
     task_id = str(uuid.uuid4())
@@ -215,7 +219,7 @@ async def generate_flashcard_from_pedag_async(
 
     # Lancer la tâche Celery de manière asynchrone
     generate_flashcard_from_pedag_task.apply_async(
-        args=[task_id, pedag_entry.model_dump(), request.top_k],
+        args=[task_id, pedag_entry.model_dump(), auth_uid, request.top_k],
         task_id=task_id
     )
 
@@ -223,6 +227,77 @@ async def generate_flashcard_from_pedag_async(
         task_id=task_id,
         status="pending"
     )
+
+
+@mindmap_router.get("/flashcard_from_pedag/{task_id}", response_model=MindMapResponse)
+async def get_flashcard_from_pedag_result(task_id: str):
+    """
+    Récupère le résultat d'une tâche de génération de flashcards via son task_id.
+
+    Args:
+        task_id: ID unique de la tâche Celery
+
+    Returns:
+        MindMapResponse avec les flashcards générées
+
+    Raises:
+        HTTPException 202: Si la tâche est en cours (PENDING)
+        HTTPException 500: Si la tâche a échoué (FAILURE) ou erreur interne
+    """
+    try:
+        task_result = AsyncResult(task_id, app=celery)
+
+        print(f"🔍 Task {task_id} - State: {task_result.state}")
+        print(f"🔍 Task {task_id} - Ready: {task_result.ready()}")
+        print(f"🔍 Task {task_id} - Successful: {task_result.successful() if task_result.ready() else 'N/A'}")
+
+        if task_result.state == "PENDING":
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "status": "PENDING",
+                    "task_id": task_id,
+                    "message": "La génération est en cours..."
+                }
+            )
+
+        elif task_result.state == "SUCCESS":
+            result = task_result.result
+
+            return MindMapResponse(
+                success=result.get("success", True),
+                mind_map=result.get("mind_map", {}),
+                templates_used=result.get("templates_used", 0),
+                prompt=result.get("prompt", "")
+            )
+
+        elif task_result.state == "FAILURE":
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "status": "FAILURE",
+                    "task_id": task_id,
+                    "error": str(task_result.info)
+                }
+            )
+
+        else:
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "status": task_result.state,
+                    "task_id": task_id,
+                    "message": f"État actuel: {task_result.state}"
+                }
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la récupération du résultat: {str(e)}"
+        )
 
 
 @mindmap_router.get("/health")

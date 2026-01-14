@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv, find_dotenv
 
-from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
+from app.chains.llm.openai_codex_llm import OpenAICodexLLM
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
@@ -46,7 +46,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Load embedding model and LLM for mind map generation
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 embedding_model = SentenceTransformer(MODEL_NAME)
-openai_llm = ClaudeHaiku45Llm().get_llm()
+openai_llm = OpenAICodexLLM("gpt-5.1-codex-mini").get_llm()
 
 
 @celery.task(name="generate.flashcard")
@@ -277,11 +277,11 @@ def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, aut
         )
 
         # Generate mind map using _generate_info_format_pairs with pedagogical_json as raw_data
-        # result = generator.generate_mind_map(raw_data=pedag_entry.pedagogical_json, top_k=top_k)
-        result = {
-            "mind_map": shit_test_4,
-            "prompt": "SHIT"
-        }
+        result = generator.generate_mind_map(raw_data=pedag_entry.pedagogical_json, top_k=top_k)
+        # result = {
+        #     "mind_map": shit_test_4,
+        #     "prompt": "SHIT"
+        # }
 
         print(f"📥 Flashcard from pedagogical JSON generation completed for task {task_id}")
 

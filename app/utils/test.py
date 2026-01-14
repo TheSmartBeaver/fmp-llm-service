@@ -3478,7 +3478,7 @@ shit_test_3 = [
 ]
 
 shit_test_4 = {
-    "success": true,
+    "success": True,
     "mind_map": [
         {
             "recto": {

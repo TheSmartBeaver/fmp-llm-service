@@ -21,6 +21,7 @@ from app.chains.llm.open_ai_gpt5_nano_llm import OpenAiGPT5NanoLlm
 from app.chains.mind_map_generator import MindMapGenerator
 from app.chains.course_material_generator import CourseMaterialGenerator
 from app.chains.course_material_generator_v2 import CourseMaterialGeneratorV2
+from app.chains.course_material_generator_v3 import CourseMaterialGeneratorV3
 from app.services.socket import socket_notify
 from app.services.fcm_service import FCMService
 
@@ -425,6 +426,172 @@ def generate_course_material_task(
                         data={
                             "task_id": task_id,
                             "event": "course_material_error",
+                            "error": str(e),
+                        },
+                        notification_id=task_id,
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
+
+        raise
+
+    finally:
+        # Close database session
+        db.close()
+
+
+@celery.task(name="generate.course_material_html")
+def generate_course_material_html_task(
+    task_id: str, user_entry_dict: dict, auth_uid: str, llm_config_dict: dict = None
+):
+    """
+    Tâche Celery pour générer un support de cours HTML avec CourseMaterialGeneratorV3 et envoyer une notification FCM.
+
+    Cette version utilise le nouveau générateur V3 qui:
+    - Crée d'abord un JSON pédagogique enrichi avec explications complètes
+    - Construit un mapping chemin → valeur à partir du JSON pédagogique
+    - Groupe les chemins par préfixe
+    - Génère du HTML pour chaque groupe en parallèle via LLM
+    - Retourne des divs HTML avec CSS inline (pas de templates)
+
+    Args:
+        task_id: Identifiant unique de la tâche
+        user_entry_dict: Dictionnaire UserEntryDto contenant le contexte, le contenu et les médias
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+        llm_config_dict: Dictionnaire LLMConfigDto optionnel pour la configuration des modèles LLM
+
+    Returns:
+        Dict contenant les supports HTML générés
+    """
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
+    print(f"📥 Starting course material HTML generation V3 for task {task_id}")
+
+    # Create database session
+    db = SessionLocal()
+
+    try:
+        # Reconstruct UserEntryDto from dict
+        user_entry = UserEntryDto(**user_entry_dict)
+        print(f"📥 UserEntryDto reconstructed: {user_entry}")
+
+        # Reconstruct LLMConfigDto from dict (if provided)
+        llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else None
+        print(f"📥 LLMConfigDto reconstructed: {llm_config}")
+
+        # Create course material generator V3 with LLM configuration
+        generator = CourseMaterialGeneratorV3(
+            db_session=db,
+            embedding_model=embedding_model,
+            llm_config=llm_config
+        )
+
+        # Generate course material HTML
+        result_v3 = generator.generate_course_material(user_entry=user_entry)
+
+        # Adapter le format de retour
+        result = {
+            "success": True,
+            "html_supports": result_v3["htmlSupports"],
+            "pedagogical_json": result_v3["pedagogical_json"],
+            "debug_info": result_v3["debug_info"],
+        }
+
+        print(f"📥 Course material HTML generation V3 completed for task {task_id}")
+        print(f" result = {json.dumps(result, indent=2, ensure_ascii=False)}")
+
+        # Publish result to Redis for WebSocket notifications
+        redis.publish(
+            "course_material_html_events",
+            json.dumps(
+                {
+                    "event": "course_material_html_generated",
+                    "type": "message",
+                    "task_id": task_id,
+                    "num_groups": result["debug_info"].get("num_groups", 0),
+                    "num_paths": result["debug_info"].get("num_paths", 0),
+                }
+            ),
+        )
+
+        # Send FCM notification
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(
+                    DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True
+                )
+                .all()
+            )
+
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+
+                num_groups = result["debug_info"].get("num_groups", 0)
+
+                # Send only metadata in FCM notification (Android has 4KB limit)
+                fcm_result = fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Supports HTML générés",
+                    body=f"{num_groups} groupe(s) de supports HTML ont été générés avec succès",
+                    data={
+                        "task_id": task_id,
+                        "event": "course_material_html_generated",
+                        "num_groups": str(num_groups),
+                        # Don't send full data, app will fetch from API using task_id
+                    },
+                    notification_id=task_id,
+                )
+
+                print(
+                    f"📱 FCM notifications sent: {fcm_result['success_count']} succeeded, {fcm_result['failure_count']} failed"
+                )
+            else:
+                print(f"⚠️ No active devices found for user {auth_uid}")
+        else:
+            print(f"⚠️ User not found with auth_uid: {auth_uid}")
+
+        print(f"📥 Celery task ended for {task_id}")
+
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating course material HTML for task {task_id}: {str(e)}")
+
+        # Publish error to Redis
+        redis.publish(
+            "course_material_html_events",
+            json.dumps(
+                {"event": "course_material_html_error", "task_id": task_id, "error": str(e)}
+            ),
+        )
+
+        # Send FCM error notification
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(
+                        DeviceTokens.AppUserSKU == user.SKU,
+                        DeviceTokens.IsActive == True,
+                    )
+                    .all()
+                )
+
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de génération",
+                        body="Une erreur s'est produite lors de la génération des supports HTML",
+                        data={
+                            "task_id": task_id,
+                            "event": "course_material_html_error",
                             "error": str(e),
                         },
                         notification_id=task_id,

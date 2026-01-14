@@ -8,7 +8,7 @@ from celery.result import AsyncResult
 
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
-from app.workers.tasks import generate_course_material_task
+from app.workers.tasks import generate_course_material_task, generate_course_material_html_task
 from app.workers.celery_app import celery
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.course_material_generator import CourseMaterialGenerator
@@ -429,6 +429,127 @@ async def generate_course_material_v3(
         pedagogical_json=result["pedagogical_json"],
         debug_info=result["debug_info"]
     )
+
+
+@course_material_router.post("/generate_html_CELERY", response_model=CourseMaterialTaskResponse)
+async def generate_course_material_html_celery(
+    request: UserEntryDto,
+    llm_config: Optional[LLMConfigDto] = None,
+    auth_uid: str = Header(..., alias="X-Auth-Uid")
+):
+    """
+    Lance une génération asynchrone de support de cours HTML via Celery avec CourseMaterialGeneratorV3.
+
+    Cette version utilise le générateur V3 qui:
+    - Génère un JSON pédagogique enrichi
+    - Construit un mapping chemin → valeur
+    - Groupe les chemins par préfixe
+    - Génère du HTML pour chaque groupe en parallèle via LLM
+    - Retourne des divs HTML avec CSS inline
+
+    Args:
+        request: UserEntryDto contenant le contexte, le contenu textuel et les médias
+        llm_config: Configuration optionnelle des modèles LLM à utiliser
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+
+    Returns:
+        CourseMaterialTaskResponse avec l'ID de la tâche Celery
+
+    Note:
+        Une notification FCM sera envoyée aux appareils actifs de l'utilisateur une fois la génération terminée.
+        Utilisez GET /html_result/{task_id} pour récupérer le résultat.
+    """
+    # Générer un ID unique pour cette tâche
+    task_id = str(uuid.uuid4())
+
+    # Sérialiser la configuration LLM
+    llm_config_dict = llm_config.model_dump() if llm_config else None
+
+    # Lancer la tâche Celery de manière asynchrone avec l'auth_uid et la config LLM
+    generate_course_material_html_task.apply_async(
+        args=[task_id, request.model_dump(), auth_uid, llm_config_dict],
+        task_id=task_id
+    )
+
+    return CourseMaterialTaskResponse(
+        task_id=task_id,
+        status="pending"
+    )
+
+
+@course_material_router.get("/html_result/{task_id}", response_model=CourseMaterialResponseV3)
+async def get_course_material_html_result(task_id: str):
+    """
+    Récupère le résultat d'une tâche de génération de supports HTML via son task_id.
+
+    Args:
+        task_id: ID unique de la tâche Celery
+
+    Returns:
+        CourseMaterialResponseV3 avec les supports HTML générés
+
+    Raises:
+        HTTPException 202: Si la tâche est en cours (PENDING)
+        HTTPException 500: Si la tâche a échoué (FAILURE) ou erreur interne
+    """
+    try:
+        # Récupérer le résultat de la tâche depuis Celery
+        task_result = AsyncResult(task_id, app=celery)
+
+        # Debug logging
+        print(f"🔍 Task {task_id} - State: {task_result.state}")
+        print(f"🔍 Task {task_id} - Ready: {task_result.ready()}")
+        print(f"🔍 Task {task_id} - Successful: {task_result.successful() if task_result.ready() else 'N/A'}")
+
+        if task_result.state == "PENDING":
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "status": "PENDING",
+                    "task_id": task_id,
+                    "message": "La génération HTML est en cours..."
+                }
+            )
+
+        elif task_result.state == "SUCCESS":
+            result = task_result.result
+
+            # Transformer le résultat en CourseMaterialResponseV3
+            return CourseMaterialResponseV3(
+                success=result.get("success", True),
+                html_supports=result.get("html_supports", {}),
+                pedagogical_json=result.get("pedagogical_json", {}),
+                debug_info=result.get("debug_info", {})
+            )
+
+        elif task_result.state == "FAILURE":
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "status": "FAILURE",
+                    "task_id": task_id,
+                    "error": str(task_result.info)
+                }
+            )
+
+        else:
+            # États intermédiaires (STARTED, RETRY, etc.)
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "status": task_result.state,
+                    "task_id": task_id,
+                    "message": f"État actuel: {task_result.state}"
+                }
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la récupération du résultat: {str(e)}"
+        )
 
 
 @course_material_router.get("/health")

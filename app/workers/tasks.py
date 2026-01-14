@@ -287,7 +287,7 @@ def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, top
             "flashcard_from_pedag_events",
             json.dumps(
                 {
-                    "event": "flashcard_from_pedag_generated",
+                    "event": "mindmap_generated",
                     "type": "message",
                     "task_id": task_id,
                     "templates_used": top_k,

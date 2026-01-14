@@ -278,7 +278,8 @@ def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, top
         )
 
         # Generate mind map using _generate_info_format_pairs with pedagogical_json as raw_data
-        result = generator.generate_mind_map(raw_data=pedag_entry.pedagogical_json, top_k=top_k)
+        # result = generator.generate_mind_map(raw_data=pedag_entry.pedagogical_json, top_k=top_k)
+        result = shit_test_4
 
         print(f"📥 Flashcard from pedagogical JSON generation completed for task {task_id}")
 

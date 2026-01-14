@@ -11,6 +11,7 @@ from dotenv import load_dotenv, find_dotenv
 from app.chains.llm.openai_codex_llm import OpenAICodexLLM
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
+from app.chains.llm.universal_llm import create_universal_llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.dto.user_entry.pedagogical_context_entry_dto import PedagogicalContextEntryDto
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
@@ -46,7 +47,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Load embedding model and LLM for mind map generation
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 embedding_model = SentenceTransformer(MODEL_NAME)
-openai_llm = OpenAICodexLLM("gpt-5.1-codex-mini").get_llm()
+openai_llm = create_universal_llm("gpt-5.1-codex-mini")
 
 
 @celery.task(name="generate.flashcard")

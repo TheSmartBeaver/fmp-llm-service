@@ -1,5 +1,6 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import asyncio
+import json
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -7,6 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
 from app.utils.template_search import fetch_similar_templates
+from app.chains.llm.universal_llm import create_universal_llm
 
 
 class MindMapGenerator:
@@ -24,14 +26,16 @@ class MindMapGenerator:
         """
         Args:
             db_session: Session SQLAlchemy pour accéder à la DB
-            llm: Modèle LangChain (ChatOpenAI)
+            llm: Modèle LangChain pour la génération de cartes (gpt-5.1-codex-mini)
             embedding_model: Modèle sentence-transformers pour les embeddings
         """
         self.db = db_session
-        self.llm = llm
+        self.llm = llm  # Pour _build_single_card_prompt_and_chain (gpt-5.1-codex-mini)
         self.embedding_model = embedding_model
+        # LLM séparé pour _generate_info_format_pairs (gpt-5-mini)
+        self.info_format_llm = create_universal_llm("gpt-5-mini")
 
-    def generate_mind_map(self, raw_data: str, top_k: int = 15) -> Dict[str, Any]:
+    def generate_mind_map(self, raw_data: str, top_k: int = 12) -> Dict[str, Any]:
         """
         Génère un tableau de cartes mentales à partir de données brutes.
 
@@ -67,7 +71,7 @@ class MindMapGenerator:
 
         return loop.run_until_complete(self._generate_mind_map_async(raw_data, top_k))
 
-    async def _generate_mind_map_async(self, raw_data: str, top_k: int = 15) -> Dict[str, Any]:
+    async def _generate_mind_map_async(self, raw_data: str, top_k: int = 12) -> Dict[str, Any]:
         """
         Version asynchrone de generate_mind_map.
         """
@@ -180,8 +184,8 @@ Génère les triplets question-information-format au format JSON. N'oublie pas d
             ("human", user_prompt)
         ])
 
-        # Créer la chaîne avec parser JSON
-        chain = prompt | self.llm | JsonOutputParser()
+        # Créer la chaîne avec parser JSON - utilise info_format_llm (gpt-5-mini)
+        chain = prompt | self.info_format_llm | JsonOutputParser()
 
         # Préparer le prompt complet pour le retour
         full_prompt = prompt.format(raw_data=raw_data)
@@ -338,13 +342,15 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles. Le 
 
         return chain, full_prompt, invoke_params
 
-    async def _generate_single_card_from_info_format_async(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
+    async def _generate_single_card_from_info_format_async(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]], max_retries: int = 2) -> tuple[Dict[str, Any], str]:
         """
         Génère une carte mentale unique à partir d'un triplet question-information-format (VERSION ASYNCHRONE).
+        Inclut une correction automatique par LLM en cas d'erreur (max 2 tentatives).
 
         Args:
             info_format_pair: Dictionnaire contenant 'question', 'information' et 'format'
             templates: Liste des templates disponibles avec leurs métadonnées
+            max_retries: Nombre maximum de tentatives (défaut: 2)
 
         Returns:
             Tuple contenant:
@@ -353,10 +359,129 @@ Génère le JSON de la carte mentale en utilisant les templates disponibles. Le 
         """
         chain, full_prompt, invoke_params = self._build_single_card_prompt_and_chain(info_format_pair, templates)
 
-        # Exécuter la chaîne de manière ASYNCHRONE
-        result = await chain.ainvoke(invoke_params)
+        last_error = None
+        last_result = None
 
-        return result, full_prompt
+        for attempt in range(max_retries):
+            try:
+                # Exécuter la chaîne de manière ASYNCHRONE
+                result = await chain.ainvoke(invoke_params)
+
+                # Valider la structure de la carte
+                self._validate_single_card(result)
+
+                return result, full_prompt
+
+            except Exception as e:
+                last_error = str(e)
+                last_result = result if 'result' in dir() else None
+                print(f"⚠️ Tentative {attempt + 1}/{max_retries} échouée: {last_error}")
+
+                if attempt < max_retries - 1:
+                    # Tenter une correction par LLM
+                    result = await self._auto_correct_card(
+                        info_format_pair, templates, last_result, last_error
+                    )
+                    if result:
+                        try:
+                            self._validate_single_card(result)
+                            print(f"✅ Correction automatique réussie à la tentative {attempt + 1}")
+                            return result, full_prompt
+                        except Exception as correction_error:
+                            print(f"⚠️ Correction échouée: {correction_error}")
+                            continue
+
+        # Si toutes les tentatives ont échoué, lever l'erreur
+        raise ValueError(f"Échec après {max_retries} tentatives. Dernière erreur: {last_error}")
+
+    def _validate_single_card(self, card: Dict[str, Any]) -> None:
+        """
+        Valide la structure d'une carte unique.
+
+        Args:
+            card: La carte à valider
+
+        Raises:
+            ValueError: Si la carte est invalide
+        """
+        if not isinstance(card, dict):
+            raise ValueError("La carte doit être un objet")
+
+        required_keys = ["recto", "verso"]
+        for key in required_keys:
+            if key not in card:
+                raise ValueError(f"Clé obligatoire manquante: {key}")
+
+        # Vérifier que recto et verso ont des template_name
+        if not isinstance(card.get("recto"), dict) or "template_name" not in card.get("recto", {}):
+            raise ValueError("recto doit contenir un template_name")
+        if not isinstance(card.get("verso"), dict) or "template_name" not in card.get("verso", {}):
+            raise ValueError("verso doit contenir un template_name")
+
+    async def _auto_correct_card(
+        self,
+        info_format_pair: Dict[str, str],
+        templates: List[Dict[str, Any]],
+        failed_result: Any,
+        error_message: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Tente de corriger une carte mal formée via LLM.
+
+        Args:
+            info_format_pair: Les données d'entrée originales
+            templates: Les templates disponibles
+            failed_result: Le résultat échoué (peut être None)
+            error_message: Le message d'erreur
+
+        Returns:
+            La carte corrigée ou None si la correction échoue
+        """
+        templates_description = self._format_templates_for_prompt(templates)
+
+        correction_prompt = f"""Le JSON suivant a été généré mais contient une erreur:
+
+ERREUR: {error_message}
+
+JSON GÉNÉRÉ (peut être incomplet ou mal formé):
+{json.dumps(failed_result, indent=2, ensure_ascii=False) if failed_result else "Aucun résultat"}
+
+DONNÉES D'ENTRÉE:
+- Question: {info_format_pair['question']}
+- Information: {info_format_pair['information']}
+- Format: {info_format_pair['format']}
+
+TEMPLATES DISPONIBLES:
+{templates_description}
+
+CORRIGE le JSON pour qu'il respecte STRICTEMENT cette structure:
+{{
+    "recto": {{
+        "template_name": "chemin/du/template",
+        ...autres champs du template...
+    }},
+    "verso": {{
+        "template_name": "chemin/du/template",
+        ...autres champs du template...
+    }},
+    "version": "1.0.0"
+}}
+
+Réponds UNIQUEMENT avec le JSON corrigé, sans texte additionnel."""
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "Tu es un expert en correction de JSON. Corrige le JSON fourni pour qu'il respecte la structure attendue."),
+            ("human", correction_prompt)
+        ])
+
+        chain = prompt | self.llm | JsonOutputParser()
+
+        try:
+            corrected = await chain.ainvoke({})
+            return corrected
+        except Exception as e:
+            print(f"❌ Erreur lors de la correction automatique: {e}")
+            return None
 
     def _generate_single_card_from_info_format(self, info_format_pair: Dict[str, str], templates: List[Dict[str, Any]]) -> tuple[Dict[str, Any], str]:
         """

@@ -249,7 +249,7 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
 
 
 @celery.task(name="generate.flashcard_from_pedag")
-def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, auth_uid: str, top_k: int = 15):
+def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, auth_uid: str, top_k: int = 12):
     """
     Tâche Celery pour générer des flashcards à partir d'un JSON pédagogique.
 

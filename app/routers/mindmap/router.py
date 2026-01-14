@@ -173,7 +173,7 @@ class FlashcardFromPedagRequest(BaseModel):
     """Requête pour générer des flashcards à partir d'un JSON pédagogique"""
     context: ContextEntryDto
     pedagogical_json: str
-    top_k: int = 15
+    top_k: int = 12
 
     class Config:
         json_schema_extra = {

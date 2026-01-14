@@ -57,8 +57,22 @@ class MindMapGenerator:
                 ]
             - prompt: Le prompt complet envoyé au LLM (premier et derniers prompts)
         """
+        # Utiliser get_event_loop() avec run_until_complete pour compatibilité avec Celery
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # Si pas de loop, en créer un nouveau
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(self._generate_mind_map_async(raw_data, top_k))
+
+    async def _generate_mind_map_async(self, raw_data: str, top_k: int = 15) -> Dict[str, Any]:
+        """
+        Version asynchrone de generate_mind_map.
+        """
         # Étape 1: Générer les paires informations-format intermédiaires
-        info_format_pairs, info_format_prompt = self._generate_info_format_pairs(raw_data)
+        info_format_pairs, info_format_prompt = await self._generate_info_format_pairs(raw_data)
 
         # Étape 2 & 3: Pour chaque paire, récupérer les templates et générer la carte EN PARALLÈLE
         all_mind_maps = []
@@ -78,15 +92,7 @@ class MindMapGenerator:
             tasks.append(self._generate_single_card_from_info_format_async(info_format_pair, templates))
 
         # Exécuter toutes les tâches en parallèle
-        # Utiliser get_event_loop() avec run_until_complete pour compatibilité avec Celery
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            # Si pas de loop, en créer un nouveau
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        results = loop.run_until_complete(asyncio.gather(*tasks))
+        results = await asyncio.gather(*tasks)
 
         # Extraire les résultats
         for mind_map, gen_prompt in results:
@@ -104,7 +110,7 @@ class MindMapGenerator:
             "prompt": full_prompt
         }
 
-    def _generate_info_format_pairs(self, raw_data: str) -> tuple[List[Dict[str, str]], str]:
+    async def _generate_info_format_pairs(self, raw_data: str) -> tuple[List[Dict[str, str]], str]:
         """
         Génère des triplets question-information-format intermédiaires à partir des données brutes.
 
@@ -180,8 +186,8 @@ Génère les triplets question-information-format au format JSON. N'oublie pas d
         # Préparer le prompt complet pour le retour
         full_prompt = prompt.format(raw_data=raw_data)
 
-        # Exécuter la chaîne
-        result = chain.invoke({"raw_data": raw_data})
+        # Exécuter la chaîne de manière ASYNCHRONE
+        result = await chain.ainvoke({"raw_data": raw_data})
 
         return result, full_prompt
 

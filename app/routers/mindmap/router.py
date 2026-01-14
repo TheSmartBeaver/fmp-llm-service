@@ -8,7 +8,9 @@ import uuid
 from app.database import get_db
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.mind_map_generator import MindMapGenerator
-from app.workers.tasks import generate_mindmap_task
+from app.workers.tasks import generate_mindmap_task, generate_flashcard_from_pedag_task
+from app.models.dto.user_entry.context_entry_dto import ContextEntryDto
+from app.models.dto.user_entry.pedagogical_context_entry_dto import PedagogicalContextEntryDto
 
 
 mindmap_router = APIRouter(prefix="/mindmap")
@@ -163,6 +165,64 @@ async def generate_mindmap(
             status_code=500,
             detail=f"Erreur lors de la génération: {str(e)}"
         )
+
+
+class FlashcardFromPedagRequest(BaseModel):
+    """Requête pour générer des flashcards à partir d'un JSON pédagogique"""
+    context: ContextEntryDto
+    pedagogical_json: str
+    top_k: int = 15
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "context": {
+                    "course": "Biologie",
+                    "topic_path": "Cellule/Photosynthèse",
+                    "fc_to_modify": ""
+                },
+                "pedagogical_json": '{"title": "La photosynthèse", "content": "Processus de conversion..."}',
+                "top_k": 15
+            }
+        }
+
+
+@mindmap_router.post("/generate_flashcard_from_pedag_async", response_model=MindMapTaskResponse)
+async def generate_flashcard_from_pedag_async(
+    request: FlashcardFromPedagRequest
+):
+    """
+    Lance une génération asynchrone de flashcards à partir d'un JSON pédagogique via Celery.
+
+    Args:
+        request: Contient context (ContextEntryDto), pedagogical_json (string JSON) et top_k
+
+    Returns:
+        MindMapTaskResponse avec l'ID de la tâche Celery
+
+    Note:
+        Le résultat sera publié sur Redis (canal 'flashcard_from_pedag_events') une fois la génération terminée.
+        La génération utilise _generate_info_format_pairs avec le JSON pédagogique comme raw_data.
+    """
+    # Générer un ID unique pour cette tâche
+    task_id = str(uuid.uuid4())
+
+    # Construire le DTO pour la tâche Celery
+    pedag_entry = PedagogicalContextEntryDto(
+        context=request.context,
+        pedagogical_json=request.pedagogical_json
+    )
+
+    # Lancer la tâche Celery de manière asynchrone
+    generate_flashcard_from_pedag_task.apply_async(
+        args=[task_id, pedag_entry.model_dump(), request.top_k],
+        task_id=task_id
+    )
+
+    return MindMapTaskResponse(
+        task_id=task_id,
+        status="pending"
+    )
 
 
 @mindmap_router.get("/health")

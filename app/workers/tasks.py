@@ -12,6 +12,7 @@ from app.chains.llm.claude_haiku_45_llm import ClaudeHaiku45Llm
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
+from app.models.dto.user_entry.pedagogical_context_entry_dto import PedagogicalContextEntryDto
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 from app.models.db.fmp_models import AppUsers, DeviceTokens
 
@@ -237,6 +238,81 @@ def generate_mindmap_task(task_id: str, raw_data: str, top_k: int = 15):
         redis.publish(
             "mindmap_events",
             json.dumps({"event": "mindmap_error", "task_id": task_id, "error": str(e)}),
+        )
+
+        raise
+
+    finally:
+        # Close database session
+        db.close()
+
+
+@celery.task(name="generate.flashcard_from_pedag")
+def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, top_k: int = 15):
+    """
+    Tâche Celery pour générer des flashcards à partir d'un JSON pédagogique.
+
+    Args:
+        task_id: Identifiant unique de la tâche
+        pedag_entry_dict: Dictionnaire PedagogicalContextEntryDto contenant le contexte et le JSON pédagogique
+        top_k: Nombre de templates à utiliser
+
+    Returns:
+        Dict contenant les flashcards générées
+    """
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
+    print(f"📥 Starting flashcard from pedagogical JSON generation for task {task_id}")
+
+    # Create database session
+    db = SessionLocal()
+
+    try:
+        # Reconstruct PedagogicalContextEntryDto from dict
+        pedag_entry = PedagogicalContextEntryDto(**pedag_entry_dict)
+        print(f"📥 PedagogicalContextEntryDto reconstructed: {pedag_entry}")
+
+        # Create mind map generator
+        generator = MindMapGenerator(
+            db_session=db, llm=openai_llm, embedding_model=embedding_model
+        )
+
+        # Generate mind map using _generate_info_format_pairs with pedagogical_json as raw_data
+        result = generator.generate_mind_map(raw_data=pedag_entry.pedagogical_json, top_k=top_k)
+
+        print(f"📥 Flashcard from pedagogical JSON generation completed for task {task_id}")
+
+        # Publish result to Redis
+        redis.publish(
+            "flashcard_from_pedag_events",
+            json.dumps(
+                {
+                    "event": "flashcard_from_pedag_generated",
+                    "type": "message",
+                    "task_id": task_id,
+                    "templates_used": top_k,
+                    "data": result["mind_map"],
+                    "prompt": result["prompt"],
+                }
+            ),
+        )
+
+        print(f"📥 Celery task ended for {task_id}")
+
+        return {
+            "success": True,
+            "mind_map": result["mind_map"],
+            "templates_used": top_k,
+            "prompt": result["prompt"],
+        }
+
+    except Exception as e:
+        print(f"❌ Error generating flashcard from pedagogical JSON for task {task_id}: {str(e)}")
+
+        # Publish error to Redis
+        redis.publish(
+            "flashcard_from_pedag_events",
+            json.dumps({"event": "flashcard_from_pedag_error", "task_id": task_id, "error": str(e)}),
         )
 
         raise
@@ -489,17 +565,17 @@ def generate_course_material_html_task(
         )
 
         # Generate course material HTML
-        result_v3 = generator.generate_course_material(user_entry=user_entry)
+        #result_v3 = generator.generate_course_material(user_entry=user_entry)
 
         # Adapter le format de retour
-        result = {
-            "success": True,
-            "html_supports": result_v3["htmlSupports"],
-            "pedagogical_json": result_v3["pedagogical_json"],
-            "debug_info": result_v3["debug_info"],
-        }
+        # result = {
+        #     "success": True,
+        #     "html_supports": result_v3["htmlSupports"],
+        #     "pedagogical_json": result_v3["pedagogical_json"],
+        #     "debug_info": result_v3["debug_info"],
+        # }
 
-        # result = shit_test_4
+        result = shit_test_4
 
         print(f"📥 Course material HTML generation V3 completed for task {task_id}")
         print(f" result = {json.dumps(result, indent=2, ensure_ascii=False)}")

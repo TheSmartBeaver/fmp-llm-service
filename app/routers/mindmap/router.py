@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 from pydantic import BaseModel
-from typing import Any, Dict
+from typing import Any, Dict, List
 from celery.result import AsyncResult
 import uuid
 
@@ -189,6 +189,14 @@ class FlashcardFromPedagRequest(BaseModel):
         }
 
 
+class FlashcardFromPedagResponse(BaseModel):
+    """Réponse contenant les flashcards générées à partir d'un JSON pédagogique"""
+    success: bool
+    mind_map: List[Dict[str, Any]]
+    templates_used: int
+    prompt: str
+
+
 @mindmap_router.post("/generate_flashcard_from_pedag_async", response_model=MindMapTaskResponse)
 async def generate_flashcard_from_pedag_async(
     request: FlashcardFromPedagRequest,
@@ -229,7 +237,7 @@ async def generate_flashcard_from_pedag_async(
     )
 
 
-@mindmap_router.get("/flashcard_from_pedag/{task_id}", response_model=MindMapResponse)
+@mindmap_router.get("/flashcard_from_pedag/{task_id}", response_model=FlashcardFromPedagResponse)
 async def get_flashcard_from_pedag_result(task_id: str):
     """
     Récupère le résultat d'une tâche de génération de flashcards via son task_id.
@@ -238,7 +246,7 @@ async def get_flashcard_from_pedag_result(task_id: str):
         task_id: ID unique de la tâche Celery
 
     Returns:
-        MindMapResponse avec les flashcards générées
+        FlashcardFromPedagResponse avec les flashcards générées
 
     Raises:
         HTTPException 202: Si la tâche est en cours (PENDING)
@@ -264,9 +272,9 @@ async def get_flashcard_from_pedag_result(task_id: str):
         elif task_result.state == "SUCCESS":
             result = task_result.result
 
-            return MindMapResponse(
+            return FlashcardFromPedagResponse(
                 success=result.get("success", True),
-                mind_map=result.get("mind_map", {}),
+                mind_map=result.get("mind_map", []),
                 templates_used=result.get("templates_used", 0),
                 prompt=result.get("prompt", "")
             )

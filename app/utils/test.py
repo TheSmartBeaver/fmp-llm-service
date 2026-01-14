@@ -3478,124 +3478,492 @@ shit_test_3 = [
 ]
 
 shit_test_4 = {
-    "success": True,
-    "html_supports": {
-        "course": '```html\n<div style="font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 40px 20px; background-color: #f9f9f9;">\n  <header style="margin-bottom: 40px; border-bottom: 3px solid #0066cc; padding-bottom: 20px;">\n    <h1 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 2em; line-height: 1.3;">Structuration pédagogique des contenus éducatifs</h1>\n    <p style="margin: 0; color: #666; font-size: 0.95em; font-weight: 500;">Groupe : Course</p>\n  </header>\n\n  <section style="margin-bottom: 35px;">\n    <h2 style="color: #0066cc; font-size: 1.4em; margin-top: 0; margin-bottom: 15px; border-left: 4px solid #0066cc; padding-left: 15px;">Résumé</h2>\n    <p style="color: #333; line-height: 1.8; font-size: 1em; margin: 0;">Ce module présente une approche systématique pour transformer des notes brutes en un contenu pédagogique structuré au format JSON. On y détaille pourquoi cette structuration est bénéfique, comment organiser les informations par thèmes logiques et comment intégrer de manière cohérente des supports multimédias pour enrichir l\'expérience d\'apprentissage. L\'objectif est de rendre les contenus plus lisibles, réutilisables et accessibles, tout en évitant les contenus d\'évaluation et les exercices, conformément aux principes pédagogiques décrits.</p>\n  </section>\n\n  <section style="margin-bottom: 35px;">\n    <h2 style="color: #0066cc; font-size: 1.4em; margin-top: 0; margin-bottom: 15px; border-left: 4px solid #0066cc; padding-left: 15px;">Prérequis</h2>\n    <p style="color: #333; line-height: 1.8; font-size: 1em; margin: 0;">Avoir des notes de cours brutes et une compréhension générale des objectifs d\'apprentissage visés par le module.</p>\n  </section>\n\n  <section>\n    <h2 style="color: #0066cc; font-size: 1.4em; margin-top: 0; margin-bottom: 20px; border-left: 4px solid #0066cc; padding-left: 15px;">Objectifs d\'apprentissage</h2>\n    <ol style="margin: 0; padding-left: 25px; list-style-position: outside;">\n      <li style="margin-bottom: 18px; color: #333; line-height: 1.8; font-size: 1em;">\n        <strong>Comprendre</strong> les principes fondamentaux de la conversion de notes brutes en un format structuré qui soutient l\'apprentissage durable.\n      </li>\n      <li style="margin-bottom: 18px; color: #333; line-height: 1.8; font-size: 1em;">\n        <strong>Savoir regrouper</strong> les informations en thèmes logiques et établir des liens explicites entre concepts pour favoriser la compréhension et la mémorisation.\n      </li>\n      <li style="margin-bottom: 18px; color: #333; line-height: 1.8; font-size: 1em;">\n        <strong>Maîtriser</strong> l\'intégration sémantique des médias disponibles (images et vidéos) afin d\'enrichir le cadre didactique sans perturber le flux pédagogique.\n      </li>\n      <li style="color: #333; line-height: 1.8; font-size: 1em;">\n        <strong>Adopter</strong> des pratiques descriptives et contextuelles qui évitent les phrases trop courtes et favorisent une narration pédagogique riche et accessible.\n      </li>\n    </ol>\n  </section>\n</div>\n```',
-        "subjectPath": '```html\n<div style="font-family: system-ui, sans-serif; max-width: 900px; margin: 0; padding: 24px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">\n  \n  <div style="margin-bottom: 28px;">\n    <h2 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Groupe</h2>\n    <p style="margin: 0; font-size: 16px; color: #1f2937; font-weight: 500;">subjectPath</p>\n  </div>\n\n  <div style="margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb;">\n    <h3 style="margin: 0 0 12px 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Chemin pédagogique</h3>\n    <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6;">Fondements <span style="color: #9ca3af;">&gt;</span> Structuration du contenu <span style="color: #9ca3af;">&gt;</span> Conception pédagogique</p>\n  </div>\n\n  <div style="margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb;">\n    <h3 style="margin: 0 0 12px 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Objectif pédagogique</h3>\n    <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6;">Transposer des notes brutes en une structure réutilisable et évolutive, facilitant la compréhension et la maintenance du contenu.</p>\n  </div>\n\n  <div>\n    <h3 style="margin: 0 0 16px 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Contextes d\'application</h3>\n    <ol style="margin: 0; padding-left: 24px; font-size: 15px; color: #374151; line-height: 1.8;">\n      <li style="margin-bottom: 12px;">Utiliser une structure cohérente pour différents publics et niveaux de compétence.</li>\n      <li>Relier clairement les concepts entre eux pour montrer les relations de cause à effet, d\'exemple à règle, et d\'application à contexte.</li>\n    </ol>\n  </div>\n\n</div>\n```',
-        "sections[0]": '```html\n<div style="font-family: system-ui, sans-serif; max-width: 900px; margin: 0; padding: 24px; background-color: #f9f9f9; border-left: 4px solid #2563eb;">\n  <header style="margin-bottom: 24px;">\n    <h1 style="margin: 0 0 8px 0; color: #1f2937; font-size: 28px; font-weight: 600;">Cadre conceptuel et objectifs d\'apprentissage</h1>\n    <div style="height: 2px; background: linear-gradient(90deg, #2563eb, transparent); width: 80px; margin-top: 12px;"></div>\n  </header>\n  \n  <article style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 20px;">\n    <section style="margin-bottom: 20px;">\n      <h2 style="color: #374151; font-size: 16px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">Description</h2>\n      \n      <p style="color: #4b5563; line-height: 1.7; margin: 0 0 16px 0; font-size: 15px;">\n        Dans ce cadre, on expose pourquoi la structuration des notes est essentielle pour favoriser la compréhension sur le long terme. On précise que le formatage en JSON offre une base adaptable où les catégories génériques permettent d\'organiser les informations sans se lier à des contenus spécifiques.\n      </p>\n      \n      <p style="color: #4b5563; line-height: 1.7; margin: 0; font-size: 15px;">\n        Cette approche facilite la réutilisation, la mise à jour et le déploiement du contenu dans différents contextes pédagogiques, tout en clarifiant les objectifs d\'apprentissage qui guident la profondeur des explications et le choix des détails à fournir.\n      </p>\n    </section>\n    \n    <footer style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f0f0;">\n      <span style="display: inline-block; background-color: #eff6ff; color: #1e40af; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">Section 1</span>\n    </footer>\n  </article>\n</div>\n```',
-        "sections[1]": '```html\n<div style="font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 32px; background-color: #f9f9f9; border-radius: 8px;">\n  <header style="margin-bottom: 32px; border-bottom: 2px solid #0066cc; padding-bottom: 16px;">\n    <h1 style="margin: 0 0 12px 0; color: #003d99; font-size: 28px; font-weight: 700;">Organisation et relations entre concepts</h1>\n    <p style="margin: 0; color: #666; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Section 2</p>\n  </header>\n\n  <main>\n    <section style="background-color: white; padding: 24px; border: 1px solid #ddd; border-radius: 6px; line-height: 1.8;">\n      <h2 style="color: #0066cc; font-size: 18px; margin-top: 0; margin-bottom: 16px; font-weight: 600;">Description</h2>\n      \n      <p style="color: #333; margin: 0 0 16px 0; font-size: 16px;">Cette section met en lumière <strong>l\'importance de regrouper les informations par thèmes logiques</strong> et de rendre explicites les relations entre idées.</p>\n\n      <h3 style="color: #1a1a1a; font-size: 16px; margin: 24px 0 12px 0; font-weight: 600;">Points clés couverts</h3>\n      <ul style="margin: 0 0 16px 0; padding-left: 24px; color: #333;">\n        <li style="margin-bottom: 10px;">Similarités entre concepts</li>\n        <li style="margin-bottom: 10px;">Différences et contrastes</li>\n        <li style="margin-bottom: 10px;">Dépendances et relations causales</li>\n        <li style="margin-bottom: 10px;">Construction d\'une carte cognitive robuste</li>\n      </ul>\n\n      <h3 style="color: #1a1a1a; font-size: 16px; margin: 24px 0 12px 0; font-weight: 600;">Types de relations explorées</h3>\n      <ul style="margin: 0 0 16px 0; padding-left: 24px; color: #333;">\n        <li style="margin-bottom: 10px;"><strong>Comparaison</strong> : mise en évidence des similitudes et différences</li>\n        <li style="margin-bottom: 10px;"><strong>Extension</strong> : approfondissement et élargissement des concepts</li>\n        <li style="margin-bottom: 10px;"><strong>Interdépendance</strong> : connexions mutuelles et influences réciproques</li>\n      </ul>\n\n      <p style="color: #333; margin: 16px 0 0 0; font-size: 16px;">Ces relations sont articulées dans la structure JSON pour <strong>soutenir la cohérence du discours pédagogique</strong> et faciliter la compréhension systématique des concepts.</p>\n\n      <div style="background-color: #f0f7ff; border-left: 4px solid #0066cc; padding: 16px; margin-top: 24px; border-radius: 4px;">\n        <p style="margin: 0; color: #003d99; font-size: 14px; font-weight: 500;">📌 Note pédagogique : Cette section ne contient pas d\'exercices ou d\'évaluations. Elle fournit les fondations conceptuelles et méthodologiques nécessaires pour structurer efficacement une base de connaissances.</p>\n      </div>\n    </section>\n  </main>\n</div>\n```',
-        "sections[2]": '```html\n<div style="font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">\n  <header style="margin-bottom: 2rem; border-bottom: 3px solid #0066cc; padding-bottom: 1.5rem;">\n    <h1 style="margin: 0; color: #0066cc; font-size: 2rem; line-height: 1.3;">Intégration des médias et accessibilité</h1>\n    <p style="margin: 0.5rem 0 0 0; color: #666; font-size: 0.95rem; font-weight: 500;">Section 3 • Thème pédagogique</p>\n  </header>\n\n  <main style="line-height: 1.8; color: #333;">\n    <section style="margin-bottom: 1.5rem;">\n      <h2 style="color: #0066cc; font-size: 1.3rem; margin: 0 0 1rem 0;">Description</h2>\n      \n      <article style="background-color: white; padding: 1.5rem; border-left: 4px solid #0066cc; border-radius: 4px;">\n        <p style="margin: 0 0 1rem 0;">On détaille l\'apport des supports disponibles pour enrichir l\'expérience d\'apprentissage. L\'image et la vidéo servent de <strong>médiateurs visuels et temporels</strong> qui clarifient les explications et ancrent les concepts dans des exemples concrets.</p>\n        \n        <p style="margin: 0;">On explique comment référencer ces médias de manière sémantique dans le parcours pédagogique, en indiquant des <strong>URLs pertinentes</strong> et des <strong>repères temporels</strong> lorsque nécessaire, afin que l\'apprenant puisse accéder rapidement aux ressources sans rompre le flux pédagogique et sans détourner l\'attention de l\'objectif éducatif.</p>\n      </article>\n    </section>\n\n    <section style="margin-top: 2rem; padding: 1.5rem; background-color: #e6f2ff; border-radius: 4px;">\n      <h3 style="color: #0066cc; margin: 0 0 1rem 0; font-size: 1.1rem;">Points clés</h3>\n      <ul style="margin: 0; padding-left: 1.5rem; color: #333;">\n        <li style="margin-bottom: 0.75rem;">Médias comme vecteurs de clarification et de concrétisation</li>\n        <li style="margin-bottom: 0.75rem;">Référencement sémantique dans le parcours pédagogique</li>\n        <li style="margin-bottom: 0.75rem;">Utilisation d\'URLs pertinentes et de repères temporels</li>\n        <li style="margin-bottom: 0;">Continuité du flux pédagogique et maintien de la concentration</li>\n      </ul>\n    </section>\n  </main>\n</div>\n```',
-        "sections[3]": '```html\n<div style="font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 2rem; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #2c5aa0;">\n  <header style="margin-bottom: 2rem;">\n    <h1 style="font-size: 1.75rem; color: #1a1a1a; margin: 0 0 0.5rem 0;">Bonnes pratiques et recommandations</h1>\n    <div style="height: 3px; width: 60px; background: linear-gradient(to right, #2c5aa0, #5a9fd4); border-radius: 2px; margin: 1rem 0;"></div>\n  </header>\n\n  <article style="line-height: 1.8; color: #333;">\n    <p style="font-size: 1rem; margin-bottom: 1.5rem;">Cette dernière partie propose des pratiques qui favorisent une structuration claire et évolutive.</p>\n\n    <section style="margin: 2rem 0;">\n      <h2 style="font-size: 1.25rem; color: #2c5aa0; margin-bottom: 1rem;">Principes clés</h2>\n      <ul style="list-style-position: inside; margin: 0; padding-left: 1.5rem;">\n        <li style="margin-bottom: 0.75rem;">Privilégier des descriptions <strong>développées et contextuelles</strong></li>\n        <li style="margin-bottom: 0.75rem;">Éviter les formulations trop brèves qui limitent la compréhension</li>\n        <li style="margin-bottom: 0.75rem;">Assurer que chaque section peut être comprise de manière <strong>autonome</strong> tout en s\'inscrivant dans l\'ensemble du module</li>\n      </ul>\n    </section>\n\n    <section style="margin: 2rem 0; padding: 1.25rem; background-color: #e8f0f8; border-radius: 6px; border-left: 3px solid #2c5aa0;">\n      <h2 style="font-size: 1.25rem; color: #2c5aa0; margin-top: 0;">Points importants à retenir</h2>\n      <ul style="list-style-position: inside; margin: 0; padding-left: 1.5rem;">\n        <li style="margin-bottom: 0.75rem;"><strong>Absence d\'exercices ou de quiz</strong> dans ce cadre pédagogique</li>\n        <li style="margin-bottom: 0.75rem;">Importance d\'une <strong>narration explicative riche et accessible</strong></li>\n        <li>Une narration qui <strong>soutient l\'apprentissage</strong> tout au long du module</li>\n      </ul>\n    </section>\n  </article>\n</div>\n```',
-        "media": '```html\n<div style="font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">\n  <h1 style="color: #1a1a1a; margin-bottom: 30px; font-size: 28px; border-bottom: 3px solid #0066cc; padding-bottom: 10px;">Ressources Média</h1>\n  \n  <section style="margin-bottom: 40px;">\n    <h2 style="color: #0066cc; font-size: 20px; margin-bottom: 20px;">Images</h2>\n    <article style="background-color: white; border: 1px solid #ddd; border-radius: 6px; padding: 20px; margin-bottom: 15px;">\n      <h3 style="color: #333; font-size: 16px; margin-top: 0;">Image 1</h3>\n      <dl style="margin: 15px 0; line-height: 1.8;">\n        <dt style="font-weight: bold; color: #555; margin-top: 10px;">URL:</dt>\n        <dd style="margin-left: 0; color: #0066cc; word-break: break-all;">https://example.org/image1.jpg</dd>\n        \n        <dt style="font-weight: bold; color: #555; margin-top: 10px;">Texte alternatif:</dt>\n        <dd style="margin-left: 0; color: #333;">Illustration conceptuelle liée à la structuration pédagogique</dd>\n        \n        <dt style="font-weight: bold; color: #555; margin-top: 10px;">Notes d\'utilisation:</dt>\n        <dd style="margin-left: 0; color: #666; font-style: italic;">Intégrée dans la section sur les relations entre concepts pour fournir un repère visuel des interconnexions.</dd>\n      </dl>\n    </article>\n  </section>\n  \n  <section>\n    <h2 style="color: #0066cc; font-size: 20px; margin-bottom: 20px;">Vidéos</h2>\n    <article style="background-color: white; border: 1px solid #ddd; border-radius: 6px; padding: 20px; margin-bottom: 15px;">\n      <h3 style="color: #333; font-size: 16px; margin-top: 0;">Vidéo 1</h3>\n      <dl style="margin: 15px 0; line-height: 1.8;">\n        <dt style="font-weight: bold; color: #555; margin-top: 10px;">URL:</dt>\n        <dd style="margin-left: 0; color: #0066cc; word-break: break-all;">https://example.org/video1.mp4</dd>\n        \n        <dt style="font-weight: bold; color: #555; margin-top: 10px;">Début:</dt>\n        <dd style="margin-left: 0; color: #333;">00:00:00</dd>\n        \n        <dt style="font-weight: bold; color: #555; margin-top: 10px;">Légende:</dt>\n        <dd style="margin-left: 0; color: #333;">Introduction visuelle à la structure pédagogique et à son utilité.</dd>\n        \n        <dt style="font-weight: bold; color: #555; margin-top: 10px;">Notes d\'utilisation:</dt>\n        <dd style="margin-left: 0; color: #666; font-style: italic;">Utilisée comme ressource d\'ouverture pour présenter les objectifs et l\'architecture du module.</dd>\n      </dl>\n    </article>\n  </section>\n</div>\n```',
-    },
-    "pedagogical_json": {
-        "course": {
-            "title": "Structuration pédagogique des contenus éducatifs",
-            "summary": "Ce module présente une approche systématique pour transformer des notes brutes en un contenu pédagogique structuré au format JSON. On y détaille pourquoi cette structuration est bénéfique, comment organiser les informations par thèmes logiques et comment intégrer de manière cohérente des supports multimédias pour enrichir l’expérience d’apprentissage. L’objectif est de rendre les contenus plus lisibles, réutilisables et accessibles, tout en évitant les contenus d’évaluation et les exercices, conformément aux principes pédagogiques décrits.",
-            "prerequisites": "Avoir des notes de cours brutes et une compréhension générale des objectifs d’apprentissage visés par le module.",
-            "learningObjectives": [
-                "Comprendre les principes fondamentaux de la conversion de notes brutes en un format structuré qui soutient l’apprentissage durable.",
-                "Savoir regrouper les informations en thèmes logiques et établir des liens explicites entre concepts pour favoriser la compréhension et la mémorisation.",
-                "Maîtriser l’intégration sémantique des médias disponibles (images et vidéos) afin d’enrichir le cadre didactique sans perturber le flux pédagogique.",
-                "Adopter des pratiques descriptives et contextuelles qui évitent les phrases trop courtes et favorisent une narration pédagogique riche et accessible.",
-            ],
-        },
-        "subjectPath": {
-            "path": "Fondements > Structuration du contenu > Conception pédagogique",
-            "focus": "Transposer des notes brutes en une structure réutilisable et évolutive, facilitant la compréhension et la maintenance du contenu.",
-            "contexts": [
-                "Utiliser une structure cohérente pour différents publics et niveaux de compétence.",
-                "Relier clairement les concepts entre eux pour montrer les relations de cause à effet, d’exemple à règle, et d’application à contexte.",
-            ],
-        },
-        "sections": [
-            {
-                "theme": {
-                    "name": "Cadre conceptuel et objectifs d'apprentissage",
-                    "description": "Dans ce cadre, on expose pourquoi la structuration des notes est essentielle pour favoriser la compréhension sur le long terme. On précise que le formatage en JSON offre une base adaptable où les catégories génériques permettent d’organiser les informations sans se lier à des contenus spécifiques. Cette approche facilite la réutilisation, la mise à jour et le déploiement du contenu dans différents contextes pédagogiques, tout en clarifiant les objectifs d’apprentissage qui guident la profondeur des explications et le choix des détails à fournir.",
-                }
+    "success": true,
+    "mind_map": [
+        {
+            "recto": {
+                "template_name": "big_question",
+                "field_name_1": "Qu'est-ce que le Principe de Responsabilité Unique (SRP) ?",
+                "field_name_2": "Un concept fondamental de l'architecture logicielle",
+                "field_name_3": {
+                    "template_name": "hint_box",
+                    "field_name_1": "💡 Une classe = Une raison de changer",
+                },
             },
-            {
-                "theme": {
-                    "name": "Organisation et relations entre concepts",
-                    "description": "Cette section met en lumière l’importance de regrouper les informations par thèmes logiques et de rendre explicites les relations entre idées. On décrit comment les similarités, les différences et les dépendances entre concepts aident à construire une carte cognitive robuste. On illustre comment articuler des liens tels que comparaison, extension et interdépendance dans la structure JSON, en fournissant des scénarios d’usage qui montrent comment ces relations soutiennent la cohérence du discours pédagogique, sans introduire d’exercices ou d’évaluations.",
-                }
+            "verso": {
+                "template_name": "definition_with_justification",
+                "field_name_1": "Définition du SRP",
+                "field_name_2": "Une classe ou un module ne doit avoir qu'une seule raison de changer, c'est-à-dire une responsabilité métier clairement identifiée.",
+                "field_name_3": "Pourquoi c'est important",
+                "field_name_4": [
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Compréhension",
+                        "field_name_2": "Rôle rapide et clair de chaque unité de code",
+                    },
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Maintenabilité",
+                        "field_name_2": "Limiter l'impact d'un changement à une dimension précise du système",
+                    },
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Flexibilité",
+                        "field_name_2": "Modifier une responsabilité sans affecter les autres",
+                    },
+                ],
+                "field_name_5": "Application pratique",
+                "field_name_6": [
+                    {
+                        "template_name": "layer_item",
+                        "field_name_1": "Couche Métier",
+                        "field_name_2": "Responsabilité: Implémenter les règles métiers et la logique applicative",
+                    },
+                    {
+                        "template_name": "layer_item",
+                        "field_name_1": "Couche Données",
+                        "field_name_2": "Responsabilité: Gérer l'accès et la persistance des données",
+                    },
+                    {
+                        "template_name": "layer_item",
+                        "field_name_1": "Couche Orchestration",
+                        "field_name_2": "Responsabilité: Coordonner les interactions entre composants",
+                    },
+                ],
             },
-            {
-                "theme": {
-                    "name": "Intégration des médias et accessibilité",
-                    "description": "On détaille l’apport des supports disponibles pour enrichir l’expérience d’apprentissage. L’image et la vidéo servent de médiateurs visuels et temporels qui clarifient les explications et ancrent les concepts dans des exemples concrets. On explique comment référencer ces médias de manière sémantique dans le parcours pédagogique, en indiquant des URLs pertinentes et des repères temporels lorsque nécessaire, afin que l’apprenant puisse accéder rapidement aux ressources sans rompre le flux pédagogique et sans détourner l’attention de l’objectif éducatif.",
-                }
-            },
-            {
-                "theme": {
-                    "name": "Bonnes pratiques et recommandations",
-                    "description": "Cette dernière partie propose des pratiques qui favorisent une structuration claire et évolutive: privilégier des descriptions développées et contextuelles, éviter les formulations trop brèves qui limitent la compréhension, et assurer que chaque section peut être comprise de manière autonome tout en s’inscrivant dans l’ensemble du module. On rappelle l’absence d’exercices ou de quiz dans ce cadre et l’importance d’une narration explicative riche et accessible qui soutient l’apprentissage.",
-                }
-            },
-        ],
-        "media": {
-            "images": [
-                {
-                    "id": "Image 1",
-                    "url": "https://example.org/image1.jpg",
-                    "altText": "Illustration conceptuelle liée à la structuration pédagogique",
-                    "usageNotes": "Intégrée dans la section sur les relations entre concepts pour fournir un repère visuel des interconnexions.",
-                }
-            ],
-            "videos": [
-                {
-                    "id": "Vidéo 1",
-                    "url": "https://example.org/video1.mp4",
-                    "start": "00:00:00",
-                    "caption": "Introduction visuelle à la structure pédagogique et à son utilité.",
-                    "usageNotes": "Utilisée comme ressource d’ouverture pour présenter les objectifs et l’architecture du module.",
-                }
-            ],
+            "version": "1.0.0",
         },
-    },
-    "debug_info": {
-        "pedagogical_prompt": 'System: Tu es un expert pédagogue spécialisé dans la structuration de contenu éducatif.\n\nCONTEXTE PÉDAGOGIQUE:\n- Cours: string\n- Chemin du sujet: string\n\nMÉDIAS DISPONIBLES:\nIMAGES DISPONIBLES:\n  - Image 1: string (URL: string)\n\nVIDÉOS DISPONIBLES:\n  - Vidéo 1: string (URL: string, Début: string)\n\nTa mission : transformer des notes de cours brutes en un JSON structuré OPTIMAL pour l\'apprentissage.\n\nRÈGLES CRITIQUES:\n1. ✅ Crée des explications COMPLÈTES et CONTEXTUALISÉES (plusieurs phrases développées)\n2. ✅ NE fais PAS de phrases trop courtes - développe les concepts avec du contexte\n3. ✅ Ajoute du contexte pour faciliter la compréhension (pourquoi, comment, dans quel cas)\n4. ✅ Regroupe les informations par thèmes logiques et cohérents\n5. ✅ Explicite les liens entre les concepts (similitudes, différences, relations)\n6. ✅ Enrichis avec des exemples concrets et pertinents\n7. ✅ Intègre les références aux médias disponibles de manière sémantique\n8. 🚫 INTERDICTION ABSOLUE: NE crée PAS d\'exercices, questions, QCM, quiz ou évaluations\n9. ✅ Utilise un langage clair et pédagogique, adapté à l\'apprentissage\n10. ⚠️ RÈGLE STRUCTURELLE CRITIQUE: Les clés (noms de propriétés) du JSON ne doivent JAMAIS représenter des valeurs ou du contenu réel\n    - ❌ INTERDIT: {"Principe de responsabilité unique": "explication..."}\n    - ❌ INTERDIT: {"SRP": "définition...", "OCP": "définition..."}\n    - ✅ CORRECT: {"concepts": [{"name": "Principe de responsabilité unique", "explanation": "..."}]}\n    - ✅ CORRECT: {"principles": [{"acronym": "SRP", "definition": "..."}]}\n    - Les clés doivent être des CATÉGORIES ou des RÔLES génériques, jamais des valeurs spécifiques\n\nHuman: Voici les notes de cours brutes à transformer en JSON pédagogique optimal:\n\nCONTENU TEXTUEL:\nstring\n\nstring\n\nGénère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Développe les explications, ajoute du contexte, ne fais pas de phrases courtes.',
-        "path_to_value_map": {
-            "course->title": "Structuration pédagogique des contenus éducatifs",
-            "course->summary": "Ce module présente une approche systématique pour transformer des notes brutes en un contenu pédagogique structuré au format JSON. On y détaille pourquoi cette structuration est bénéfique, comment organiser les informations par thèmes logiques et comment intégrer de manière cohérente des supports multimédias pour enrichir l’expérience d’apprentissage. L’objectif est de rendre les contenus plus lisibles, réutilisables et accessibles, tout en évitant les contenus d’évaluation et les exercices, conformément aux principes pédagogiques décrits.",
-            "course->prerequisites": "Avoir des notes de cours brutes et une compréhension générale des objectifs d’apprentissage visés par le module.",
-            "course->learningObjectives[0]": "Comprendre les principes fondamentaux de la conversion de notes brutes en un format structuré qui soutient l’apprentissage durable.",
-            "course->learningObjectives[1]": "Savoir regrouper les informations en thèmes logiques et établir des liens explicites entre concepts pour favoriser la compréhension et la mémorisation.",
-            "course->learningObjectives[2]": "Maîtriser l’intégration sémantique des médias disponibles (images et vidéos) afin d’enrichir le cadre didactique sans perturber le flux pédagogique.",
-            "course->learningObjectives[3]": "Adopter des pratiques descriptives et contextuelles qui évitent les phrases trop courtes et favorisent une narration pédagogique riche et accessible.",
-            "subjectPath->path": "Fondements > Structuration du contenu > Conception pédagogique",
-            "subjectPath->focus": "Transposer des notes brutes en une structure réutilisable et évolutive, facilitant la compréhension et la maintenance du contenu.",
-            "subjectPath->contexts[0]": "Utiliser une structure cohérente pour différents publics et niveaux de compétence.",
-            "subjectPath->contexts[1]": "Relier clairement les concepts entre eux pour montrer les relations de cause à effet, d’exemple à règle, et d’application à contexte.",
-            "sections[0]->theme->name": "Cadre conceptuel et objectifs d'apprentissage",
-            "sections[0]->theme->description": "Dans ce cadre, on expose pourquoi la structuration des notes est essentielle pour favoriser la compréhension sur le long terme. On précise que le formatage en JSON offre une base adaptable où les catégories génériques permettent d’organiser les informations sans se lier à des contenus spécifiques. Cette approche facilite la réutilisation, la mise à jour et le déploiement du contenu dans différents contextes pédagogiques, tout en clarifiant les objectifs d’apprentissage qui guident la profondeur des explications et le choix des détails à fournir.",
-            "sections[1]->theme->name": "Organisation et relations entre concepts",
-            "sections[1]->theme->description": "Cette section met en lumière l’importance de regrouper les informations par thèmes logiques et de rendre explicites les relations entre idées. On décrit comment les similarités, les différences et les dépendances entre concepts aident à construire une carte cognitive robuste. On illustre comment articuler des liens tels que comparaison, extension et interdépendance dans la structure JSON, en fournissant des scénarios d’usage qui montrent comment ces relations soutiennent la cohérence du discours pédagogique, sans introduire d’exercices ou d’évaluations.",
-            "sections[2]->theme->name": "Intégration des médias et accessibilité",
-            "sections[2]->theme->description": "On détaille l’apport des supports disponibles pour enrichir l’expérience d’apprentissage. L’image et la vidéo servent de médiateurs visuels et temporels qui clarifient les explications et ancrent les concepts dans des exemples concrets. On explique comment référencer ces médias de manière sémantique dans le parcours pédagogique, en indiquant des URLs pertinentes et des repères temporels lorsque nécessaire, afin que l’apprenant puisse accéder rapidement aux ressources sans rompre le flux pédagogique et sans détourner l’attention de l’objectif éducatif.",
-            "sections[3]->theme->name": "Bonnes pratiques et recommandations",
-            "sections[3]->theme->description": "Cette dernière partie propose des pratiques qui favorisent une structuration claire et évolutive: privilégier des descriptions développées et contextuelles, éviter les formulations trop brèves qui limitent la compréhension, et assurer que chaque section peut être comprise de manière autonome tout en s’inscrivant dans l’ensemble du module. On rappelle l’absence d’exercices ou de quiz dans ce cadre et l’importance d’une narration explicative riche et accessible qui soutient l’apprentissage.",
-            "media->images[0]->id": "Image 1",
-            "media->images[0]->url": "https://example.org/image1.jpg",
-            "media->images[0]->altText": "Illustration conceptuelle liée à la structuration pédagogique",
-            "media->images[0]->usageNotes": "Intégrée dans la section sur les relations entre concepts pour fournir un repère visuel des interconnexions.",
-            "media->videos[0]->id": "Vidéo 1",
-            "media->videos[0]->url": "https://example.org/video1.mp4",
-            "media->videos[0]->start": "00:00:00",
-            "media->videos[0]->caption": "Introduction visuelle à la structure pédagogique et à son utilité.",
-            "media->videos[0]->usageNotes": "Utilisée comme ressource d’ouverture pour présenter les objectifs et l’architecture du module.",
+        {
+            "recto": {
+                "template_name": "question_template",
+                "field_name_1": "Quels sont les bénéfices directs de l'application du Principe de Responsabilité Unique?",
+            },
+            "verso": {
+                "template_name": "benefits_template",
+                "field_name_1": "Bénéfices du Principe de Responsabilité Unique (SRP)",
+                "field_name_2": [
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Modularité renforcée",
+                        "field_name_2": "Évolution indépendante des composants grâce à la séparation des responsabilités",
+                    },
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Tests plus fiables et simples",
+                        "field_name_2": "Les changements sont confinés à une porte d'entrée délimitée, facilitant la testabilité ciblée",
+                    },
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Réduction des régressions",
+                        "field_name_2": "L'isolation de chaque responsabilité réduit le risque de régressions lors des modifications",
+                    },
+                ],
+            },
+            "version": "1.0.0",
         },
-        "path_groups": [
-            "course",
-            "subjectPath",
-            "sections[0]",
-            "sections[1]",
-            "sections[2]",
-            "sections[3]",
-            "media",
-        ],
-        "num_groups": 7,
-        "num_paths": 28,
-    },
+        {
+            "recto": {
+                "template_name": "question_template",
+                "field_name_1": "Qu'est-ce que le Principe Ouvert/Fermé (OCP) ?",
+                "field_name_2": {
+                    "template_name": "hint_template",
+                    "field_name_1": "Un principe SOLID fondamental pour écrire du code flexible et maintenable",
+                },
+            },
+            "verso": {
+                "template_name": "definition_template",
+                "field_name_1": "Principe Ouvert/Fermé (OCP)",
+                "field_name_2": "Une entité logicielle doit être ouverte à l'extension mais fermée à la modification",
+                "field_name_3": [
+                    {
+                        "template_name": "principle_item",
+                        "field_name_1": "Principe Technique",
+                        "field_name_2": "Ne pas modifier le code existant pour ajouter de nouveaux comportements",
+                    },
+                    {
+                        "template_name": "principle_item",
+                        "field_name_1": "Mécanisme de Mise en Œuvre",
+                        "field_name_2": "Créer de nouvelles implémentations conformes à une abstraction commune (interfaces ou classes abstraites)",
+                    },
+                    {
+                        "template_name": "principle_item",
+                        "field_name_1": "Avantages Clés",
+                        "field_name_2": "Minimise les risques de régressions et les perturbations des fonctionnalités déjà déployées",
+                    },
+                ],
+            },
+            "version": "1.0.0",
+        },
+        {
+            "recto": {
+                "template_name": "question_template",
+                "field_name_1": "Qu'est-ce que le Principe de Substitution de Liskov (LSP) ?",
+                "field_name_2": {
+                    "template_name": "hint_template",
+                    "field_name_1": "Un principe SOLID qui régit la relation entre classes dérivées et classe de base",
+                },
+            },
+            "verso": {
+                "template_name": "definition_template",
+                "field_name_1": "Principe de Substitution de Liskov (LSP)",
+                "field_name_2": "Toute classe dérivée doit pouvoir remplacer sa classe de base sans altérer le comportement attendu du programme",
+                "field_name_3": [
+                    {
+                        "template_name": "contract_item",
+                        "field_name_1": "Contrat avec la classe de base",
+                        "field_name_2": "Les objets d'une sous-classe doivent être utilisables partout où l'on attend un objet de la super-classe",
+                    },
+                    {
+                        "template_name": "contract_item",
+                        "field_name_1": "Respect des préconditions",
+                        "field_name_2": "Les conditions nécessaires avant l'exécution d'une méthode ne doivent pas être renforcées dans la sous-classe",
+                    },
+                    {
+                        "template_name": "contract_item",
+                        "field_name_1": "Respect des postconditions",
+                        "field_name_2": "Les garanties après l'exécution d'une méthode ne doivent pas être affaiblies dans la sous-classe",
+                    },
+                    {
+                        "template_name": "contract_item",
+                        "field_name_1": "Respect des invariants",
+                        "field_name_2": "Les propriétés invariantes de la classe de base doivent rester vraies dans la sous-classe",
+                    },
+                ],
+                "field_name_4": [
+                    {
+                        "template_name": "application_item",
+                        "field_name_1": "Prévention des violations contractuelles",
+                        "field_name_2": "Évite les comportements inattendus lors de la substitution de types",
+                    },
+                    {
+                        "template_name": "application_item",
+                        "field_name_1": "Système prévisible",
+                        "field_name_2": "Augmente la fiabilité et la maintenabilité du code polymorphe",
+                    },
+                    {
+                        "template_name": "application_item",
+                        "field_name_1": "Design orienté objet robuste",
+                        "field_name_2": "Assure que l'héritage est utilisé correctement pour la spécialisation, pas la dérive comportementale",
+                    },
+                ],
+            },
+            "version": "1.0.0",
+        },
+        {
+            "recto": {
+                "template_name": "question_template",
+                "question_text": "Qu'est-ce que le Principe de Ségrégation des Interfaces (ISP) ?",
+            },
+            "verso": {
+                "template_name": "definition_with_principle_template",
+                "definition_title": "Principe de Ségrégation des Interfaces (ISP)",
+                "definition_text": "L'ISP recommande de créer des interfaces spécifiques et légères plutôt qu'une interface générale trop large.",
+                "principle_title": "Principe de Granularité",
+                "principle_details": [
+                    {
+                        "template_name": "principle_item",
+                        "principle_name": "Scinder les interfaces",
+                        "principle_description": "Diviser les interfaces en ensembles fonctionnels plus petits et cohérents",
+                    },
+                    {
+                        "template_name": "principle_item",
+                        "principle_name": "Implémentation sélective",
+                        "principle_description": "Chaque classe n'implémente que les méthodes dont elle a réellement besoin",
+                    },
+                ],
+                "advantages_title": "Avantages",
+                "advantages_list": [
+                    {
+                        "template_name": "advantage_item",
+                        "advantage_name": "Réduction du couplage",
+                        "advantage_description": "Les dépendances entre composants sont minimisées et localisées",
+                    },
+                    {
+                        "template_name": "advantage_item",
+                        "advantage_name": "Clarté des contrats",
+                        "advantage_description": "Les interfaces communiquent clairement leurs responsabilités",
+                    },
+                    {
+                        "template_name": "advantage_item",
+                        "advantage_name": "Facilité de remplacement",
+                        "advantage_description": "Les composants peuvent être remplacés sans affecter le reste du système",
+                    },
+                    {
+                        "template_name": "advantage_item",
+                        "advantage_name": "Amélioration des tests",
+                        "advantage_description": "Les tests unitaires deviennent plus simples et plus ciblés",
+                    },
+                ],
+            },
+            "version": "1.0.0",
+        },
+        {
+            "recto": {
+                "template_name": "centered_title_template",
+                "title": "Qu'est-ce que le Principe d'Inversion des Dépendances (DIP) ?",
+                "subtitle": "Abstractions et Testabilité",
+            },
+            "verso": {
+                "template_name": "definition_with_details_template",
+                "definition": "Le DIP (Dependency Inversion Principle) stipule que les modules de haut niveau ne doivent pas dépendre des modules de bas niveau, mais tous deux doivent dépendre d'abstractions (interfaces).",
+                "details": [
+                    {
+                        "template_name": "section_template",
+                        "title": "Mécanisme de fonctionnement",
+                        "content": [
+                            {
+                                "template_name": "point_template",
+                                "label": "Introduction d'abstractions",
+                                "description": "Créer des interfaces que les modules consomment plutôt que de dépendre directement d'implémentations concrètes",
+                            },
+                            {
+                                "template_name": "point_template",
+                                "label": "Injection de dépendances",
+                                "description": "Passer les implémentations concrètes aux modules via le constructeur ou des méthodes, plutôt que de les créer en interne",
+                            },
+                            {
+                                "template_name": "point_template",
+                                "label": "Découplage architectural",
+                                "description": "Les modules interagissent via des contrats (interfaces) plutôt que via des implémentations directes",
+                            },
+                        ],
+                    },
+                    {
+                        "template_name": "section_template",
+                        "title": "Bénéfices pour les tests",
+                        "content": [
+                            {
+                                "template_name": "point_template",
+                                "label": "Échange facile des implémentations",
+                                "description": "Remplacer facilement les implémentations concrètes par des mocks ou stubs sans modifier la logique métier",
+                            },
+                            {
+                                "template_name": "point_template",
+                                "label": "Tests unitaires isolés",
+                                "description": "Tester chaque module indépendamment en injectant des implémentations de test",
+                            },
+                            {
+                                "template_name": "point_template",
+                                "label": "Réduction de la complexité",
+                                "description": "Simplifier la mise en place de scénarios de test en controlant les dépendances",
+                            },
+                            {
+                                "template_name": "point_template",
+                                "label": "Flexibilité et maintenabilité",
+                                "description": "Adapter le système aux besoins sans modification de la logique métier existante",
+                            },
+                        ],
+                    },
+                ],
+            },
+            "version": "1.0.0",
+        },
+        {
+            "recto": {
+                "template_name": "question_template",
+                "field_name_1": "Comment le Principe de Responsabilité Unique et le Principe de Ségrégation des Interfaces travaillent-ils ensemble?",
+                "field_name_2": {
+                    "template_name": "hint_template",
+                    "field_name_1": "Deux principes SOLID qui se complètent pour améliorer la conception",
+                },
+            },
+            "verso": {
+                "template_name": "interaction_template",
+                "field_name_1": "Synergie entre SRP et ISP",
+                "field_name_2": [
+                    {
+                        "template_name": "interaction_element",
+                        "field_name_1": "Principe de Responsabilité Unique (SRP)",
+                        "field_name_2": "Éclate les responsabilités en composants distincts",
+                        "field_name_3": "Une classe = une raison de changer",
+                    },
+                    {
+                        "template_name": "interaction_element",
+                        "field_name_1": "Principe de Ségrégation des Interfaces (ISP)",
+                        "field_name_2": "S'assure que chaque classe n'accède qu'aux interfaces nécessaires",
+                        "field_name_3": "Évite les dépendances à des interfaces trop larges",
+                    },
+                ],
+                "field_name_4": {
+                    "template_name": "synthesis_template",
+                    "field_name_1": "Résultat de la combinaison",
+                    "field_name_2": [
+                        {
+                            "template_name": "benefit_item",
+                            "field_name_1": "Limite la surface de responsabilité d'une classe",
+                        },
+                        {
+                            "template_name": "benefit_item",
+                            "field_name_1": "Maximise la modularité du système",
+                        },
+                        {
+                            "template_name": "benefit_item",
+                            "field_name_1": "Réduit le couplage entre composants",
+                        },
+                        {
+                            "template_name": "benefit_item",
+                            "field_name_1": "Améliore la maintenabilité et l'évolutivité",
+                        },
+                    ],
+                },
+            },
+            "version": "1.0.0",
+        },
+        {
+            "recto": {
+                "template_name": "question_template",
+                "question_text": "Comment le Principe Ouvert/Fermé et le Principe d'Inversion des Dépendances se complètent-ils?",
+                "visual_hint": {
+                    "template_name": "hint_template",
+                    "hint_text": "Deux principes SOLID qui travaillent ensemble pour une architecture flexible",
+                },
+            },
+            "verso": {
+                "template_name": "relationship_diagram",
+                "title": "Complémentarité entre OCP et DIP",
+                "relationships": [
+                    {
+                        "template_name": "relationship_item",
+                        "source": "Principe d'Inversion des Dépendances (DIP)",
+                        "action": "Crée les abstractions nécessaires",
+                        "target": "Interfaces et classes abstraites",
+                        "description": "DIP introduit des couches d'abstraction et permet l'injection de dépendances",
+                    },
+                    {
+                        "template_name": "relationship_item",
+                        "source": "Principe Ouvert/Fermé (OCP)",
+                        "action": "Utilise les abstractions pour",
+                        "target": "Ajouter des fonctionnalités sans modification",
+                        "description": "OCP s'appuie sur les abstractions créées par DIP pour étendre le code",
+                    },
+                ],
+                "synergy": {
+                    "template_name": "definition_template",
+                    "title": "Synergie OCP + DIP",
+                    "content": "L'extension par des abstractions (DIP) rend possible l'ajout de nouvelles fonctionnalités sans bouleversement du code existant (OCP)",
+                },
+                "demonstration": {
+                    "template_name": "sequential_steps_template",
+                    "title": "Démonstration de complémentarité",
+                    "steps": [
+                        {
+                            "template_name": "step_item",
+                            "step_title": "DIP établit l'abstraction",
+                            "step_content": "Une classe dépend d'une interface plutôt que d'une implémentation concrète",
+                        },
+                        {
+                            "template_name": "step_item",
+                            "step_title": "OCP utilise l'abstraction",
+                            "step_content": "Ajouter une nouvelle implémentation de l'interface sans toucher à la classe qui l'utilise",
+                        },
+                        {
+                            "template_name": "step_item",
+                            "step_title": "Résultat",
+                            "step_content": "Code ouvert à l'extension (nouvelles implémentations) et fermé à la modification (classe originale intacte)",
+                        },
+                    ],
+                },
+            },
+            "version": "1.0.0",
+        },
+        {
+            "recto": {
+                "template_name": "question_template",
+                "field_name_1": "Comment le Principe de Substitution de Liskov soutient-il le Principe d'Inversion des Dépendances?",
+                "field_name_2": {
+                    "template_name": "hint_template",
+                    "field_name_1": "Deux principes SOLID qui travaillent ensemble pour une meilleure architecture",
+                },
+            },
+            "verso": {
+                "template_name": "concept_relationship_template",
+                "field_name_1": "Relation de Support entre LSP et DIP",
+                "field_name_2": [
+                    {
+                        "template_name": "concept_block",
+                        "field_name_1": "Rôle du Principe de Substitution de Liskov (LSP)",
+                        "field_name_2": "Assure que les substitutions de types maintiennent le comportement prévu en respectant les contrats et invariants",
+                        "field_name_3": "Garantit la prévisibilité comportementale",
+                    },
+                    {
+                        "template_name": "concept_block",
+                        "field_name_1": "Rôle du Principe d'Inversion des Dépendances (DIP)",
+                        "field_name_2": "Assure que les substitutions se font via des abstractions plutôt que via des types concrets",
+                        "field_name_3": "Garantit le découplage architectural",
+                    },
+                ],
+                "field_name_3": {
+                    "template_name": "benefit_template",
+                    "field_name_1": "Renforcement Mutuel",
+                    "field_name_2": [
+                        {
+                            "template_name": "benefit_item",
+                            "field_name_1": "Stabilité accrue",
+                            "field_name_2": "On peut remplacer une implémentation par une autre sans surprises comportementales",
+                        },
+                        {
+                            "template_name": "benefit_item",
+                            "field_name_1": "Testabilité améliorée",
+                            "field_name_2": "Les abstractions permettent l'injection de dépendances et les mocks pour les tests",
+                        },
+                        {
+                            "template_name": "benefit_item",
+                            "field_name_1": "Flexibilité architecturale",
+                            "field_name_2": "La combinaison LSP + DIP permet l'évolution du code sans casser les dépendances",
+                        },
+                    ],
+                },
+            },
+            "version": "1.0.0",
+        },
+        {
+            "recto": {
+                "template_name": "question_template",
+                "field_name_1": "Quel est l'impact global de l'application conjointe de tous les principes SOLID?",
+            },
+            "verso": {
+                "template_name": "synthesis_template",
+                "field_name_1": "Impact collectif des principes SOLID",
+                "field_name_2": [
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Systèmes robustes",
+                        "field_name_2": "Fondations solides et fiables",
+                    },
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Systèmes flexibles",
+                        "field_name_2": "Capacité à s'adapter aux changements",
+                    },
+                    {
+                        "template_name": "benefit_item",
+                        "field_name_1": "Évolution facilitée",
+                        "field_name_2": "Maintenance et modifications sans régression",
+                    },
+                ],
+                "field_name_3": "Socle cohérent et renforcé",
+                "field_name_4": [
+                    {
+                        "template_name": "reinforcement_pillar",
+                        "field_name_1": "Modularité",
+                        "field_name_2": "SRP + ISP créent des composants indépendants et ciblés",
+                    },
+                    {
+                        "template_name": "reinforcement_pillar",
+                        "field_name_1": "Extensibilité",
+                        "field_name_2": "OCP + DIP permettent d'ajouter sans modifier l'existant",
+                    },
+                    {
+                        "template_name": "reinforcement_pillar",
+                        "field_name_1": "Substitution sûre",
+                        "field_name_2": "LSP garantit la compatibilité entre composants",
+                    },
+                ],
+                "field_name_5": "Architectures modulaires, maintenables et évolutives sans risques",
+            },
+            "version": "1.0.0",
+        },
+    ],
+    "templates_used": 0,
+    "prompt": '=== PROMPT DE GÉNÉRATION DES PAIRES INFORMATIONS-FORMAT ===\nSystem: Tu es un expert en pédagogie. Ton rôle est d\'analyser du contenu éducatif brut et de le transformer en triplets question-information-format pertinents.\n\nRÈGLES IMPORTANTES:\n1. "question" : la question dont l\'information est la réponse la plus complète et représentative possible\n2. "information" : le contenu pédagogique qui répond à la question (COURT et FOCALISÉ)\n3. "format" : comment cette information devrait être structurée/présentée\n4. Chaque triplet doit être indépendant et autonome\n5. ⚠️ DÉCOUPAGE OBLIGATOIRE : crée PLUSIEURS triplets (ne pas hésiter !) pour éviter des cartes mentales trop grosses\n6. ⚠️ PRIVILÉGIE TOUJOURS la création de PLUSIEURS petites cartes focalisées plutôt qu\'une seule carte surchargée\n7. Si le contenu source est riche, découpe-le en PLUSIEURS questions/informations focalisées (3-5 triplets minimum pour un contenu riche)\n8. Une information trop volumineuse = plusieurs triplets au lieu d\'un seul\n9. Chaque information devrait tenir sur 2-4 phrases maximum (au-delà = découper en plusieurs triplets)\n10. Les formats peuvent être : définition, liste, comparaison, chronologie, processus, explication structurelle, schéma conceptuel, etc.\n\nEXEMPLES DE FORMATS:\n- "définition scientifique avec processus chimique"\n- "chronologie avec dates et événements majeurs"\n- "comparaison avec critères (mutabilité, performance, usage)"\n- "liste de causes avec catégorisation"\n- "explication structurelle avec étapes séquentielles"\n- "description pathologique avec symptômes énumérés"\n- "définition technique avec syntaxe et exemples de méthodes"\n\nEXEMPLE DE DÉCOUPAGE (BON):\nContenu source volumineux sur la Révolution française → créer 3 triplets :\n1. Question sur les causes → information sur les causes → format liste\n2. Question sur la période → information sur les dates → format temporel\n3. Question sur les événements → information sur les événements majeurs → format chronologie\n\nSTRUCTURE ATTENDUE (TABLEAU JSON):\n[\n    {\n        "question": "Question dont l\'information est la réponse complète",\n        "information": "Contenu pédagogique qui répond à la question",\n        "format": "Description du format de présentation souhaité"\n    },\n    {\n        "question": "Autre question focalisée",\n        "information": "Autre contenu pédagogique pertinent",\n        "format": "Autre format de présentation"\n    }\n]\n\nRéponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel.\nHuman: Voici le contenu pédagogique à analyser:\n\n{"foundations":{"course":"Architecture logicielle","subject":"Principes SOLID","context":"Les principes SOLID constituent un cadre de conception visant à produire des systèmes plus lisibles, maintenables et évolutifs. Chaque principe cible une dimension clé de la conception et, pris ensemble, ils favorisent un découplage et une extensibilité qui facilitent les évolutions sur le long terme."},"principles":[{"name":"Principe de Responsabilité Unique","acronym":"SRP","domain":"Conception orientée objet et modularité","explanation":"Le principe de Responsabilité Unique stipule qu\'une classe ou un module ne doit avoir qu\'une seule raison de changer, c\'est-à-dire une responsabilité métier clairement identifiée. Cette clarté permet de comprendre rapidement le rôle d\'une unité de code et de limiter l\'impact d\'un changement à une dimension précise du système. En pratique, cela implique de découper les responsabilités en composants distincts et faiblement couplés: une couche peut s\'occuper des règles métiers, une autre de l\'accès aux données, et une troisième de l\'orchestration ou de la communication avec d\'autres systèmes. Cette séparation facilite les tests, qui peuvent être ciblés et fiables, car les effets d\'un changement restent confinés à une porte d\'entrée clairement délimitée. Lorsque des classes commencent à cumuler des tâches non liées—par exemple lire des données, les transformer et les persister—, le SRP propose de réorganiser en services et dépôts dédiés, afin que chaque élément assume une seule responsabilité et interagisse via des interfaces nettes.","contexts":["Amélioration de la lisibilité du code","Réduction du coût des évolutions et des régressions","Facilitation des tests unitaires ciblés"],"benefits":["Modularité renforcée et évolution indépendante des composants","Tests plus fiables et plus simples","Réduction du risque de régressions lors des modifications"],"illustrative_examples":[{"scenario":"Une classe qui lit des données, les transforme et les persiste dans une base viole le SRP; on refactorise en DataReader, DataTransformer et DataRepository afin que chacune de ces entités gère une seule responsabilité et communique via des interfaces.","impact":"La modification d\'un aspect (par exemple le mécanisme de persistance) n\'affecte pas la logique métier."},{"scenario":"Un service métier qui coordonne des règles sans se mêler des détails d\'infrastructure; les aspects persistance et communication avec les systèmes externes sont externalisés dans des composants séparés.","impact":"Meilleure testabilité et meilleure évolutivité des règles métier."}]},{"name":"Principe Ouvert/Fermé","acronym":"OCP","domain":"Extensibilité et stabilité du code","explanation":"Le principe Ouvert/Fermé indique qu\'une entité logicielle doit être ouverte à l\'extension mais fermée à la modification. Autrement dit, il faut pouvoir ajouter de nouveaux comportements sans toucher au code existant, afin de minimiser les risques de régressions et les perturbations des fonctionnalités déjà déployées. Pour parvenir à cela, on s\'appuie sur les abstractions: interfaces, classes abstraites et mécanismes de polymorphisme, qui permettent d\'introduire de nouveaux comportements via de nouvelles implémentations conformes à une abstraction commune plutôt que par des modifications directes du code existant. Cette approche favorise l\'évolutivité et la stabilité, notamment dans des environnements où le déploiement et les tests doivent rester maîtrisés. En pratique, l\'ajout d\'un nouveau mode de calcul, d\'un nouveau type de rendu ou d\'un nouveau mécanisme de stockage peut être réalisé par l\'introduction d\'une nouvelle implémentation qui respecte l\'interface existante, sans toucher au cœur du code source.","contexts":["Évolution sans risques pour les fonctionnalités existantes","Facilité d\'ajout de variantes et de nouvelles fonctionnalités"],"benefits":["Réduction des risques lors des mises à jour","Meilleure capacité d\'extension sans modification invasive"],"illustrative_examples":[{"scenario":"Ajout d\'un nouveau mode de paiement via une nouvelle implémentation de l\'interface de paiement, sans modifier le module de paiement existant.","impact":"Extension du système sans bouleversement du code usuel."},{"scenario":"Intégration d\'un nouveau type de rapport en fournissant une nouvelle implémentation conforme à une abstraction de génération de rapports.","impact":"Nouvelles fonctionnalités sans toucher au code consommateur."}]},{"name":"Principe de Substitution de Liskov","acronym":"LSP","domain":"Comportement et substituabilité","explanation":"Le principe de Substitution de Liskov affirme que toute classe dérivée doit pouvoir remplacer sa classe de base sans altérer le comportement attendu du programme. Autrement dit, les objets d\'une sous-classe doivent pouvoir être utilisés partout où l\'on attend un objet de la super-classe, sans introduire de violations des contrats. Cela impose de respecter les préconditions et postconditions, de préserver les invariants et de garantir que les méthodes se comportent comme prévu même lorsque des sous-classes prennent le relais. Le respect du LSP évite les surprises lors des substitutions et rend le système plus prévisible et extensible. Les violations se produisent lorsque des dérivées redéfinissent des comportements essentiels ou imposent des nouvelles contraintes qui brisent les garanties offertes par la super-classe.","contexts":["Substitution sûre et prévisibilité du comportement","Maintien des contrats lors de l\'héritage"],"benefits":["Substitution fiable de types","Réduction des coûts de maintenance et de test liées aux héritages"],"illustrative_examples":[{"scenario":"Une fonction qui accepte un objet Rectangle doit également fonctionner avec une instance de Square dérivée si la Square respecte les invariants et les préconditions du Rectangle.","impact":"Préservation de la compatibilité et prévisibilité du comportement."},{"scenario":"Éviter qu\'une sous-classe viole les contrats du type parent en renforçant arbitrairement les préconditions ou en altérant les invariants.","impact":"Intégrité contractuelle et stabilité du système."}]},{"name":"Principe de Ségrégation des Interfaces","acronym":"ISP","domain":"Granularité et simplicité des contrats","explanation":"Le principe de Ségrégation des Interfaces recommande la création d\'interfaces spécifiques et légères plutôt qu\'une interface générale trop large. En pratique, cela signifie scinder les interfaces en ensembles fonctionnels plus petits et cohérents, afin que chaque classe puisse implémenter uniquement les méthodes dont elle a réellement besoin. Cette approche réduit le couplage et augmente la clarté des contrats, facilitant le remplacement et les tests des composants. Le résultat est une meilleure répartition des responsabilités et une maintenance facilitée: les classes n\'étaient pas contraintes de supporter un large protocole qu\'elles n\'exploitent pas, et les évolutions se font sans imposer des dépendances inutiles. On obtient de meilleurs résultats lorsque l\'on privilégie la composition et des interfaces alignées sur les responsabilités métier plutôt que des abstractions monolithiques.","contexts":["Réduction des dépendances inutiles","Tests plus ciblés et plus fiables"],"benefits":["Interfaces plus claires et adaptées à chaque domaine","Meilleure maintenabilité et évolutivité"],"illustrative_examples":[{"scenario":"Diviser une grande interface IWorker en IWorkerData et IWorkerDisplay; les classes n\'implémentent que les méthodes utiles à leur domaine.","impact":"Réduction du coût de test et de l\'implémentation."},{"scenario":"Éviter les dépendances transversales en délimitant les responsabilités par domaine via des interfaces spécialisées.","impact":"Moins de bruit lors de l\'intégration et du débogage."}]},{"name":"Principe d\'Inversion des Dépendances","acronym":"DIP","domain":"Dépendances et abstractions","explanation":"Le principe d\'Inversion des Dépendances précise que les modules de haut niveau ne doivent pas dépendre des modules de bas niveau mais d\'abstractions. Cette orientation favorise le découplage et la testabilité, car les détails d\'implémentation peuvent être remplacés ou simulés sans toucher à la logique métier. En pratique, DIP se matérialise par l\'introduction d\'abstractions (interfaces ou classes abstraites) que les modules de haut niveau consomment, puis par l\'injection des dépendances via des mécanismes tels que l\'injection de dépendances ou les usines. Cette approche permet d\'échanger facilement les implémentations concrètes sans modifier les composants qui orchestrent le comportement, ce qui rend le système plus flexible et plus simple à tester. L\'association du DIP avec les autres principes SOLID crée un socle robuste pour les architectures modulaires et évolutives.","contexts":["Dépendances dirigées vers des abstractions plutôt que vers des détails","Tests facilités par l\'injection et le découplage"],"benefits":["Découplage fort entre logique métier et implémentations techniques","Facilité de tests unitaires et de remplacement d\'implémentations"],"illustrative_examples":[{"scenario":"Un contrôleur de logique métier obtient des données et des services via des interfaces abstraites; les implémentations concrètes sont injectées au runtime.","impact":"Flexibilité et testabilité accrues."},{"scenario":"Remplacement d\'un repository par une version simulée dans les tests sans modifier le contrôleur.","impact":"Tests plus rapides et plus fiables."}]}],"relationships":[{"type":"interaction","source":"Principe de Responsabilité Unique","target":"Principe de Ségrégation des Interfaces","description":"SRP et ISP travaillent ensemble pour limiter la surface de responsabilité d\'une classe et éviter que celle-ci n\'ait à connaître ou à dépendre d\'interfaces trop larges."},{"type":"compatibility","source":"Principe Ouvert/Fermé","target":"Principe d\'Inversion des Dépendances","description":"OCP et DIP se complètent: l\'extension par des abstractions (DIP) permet d\'ajouter de nouveaux comportements sans modifier le code existant (OCP)."},{"type":"support","source":"Principe de Ségrégation des Interfaces","target":"Principe de Substitution de Liskov","description":"ISP encourage des interfaces spécifiques et cohérentes qui facilitent le respect du LSP, car les sous-classes ne sont pas contraintes d\'implémenter des méthodes inutiles."},{"type":"support","source":"Principe de Substitution de Liskov","target":"Principe d\'Inversion des Dépendances","description":"Le LSP assure que les substitutions de types maintiennent le comportement, tandis que le DIP assure que ces substitutions se font via des abstractions, renforçant la stabilité et la testabilité."},{"type":"collective","source":"SOLID","target":"Synthèse","description":"Quand appliqués ensemble, les principes SOLID favorisent des systèmes robustes, flexibles et plus faciles à faire évoluer dans le temps."}],"illustrative_scenarios":[{"principle":"Principe de Responsabilité Unique","scenario_summary":"Découpage d\'un module monolithique en services dédiés.","details":"Exemple: séparer la logique métier, l\'accès aux données et l\'orchestration afin que chaque composant soit testé et évolué indépendamment."},{"principle":"Principe Ouvert/Fermé","scenario_summary":"Ajout d\'un nouveau mode de paiement sans toucher au code existant.","details":"Utilisation d\'une abstraction et d\'une nouvelle implémentation conforme."},{"principle":"Principe de Substitution de Liskov","scenario_summary":"Substitution d\'un gestionnaire générique par une spécialisation sans altérer le comportement.","details":"Respect des invariants et des contrats; éviter les dérivations qui brisent le contrat."},{"principle":"Principe de Ségrégation des Interfaces","scenario_summary":"Division d\'une interface large en interfaces spécialisées.","details":"Les classes n\'implantent que les méthodes utiles, réduisant le coût de maintenance et les dépendances."},{"principle":"Principe d\'Inversion des Dépendances","scenario_summary":"Injection d\'une dépendance abstraite dans un module de haut niveau.","details":"Les implémentations concrètes peuvent être échangées sans modifier le module de haut niveau."}],"media":{"available":false,"notes":"aucun média disponible pour ce module; les références actuelles s\'appuient sur du contenu textuel."}}\n\nGénère les triplets question-information-format au format JSON. N\'oublie pas de découper en PLUSIEURS triplets si le contenu est riche !\n\n=== PROMPTS DE GÉNÉRATION DES CARTES ===\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Qu\'est-ce que le Principe de Responsabilité Unique (SRP) et pourquoi est-il important?\n\nINFORMATION: Le SRP stipule qu\'une classe ou un module ne doit avoir qu\'une seule raison de changer, c\'est-à-dire une responsabilité métier clairement identifiée. Cela permet de comprendre rapidement le rôle d\'une unité de code et de limiter l\'impact d\'un changement à une dimension précise du système. En pratique, on divise les responsabilités en composants distincts: une couche pour les règles métiers, une pour l\'accès aux données, et une pour l\'orchestration.\n\nFORMAT: Définition avec justification et application pratique\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Quels sont les bénéfices directs de l\'application du Principe de Responsabilité Unique?\n\nINFORMATION: Le SRP offre trois avantages clés: une modularité renforcée et une évolution indépendante des composants, des tests plus fiables et plus simples puisque les changements sont confinés à une porte d\'entrée délimitée, et une réduction du risque de régressions lors des modifications. La séparation facilite également la testabilité ciblée en isolant chaque responsabilité.\n\nFORMAT: Liste des bénéfices avec explications brèves\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Qu\'est-ce que le Principe Ouvert/Fermé (OCP) et comment s\'applique-t-il?\n\nINFORMATION: L\'OCP stipule qu\'une entité logicielle doit être ouverte à l\'extension mais fermée à la modification. On ne doit pas modifier le code existant pour ajouter de nouveaux comportements, mais plutôt créer de nouvelles implémentations conformes à une abstraction commune via des interfaces ou classes abstraites. Cela minimise les risques de régressions et les perturbations des fonctionnalités déjà déployées.\n\nFORMAT: Définition avec principe technique et mécanisme de mise en œuvre\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Qu\'est-ce que le Principe de Substitution de Liskov (LSP) et quel problème résout-il?\n\nINFORMATION: Le LSP affirme que toute classe dérivée doit pouvoir remplacer sa classe de base sans altérer le comportement attendu du programme. Les objets d\'une sous-classe doivent pouvoir être utilisés partout où l\'on attend un objet de la super-classe, en respectant les préconditions, postconditions et invariants. Ce principe évite les violations contractuelles et rend le système plus prévisible lors des substitutions de types.\n\nFORMAT: Définition avec contrat et domaine d\'application\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Qu\'est-ce que le Principe de Ségrégation des Interfaces (ISP)?\n\nINFORMATION: L\'ISP recommande de créer des interfaces spécifiques et légères plutôt qu\'une interface générale trop large. Il faut scinder les interfaces en ensembles fonctionnels plus petits et cohérents, afin que chaque classe n\'implémente que les méthodes dont elle a réellement besoin. Cette approche réduit le couplage, augmente la clarté des contrats et facilite le remplacement et les tests des composants.\n\nFORMAT: Définition avec principe de granularité et avantages\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Qu\'est-ce que le Principe d\'Inversion des Dépendances (DIP) et comment favorise-t-il la testabilité?\n\nINFORMATION: Le DIP précise que les modules de haut niveau ne doivent pas dépendre des modules de bas niveau mais d\'abstractions. Cela se matérialise par l\'introduction d\'interfaces que les modules consomment, puis par l\'injection des dépendances. Cette approche permet d\'échanger facilement les implémentations concrètes sans modifier la logique métier, ce qui rend le système flexible et simple à tester.\n\nFORMAT: Définition avec mécanisme et bénéfices pour les tests\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Comment le Principe de Responsabilité Unique et le Principe de Ségrégation des Interfaces travaillent-ils ensemble?\n\nINFORMATION: SRP et ISP travaillent en synergie pour limiter la surface de responsabilité d\'une classe. SRP éclate les responsabilités en composants distincts, tandis qu\'ISP s\'assure que chaque classe n\'a accès que aux interfaces dont elle a besoin, évitant qu\'elle connaisse ou dépende d\'interfaces trop larges. Cette combinaison maximise la modularité et réduit le couplage.\n\nFORMAT: Relation d\'interaction avec explication des synergies\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Comment le Principe Ouvert/Fermé et le Principe d\'Inversion des Dépendances se complètent-ils?\n\nINFORMATION: OCP et DIP se complètent naturellement: le DIP introduit des abstractions et permet l\'injection de dépendances, tandis que l\'OCP utilise ces abstractions pour ajouter de nouveaux comportements sans modifier le code existant. En d\'autres termes, l\'extension par des abstractions (DIP) rend possible l\'ajout de nouvelles fonctionnalités sans bouleversement du code existant (OCP).\n\nFORMAT: Relation de compatibilité avec démonstration de complémentarité\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Comment le Principe de Substitution de Liskov soutient-il le Principe d\'Inversion des Dépendances?\n\nINFORMATION: Le LSP assure que les substitutions de types maintiennent le comportement prévu (respect des contrats et invariants), tandis que le DIP assure que ces substitutions se font via des abstractions plutôt que via des types concrets. Cette association renforce la stabilité et la testabilité globales: on peut remplacer une implémentation par une autre sans surprises comportementales.\n\nFORMAT: Relation de support avec explications du renforcement mutuel\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.\n\n---\n\nSystem: Tu es un expert en pédagogie et en création de cartes mentales éducatives.\n\nTon rôle est de transformer UN triplet question-information-format en UNE carte mentale structurée au format JSON.\n\nTEMPLATES DISPONIBLES:\n\n\nRÈGLES IMPORTANTES:\n1. Tu dois créer UN JSON avec DEUX parties: "recto" et "verso"\n2. "recto" doit présenter la QUESTION de manière visuelle et engageante\n3. "verso" doit développer l\'INFORMATION (la réponse) complète selon le FORMAT spécifié\n4. Chaque partie utilise des templates (briques HTML) identifiés par "template_name"\n5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles ci-dessus (copie-colle exact)\n6. ⚠️ CRITIQUE: Les noms de champs (field_name_X) doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs" de chaque template\n7. ❌ N\'INVENTE JAMAIS de template_name ou de nom de champ qui n\'est pas explicitement listé dans les templates disponibles\n8. Tu peux imbriquer les structures (objets dans objets, tableaux, etc.) pour créer une carte riche\n9. Utilise l\'imbrication seulement si cela améliore la pédagogie de la carte\n10. Assure-toi que chaque valeur de champ est du contenu pédagogique pertinent\n11. Le FORMAT spécifié doit guider ton choix de templates et la structure de la carte\n12. IMPORTANT : Si l\'information fournie est TROP VOLUMINEUSE pour tenir dans une carte claire et digeste, tu dois quand même créer UNE carte mais en synthétisant au maximum. L\'idéal est que l\'information soit déjà bien découpée en amont (plusieurs triplets au lieu d\'un seul)\n\nSTRUCTURE ATTENDUE (UN SEUL OBJET JSON):\n{\n    "recto": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "présentation visuelle de la question ou objet imbriqué",\n        "autre_nom_exact": "contenu ou tableau",\n        ...\n    },\n    "verso": {\n        "template_name": "COPIE EXACTE du Path d\'un template listé ci-dessus",\n        "nom_de_champ_exact": "développement complet de l\'information (réponse) selon le format",\n        ...\n    },\n    "version": "1.0.0"\n}\n\nATTENTION: Les noms des champs ("nom_de_champ_exact", "autre_nom_exact") doivent provenir UNIQUEMENT de la description "Usage des champs" du template choisi. N\'invente JAMAIS de noms génériques comme "field_name_1" ou "field_name_2".\n\nEXEMPLE D\'IMBRICATION:\nSi la question est "Comment fonctionne la photosynthèse ?"\nl\'information est "La photosynthèse est le processus par lequel les plantes vertes convertissent l\'énergie lumineuse en énergie chimique..."\net le format est "explication structurelle avec étapes séquentielles":\n\n{\n    "recto": {\n        "template_name": "question_template",\n        "field_name_1": "Comment fonctionne la photosynthèse ?",\n        "field_name_2": {\n            "template_name": "hint_template",\n            "field_name_1": "Pense aux plantes et à la lumière"\n        }\n    },\n    "verso": {\n        "template_name": "sequential_steps_template",\n        "field_name_1": "Processus de photosynthèse:",\n        "field_name_2": [\n            {\n                "template_name": "step_item",\n                "field_name_1": "Capture de la lumière par la chlorophylle dans les chloroplastes"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Conversion de l\'énergie lumineuse en énergie chimique"\n            },\n            {\n                "template_name": "step_item",\n                "field_name_1": "Production de glucose (C6H12O6) et libération d\'oxygène (O2)"\n            }\n        ]\n    },\n    "version": "1.0.0"\n}\n\nRéponds UNIQUEMENT avec l\'OBJET JSON valide, sans texte additionnel.\nHuman: Voici le triplet question-information-format à transformer en carte mentale:\n\nQUESTION: Quel est l\'impact global de l\'application conjointe de tous les principes SOLID?\n\nINFORMATION: Quand appliqués ensemble, les cinq principes SOLID favorisent des systèmes robustes, flexibles et plus faciles à faire évoluer dans le temps. Ils créent un socle cohérent où la modularité (SRP, ISP), l\'extensibilité (OCP, DIP), et la substitution sûre (LSP) se renforcent mutuellement, permettant des architectures modulaires, maintenables et évolutives sans risques de régression.\n\nFORMAT: Synthèse collective avec bénéfices architecturaux\n\nGénère le JSON de la carte mentale en utilisant les templates disponibles. Le recto doit présenter la question, le verso doit développer l\'information selon le format spécifié.',
 }

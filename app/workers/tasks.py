@@ -615,17 +615,15 @@ def generate_course_material_html_task(
         )
 
         # Generate course material HTML
-        #result_v3 = generator.generate_course_material(user_entry=user_entry)
+        result_v3 = generator.generate_course_material(user_entry=user_entry)
 
         # Adapter le format de retour
-        # result = {
-        #     "success": True,
-        #     "html_supports": result_v3["htmlSupports"],
-        #     "pedagogical_json": result_v3["pedagogical_json"],
-        #     "debug_info": result_v3["debug_info"],
-        # }
-
-        result = shit_test_4
+        result = {
+            "success": True,
+            "html_supports": result_v3["htmlSupports"],
+            "pedagogical_json": result_v3["pedagogical_json"],
+            "debug_info": result_v3["debug_info"],
+        }
 
         print(f"📥 Course material HTML generation V3 completed for task {task_id}")
         print(f" result = {json.dumps(result, indent=2, ensure_ascii=False)}")

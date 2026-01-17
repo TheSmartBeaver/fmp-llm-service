@@ -137,7 +137,7 @@ async def generate_pedagogical_json(
     )
 
     # Créer le prompt système
-    system_prompt = """Tu es un expert pédagogue spécialisé dans la structuration de contenu éducatif.
+    system_prompt = """Tu es un expert spécialisé dans la reformulation et enrichissement de contenu éducatif.
 
 CONTEXTE PÉDAGOGIQUE:
 - Cours: {course}
@@ -155,7 +155,6 @@ RÈGLES CRITIQUES:
 4. ✅ Regroupe les informations par thèmes logiques et cohérents
 5. ✅ Explicite les liens entre les concepts (similitudes, différences, relations)
 6. ✅ Enrichis avec des exemples concrets et pertinents
-7. ✅ Intègre les références aux médias disponibles de manière sémantique
 8. 🚫 INTERDICTION ABSOLUE: NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
 9. ✅ Utilise un langage clair et pédagogique, adapté à l'apprentissage
 10. ⚠️ RÈGLE STRUCTURELLE CRITIQUE: Les clés (noms de propriétés) du JSON ne doivent JAMAIS représenter des valeurs ou du contenu réel
@@ -166,7 +165,7 @@ RÈGLES CRITIQUES:
     - Les clés doivent être des CATÉGORIES ou des RÔLES génériques, jamais des valeurs spécifiques
 """
 
-    user_prompt = """Voici les notes de cours brutes à transformer en JSON pédagogique optimal:
+    user_prompt = """Voici les notes de cours brutes à transformer en JSON :
 
 CONTENU TEXTUEL:
 {text}

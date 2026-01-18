@@ -37,7 +37,7 @@ class MindMapGenerator:
         # LLM pour filtrer les techniques d'apprentissage (gpt-5-nano)
         self.filter_llm = create_universal_llm("gpt-5-nano")
 
-    def generate_mind_map(self, raw_data: str, top_k: int = 12) -> Dict[str, Any]:
+    def generate_mind_map(self, raw_data: str, top_k: int = 12, additional_instructions: str = "") -> Dict[str, Any]:
         """
         Génère un tableau de cartes mentales à partir de données brutes.
 
@@ -49,6 +49,7 @@ class MindMapGenerator:
         Args:
             raw_data: Informations pédagogiques brutes à transformer en cartes
             top_k: Nombre de templates similaires à récupérer par paire (défaut: 15)
+            additional_instructions: Instructions supplémentaires pour guider la création des triplets
 
         Returns:
             Dict contenant:
@@ -71,17 +72,22 @@ class MindMapGenerator:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        return loop.run_until_complete(self._generate_mind_map_async(raw_data, top_k))
+        return loop.run_until_complete(self._generate_mind_map_async(raw_data, top_k, additional_instructions))
 
-    async def _generate_mind_map_async(self, raw_data: str, top_k: int = 12) -> Dict[str, Any]:
+    async def _generate_mind_map_async(self, raw_data: str, top_k: int = 12, additional_instructions: str = "") -> Dict[str, Any]:
         """
         Version asynchrone de generate_mind_map.
+
+        Args:
+            raw_data: Données pédagogiques brutes
+            top_k: Nombre de templates similaires à récupérer par paire
+            additional_instructions: Instructions supplémentaires pour guider la création des triplets
         """
         # Étape 0: Filtrer les références aux techniques d'apprentissage
         filtered_raw_data = await self._filter_learning_techniques(raw_data)
 
         # Étape 1: Générer les paires informations-format intermédiaires
-        info_format_pairs, info_format_prompt = await self._generate_info_format_pairs(filtered_raw_data)
+        info_format_pairs, info_format_prompt = await self._generate_info_format_pairs(filtered_raw_data, additional_instructions)
 
         # Étape 2 & 3: Pour chaque paire, récupérer les templates et générer la carte EN PARALLÈLE
         all_mind_maps = []
@@ -158,12 +164,13 @@ Retourne le contenu sans les références aux techniques d'apprentissage."""
 
         return result.content
 
-    async def _generate_info_format_pairs(self, raw_data: str) -> tuple[List[Dict[str, str]], str]:
+    async def _generate_info_format_pairs(self, raw_data: str, additional_instructions: str = "") -> tuple[List[Dict[str, str]], str]:
         """
         Génère des triplets question-information-format intermédiaires à partir des données brutes.
 
         Args:
             raw_data: Informations pédagogiques brutes
+            additional_instructions: Instructions supplémentaires pour guider la création des triplets
 
         Returns:
             Tuple contenant:
@@ -220,6 +227,7 @@ Réponds UNIQUEMENT avec le TABLEAU JSON valide, sans texte additionnel."""
 
 {raw_data}
 
+{additional_instructions_block}
 Génère les triplets question-information-format au format JSON. N'oublie pas de découper en PLUSIEURS triplets si le contenu est riche !"""
 
         # Créer le prompt template
@@ -231,11 +239,16 @@ Génère les triplets question-information-format au format JSON. N'oublie pas d
         # Créer la chaîne avec parser JSON - utilise info_format_llm (gpt-5-mini)
         chain = prompt | self.info_format_llm | JsonOutputParser()
 
+        # Préparer le bloc d'instructions supplémentaires
+        additional_instructions_block = ""
+        if additional_instructions and additional_instructions.strip():
+            additional_instructions_block = f"\nINSTRUCTIONS SUPPLÉMENTAIRES POUR LA CRÉATION DES TRIPLETS:\nLes instructions suivantes doivent guider ta façon de découper et formuler les triplets question-information-format:\n{additional_instructions}\n"
+
         # Préparer le prompt complet pour le retour
-        full_prompt = prompt.format(raw_data=raw_data)
+        full_prompt = prompt.format(raw_data=raw_data, additional_instructions_block=additional_instructions_block)
 
         # Exécuter la chaîne de manière ASYNCHRONE
-        result = await chain.ainvoke({"raw_data": raw_data})
+        result = await chain.ainvoke({"raw_data": raw_data, "additional_instructions_block": additional_instructions_block})
 
         return result, full_prompt
 

@@ -34,6 +34,8 @@ class MindMapGenerator:
         self.embedding_model = embedding_model
         # LLM séparé pour _generate_info_format_pairs (gpt-5-mini)
         self.info_format_llm = create_universal_llm("gpt-5-mini")
+        # LLM pour filtrer les techniques d'apprentissage (gpt-5-nano)
+        self.filter_llm = create_universal_llm("gpt-5-nano")
 
     def generate_mind_map(self, raw_data: str, top_k: int = 12) -> Dict[str, Any]:
         """
@@ -75,8 +77,11 @@ class MindMapGenerator:
         """
         Version asynchrone de generate_mind_map.
         """
+        # Étape 0: Filtrer les références aux techniques d'apprentissage
+        filtered_raw_data = await self._filter_learning_techniques(raw_data)
+
         # Étape 1: Générer les paires informations-format intermédiaires
-        info_format_pairs, info_format_prompt = await self._generate_info_format_pairs(raw_data)
+        info_format_pairs, info_format_prompt = await self._generate_info_format_pairs(filtered_raw_data)
 
         # Étape 2 & 3: Pour chaque paire, récupérer les templates et générer la carte EN PARALLÈLE
         all_mind_maps = []
@@ -113,6 +118,45 @@ class MindMapGenerator:
             "mind_map": validated_json,
             "prompt": full_prompt
         }
+
+    async def _filter_learning_techniques(self, raw_data: str) -> str:
+        """
+        Filtre les références aux techniques d'apprentissage dans les données brutes.
+
+        Args:
+            raw_data: Informations pédagogiques brutes
+
+        Returns:
+            Les données filtrées sans les références aux techniques d'apprentissage
+        """
+        system_prompt = """Tu es un assistant qui filtre le contenu éducatif.
+
+Ton rôle est de SUPPRIMER toute référence aux techniques d'apprentissage du texte fourni, tout en conservant le contenu pédagogique factuel.
+
+ÉLÉMENTS À SUPPRIMER:
+- Références aux cartes mentales, mind maps, flashcards
+- Mentions de techniques de mémorisation (répétition espacée, mnémotechniques, etc.)
+- Conseils d'apprentissage ou de révision
+- Instructions sur comment apprendre ou retenir l'information
+- Références aux méthodes pédagogiques (active recall, interleaving, etc.)
+- Toute métainstruction sur l'apprentissage"""
+
+        user_prompt = """Voici le contenu à filtrer:
+
+{raw_data}
+
+Retourne le contenu sans les références aux techniques d'apprentissage."""
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", user_prompt)
+        ])
+
+        chain = prompt | self.filter_llm
+
+        result = await chain.ainvoke({"raw_data": raw_data})
+
+        return result.content
 
     async def _generate_info_format_pairs(self, raw_data: str) -> tuple[List[Dict[str, str]], str]:
         """

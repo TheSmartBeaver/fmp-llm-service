@@ -820,3 +820,288 @@ Template {i}:
                 self._validate_structure(item, f"{path}[{i}]", valid_template_names)
 
         # Les valeurs primitives (str, int, float, bool, None) sont valides
+
+    def modify_flashcard(self, flashcard_json: str, modification_instructions: str, top_k: int = 12) -> Dict[str, Any]:
+        """
+        Modifie une flashcard existante selon les instructions fournies.
+
+        Workflow:
+        1. Parse le JSON de la flashcard existante
+        2. Calcule l'embedding à partir du contenu de la carte
+        3. Récupère les templates pertinents via recherche vectorielle
+        4. Appelle le LLM avec la carte existante + instructions pour la modifier
+        5. Valide et retourne la carte modifiée
+
+        Args:
+            flashcard_json: JSON string de la carte mentale à modifier
+            modification_instructions: Instructions décrivant les modifications à apporter
+            top_k: Nombre de templates similaires à récupérer (défaut: 12)
+
+        Returns:
+            Dict contenant:
+            - mind_map: La carte mentale modifiée (structure recto/verso/version)
+            - prompt: Le prompt complet envoyé au LLM
+        """
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(
+            self._modify_flashcard_async(flashcard_json, modification_instructions, top_k)
+        )
+
+    async def _modify_flashcard_async(self, flashcard_json: str, modification_instructions: str, top_k: int = 12) -> Dict[str, Any]:
+        """
+        Version asynchrone de modify_flashcard.
+
+        Args:
+            flashcard_json: JSON string de la carte mentale à modifier
+            modification_instructions: Instructions de modification
+            top_k: Nombre de templates similaires à récupérer
+        """
+        # Étape 1: Parser le JSON de la flashcard existante
+        try:
+            existing_card = json.loads(flashcard_json)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"JSON de flashcard invalide: {str(e)}")
+
+        # Valider la structure de base de la carte existante
+        self._validate_single_card(existing_card)
+
+        # Étape 2: Extraire le contenu textuel de la carte pour l'embedding
+        card_text = self._extract_text_from_card(existing_card)
+        combined_text = f"{card_text} {modification_instructions}"
+        embedding = self._generate_embedding(combined_text)
+
+        # Étape 3: Récupérer les templates pertinents
+        templates = fetch_similar_templates(
+            self.db, embedding, top_k, {"layouts/": 3, "text/": 5}, True
+        )
+
+        # Étape 4: Générer la carte modifiée via LLM
+        modified_card, full_prompt = await self._generate_modified_card_async(
+            existing_card, modification_instructions, templates
+        )
+
+        # Étape 5: Valider la carte modifiée
+        self._validate_single_card(modified_card)
+
+        return {
+            "mind_map": modified_card,
+            "prompt": full_prompt
+        }
+
+    def _extract_text_from_card(self, card: Dict[str, Any]) -> str:
+        """
+        Extrait le contenu textuel d'une carte pour générer un embedding.
+
+        Args:
+            card: Carte mentale au format dict
+
+        Returns:
+            String contenant tout le texte de la carte
+        """
+        texts = []
+
+        def extract_recursive(obj):
+            if isinstance(obj, str):
+                texts.append(obj)
+            elif isinstance(obj, dict):
+                for key, value in obj.items():
+                    if key != "template_name" and key != "version":
+                        extract_recursive(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    extract_recursive(item)
+
+        extract_recursive(card.get("recto", {}))
+        extract_recursive(card.get("verso", {}))
+
+        return " ".join(texts)
+
+    async def _generate_modified_card_async(
+        self,
+        existing_card: Dict[str, Any],
+        modification_instructions: str,
+        templates: List[Dict[str, Any]],
+        max_retries: int = 2
+    ) -> tuple[Dict[str, Any], str]:
+        """
+        Génère une carte modifiée à partir d'une carte existante et des instructions.
+
+        Args:
+            existing_card: Carte mentale existante (dict)
+            modification_instructions: Instructions de modification
+            templates: Liste des templates disponibles
+            max_retries: Nombre maximum de tentatives
+
+        Returns:
+            Tuple contenant:
+            - La carte modifiée
+            - Le prompt complet envoyé au LLM
+        """
+        templates_description = self._format_templates_for_prompt(templates)
+
+        system_prompt = """Tu es un expert en pédagogie et en modification de cartes mentales éducatives.
+
+Ton rôle est de MODIFIER une carte mentale existante selon les instructions fournies.
+
+TEMPLATES DISPONIBLES:
+{templates}
+
+RÈGLES IMPORTANTES:
+1. Tu dois MODIFIER la carte existante, pas en créer une nouvelle de zéro
+2. Respecte la structure JSON avec "recto", "verso" et "version"
+3. "recto" présente la QUESTION de manière visuelle
+4. "verso" développe la RÉPONSE/INFORMATION
+5. ⚠️ CRITIQUE: Les "template_name" doivent EXACTEMENT correspondre aux "Path" des templates disponibles
+6. ⚠️ CRITIQUE: Les noms de champs doivent STRICTEMENT correspondre à ceux décrits dans "Usage des champs"
+7. Tu peux changer les templates si les instructions le demandent ou si c'est pertinent
+8. Conserve ce qui n'est pas concerné par les modifications demandées
+9. Assure-toi que le contenu modifié reste pédagogiquement cohérent
+
+STRUCTURE ATTENDUE:
+{{
+    "recto": {{
+        "template_name": "COPIE EXACTE du Path d'un template",
+        "nom_de_champ_exact": "contenu modifié",
+        ...
+    }},
+    "verso": {{
+        "template_name": "COPIE EXACTE du Path d'un template",
+        "nom_de_champ_exact": "contenu modifié",
+        ...
+    }},
+    "version": "1.0.0"
+}}
+
+Réponds UNIQUEMENT avec l'OBJET JSON de la carte modifiée, sans texte additionnel."""
+
+        user_prompt = """Voici la carte mentale existante à modifier:
+
+{existing_card_json}
+
+INSTRUCTIONS DE MODIFICATION:
+{modification_instructions}
+
+Génère le JSON de la carte mentale MODIFIÉE selon les instructions ci-dessus."""
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", user_prompt)
+        ])
+
+        chain = prompt | self.llm | JsonOutputParser()
+
+        existing_card_json = json.dumps(existing_card, indent=2, ensure_ascii=False)
+
+        full_prompt = prompt.format(
+            templates=templates_description,
+            existing_card_json=existing_card_json,
+            modification_instructions=modification_instructions
+        )
+
+        invoke_params = {
+            "templates": templates_description,
+            "existing_card_json": existing_card_json,
+            "modification_instructions": modification_instructions
+        }
+
+        last_error = None
+
+        for attempt in range(max_retries):
+            try:
+                result = await chain.ainvoke(invoke_params)
+                self._validate_single_card(result)
+                return result, full_prompt
+
+            except Exception as e:
+                last_error = str(e)
+                print(f"⚠️ Tentative {attempt + 1}/{max_retries} échouée: {last_error}")
+
+                if attempt < max_retries - 1:
+                    # Tenter une correction
+                    result = await self._auto_correct_modified_card(
+                        existing_card, modification_instructions, templates,
+                        result if 'result' in dir() else None, last_error
+                    )
+                    if result:
+                        try:
+                            self._validate_single_card(result)
+                            print(f"✅ Correction automatique réussie à la tentative {attempt + 1}")
+                            return result, full_prompt
+                        except Exception as correction_error:
+                            print(f"⚠️ Correction échouée: {correction_error}")
+                            continue
+
+        raise ValueError(f"Échec après {max_retries} tentatives. Dernière erreur: {last_error}")
+
+    async def _auto_correct_modified_card(
+        self,
+        existing_card: Dict[str, Any],
+        modification_instructions: str,
+        templates: List[Dict[str, Any]],
+        failed_result: Any,
+        error_message: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Tente de corriger une carte modifiée mal formée via LLM.
+
+        Args:
+            existing_card: Carte originale
+            modification_instructions: Instructions de modification
+            templates: Templates disponibles
+            failed_result: Résultat échoué
+            error_message: Message d'erreur
+
+        Returns:
+            La carte corrigée ou None
+        """
+        templates_description = self._format_templates_for_prompt(templates)
+
+        correction_prompt = f"""Le JSON suivant a été généré mais contient une erreur:
+
+ERREUR: {error_message}
+
+JSON GÉNÉRÉ (peut être incomplet ou mal formé):
+{json.dumps(failed_result, indent=2, ensure_ascii=False) if failed_result else "Aucun résultat"}
+
+CARTE ORIGINALE:
+{json.dumps(existing_card, indent=2, ensure_ascii=False)}
+
+INSTRUCTIONS DE MODIFICATION:
+{modification_instructions}
+
+TEMPLATES DISPONIBLES:
+{templates_description}
+
+CORRIGE le JSON pour qu'il respecte STRICTEMENT cette structure:
+{{
+    "recto": {{
+        "template_name": "chemin/du/template",
+        ...autres champs du template...
+    }},
+    "verso": {{
+        "template_name": "chemin/du/template",
+        ...autres champs du template...
+    }},
+    "version": "1.0.0"
+}}
+
+Réponds UNIQUEMENT avec le JSON corrigé, sans texte additionnel."""
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "Tu es un expert en correction de JSON. Corrige le JSON fourni pour qu'il respecte la structure attendue."),
+            ("human", correction_prompt)
+        ])
+
+        chain = prompt | self.llm | JsonOutputParser()
+
+        try:
+            corrected = await chain.ainvoke({})
+            return corrected
+        except Exception as e:
+            print(f"❌ Erreur lors de la correction automatique: {e}")
+            return None

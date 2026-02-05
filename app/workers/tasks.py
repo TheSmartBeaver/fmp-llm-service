@@ -14,6 +14,7 @@ from app.chains.llm.open_ai_o3_llm import OpenAiO3Llm
 from app.chains.llm.universal_llm import create_universal_llm
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.dto.user_entry.pedagogical_context_entry_dto import PedagogicalContextEntryDto
+from app.models.dto.user_entry.flashcard_modification_entry_dto import FlashcardModificationEntryDto
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 from app.models.db.fmp_models import AppUsers, DeviceTokens
 
@@ -363,6 +364,130 @@ def generate_flashcard_from_pedag_task(task_id: str, pedag_entry_dict: dict, aut
                         data={
                             "task_id": task_id,
                             "event": "flashcard_from_pedag_error",
+                            "error": str(e),
+                        },
+                        notification_id=task_id,
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
+
+        raise
+
+    finally:
+        # Close database session
+        db.close()
+
+
+@celery.task(name="modify.flashcard")
+def modify_flashcard_task(task_id: str, fc_entry_dict: dict, auth_uid: str, top_k: int = 12):
+    """
+    Tâche Celery pour modifier une flashcard existante selon des instructions.
+
+    Args:
+        task_id: Identifiant unique de la tâche
+        fc_entry_dict: Dictionnaire FlashcardModificationEntryDto contenant le JSON de la carte et les instructions
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+        top_k: Nombre de templates à utiliser
+
+    Returns:
+        Dict contenant la flashcard modifiée
+    """
+    print(f"📥 Starting flashcard modification for task {task_id}")
+
+    # Create database session
+    db = SessionLocal()
+
+    try:
+        # Reconstruct FlashcardModificationEntryDto from dict
+        fc_entry = FlashcardModificationEntryDto(**fc_entry_dict)
+        print(f"📥 FlashcardModificationEntryDto reconstructed: {fc_entry}")
+
+        # Create mind map generator
+        generator = MindMapGenerator(
+            db_session=db, llm=openai_llm, embedding_model=embedding_model
+        )
+
+        # Modify the flashcard
+        result = generator.modify_flashcard(
+            flashcard_json=fc_entry.flashcard_json,
+            modification_instructions=fc_entry.modification_instructions,
+            top_k=top_k
+        )
+
+        print(f"📥 Flashcard modification completed for task {task_id}")
+
+        # Send FCM notification
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(
+                    DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True
+                )
+                .all()
+            )
+
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+
+                # Send FCM notification with metadata only
+                fcm_result = fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Flashcard modifiée",
+                    body="Votre flashcard a été modifiée avec succès",
+                    data={
+                        "task_id": task_id,
+                        "event": "flashcard_modified",
+                        "templates_used": str(top_k),
+                    },
+                    notification_id=task_id,
+                )
+
+                print(
+                    f"📱 FCM notifications sent: {fcm_result['success_count']} succeeded, {fcm_result['failure_count']} failed"
+                )
+            else:
+                print(f"⚠️ No active devices found for user {auth_uid}")
+        else:
+            print(f"⚠️ User not found with auth_uid: {auth_uid}")
+
+        print(f"📥 Celery task ended for {task_id}")
+
+        return {
+            "success": True,
+            "mind_map": result["mind_map"],
+            "templates_used": top_k,
+            "prompt": result["prompt"],
+        }
+
+    except Exception as e:
+        print(f"❌ Error modifying flashcard for task {task_id}: {str(e)}")
+
+        # Send FCM error notification
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(
+                        DeviceTokens.AppUserSKU == user.SKU,
+                        DeviceTokens.IsActive == True,
+                    )
+                    .all()
+                )
+
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de modification",
+                        body="Une erreur s'est produite lors de la modification de la flashcard",
+                        data={
+                            "task_id": task_id,
+                            "event": "flashcard_modification_error",
                             "error": str(e),
                         },
                         notification_id=task_id,

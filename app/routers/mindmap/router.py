@@ -9,7 +9,8 @@ import uuid
 from app.database import get_db
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.mind_map_generator import MindMapGenerator
-from app.workers.tasks import generate_mindmap_task, generate_flashcard_from_pedag_task
+from app.workers.tasks import generate_mindmap_task, generate_flashcard_from_pedag_task, modify_flashcard_task
+from app.models.dto.user_entry.flashcard_modification_entry_dto import FlashcardModificationEntryDto
 from app.workers.celery_app import celery
 from app.models.dto.user_entry.context_entry_dto import ContextEntryDto
 from app.models.dto.user_entry.pedagogical_context_entry_dto import PedagogicalContextEntryDto
@@ -275,6 +276,142 @@ async def get_flashcard_from_pedag_result(task_id: str):
             return FlashcardFromPedagResponse(
                 success=result.get("success", True),
                 mind_map=result.get("mind_map", []),
+                templates_used=result.get("templates_used", 0),
+                prompt=result.get("prompt", "")
+            )
+
+        elif task_result.state == "FAILURE":
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "status": "FAILURE",
+                    "task_id": task_id,
+                    "error": str(task_result.info)
+                }
+            )
+
+        else:
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "status": task_result.state,
+                    "task_id": task_id,
+                    "message": f"État actuel: {task_result.state}"
+                }
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la récupération du résultat: {str(e)}"
+        )
+
+
+class ModifyFlashcardRequest(BaseModel):
+    """Requête pour modifier une flashcard existante"""
+    flashcard_json: str
+    modification_instructions: str
+    top_k: int = 12
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "flashcard_json": '{"recto": {"template_name": "text/question", "question": "Qu\'est-ce que la photosynthèse?"}, "verso": {"template_name": "text/answer", "answer": "Processus de conversion..."}, "version": "1.0.0"}',
+                "modification_instructions": "Ajouter plus de détails sur les étapes du processus",
+                "top_k": 12
+            }
+        }
+
+
+class ModifyFlashcardResponse(BaseModel):
+    """Réponse contenant la flashcard modifiée"""
+    success: bool
+    mind_map: Dict[str, Any]
+    templates_used: int
+    prompt: str
+
+
+@mindmap_router.post("/modify_flashcard_async", response_model=MindMapTaskResponse)
+async def modify_flashcard_async(
+    request: ModifyFlashcardRequest,
+    auth_uid: str = Header(..., alias="X-Auth-Uid")
+):
+    """
+    Lance une modification asynchrone d'une flashcard via Celery.
+
+    Args:
+        request: Contient flashcard_json (JSON de la carte à modifier),
+                 modification_instructions (instructions de modification) et top_k
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+
+    Returns:
+        MindMapTaskResponse avec l'ID de la tâche Celery
+
+    Note:
+        Une notification FCM sera envoyée une fois la modification terminée.
+        Le résultat peut être récupéré via le task_id.
+    """
+    # Générer un ID unique pour cette tâche
+    task_id = str(uuid.uuid4())
+
+    # Construire le DTO pour la tâche Celery
+    fc_entry = FlashcardModificationEntryDto(
+        flashcard_json=request.flashcard_json,
+        modification_instructions=request.modification_instructions
+    )
+
+    # Lancer la tâche Celery de manière asynchrone
+    modify_flashcard_task.apply_async(
+        args=[task_id, fc_entry.model_dump(), auth_uid, request.top_k],
+        task_id=task_id
+    )
+
+    return MindMapTaskResponse(
+        task_id=task_id,
+        status="pending"
+    )
+
+
+@mindmap_router.get("/modify_flashcard/{task_id}", response_model=ModifyFlashcardResponse)
+async def get_modify_flashcard_result(task_id: str):
+    """
+    Récupère le résultat d'une tâche de modification de flashcard via son task_id.
+
+    Args:
+        task_id: ID unique de la tâche Celery
+
+    Returns:
+        ModifyFlashcardResponse avec la flashcard modifiée
+
+    Raises:
+        HTTPException 202: Si la tâche est en cours (PENDING)
+        HTTPException 500: Si la tâche a échoué (FAILURE) ou erreur interne
+    """
+    try:
+        task_result = AsyncResult(task_id, app=celery)
+
+        print(f"🔍 Task {task_id} - State: {task_result.state}")
+        print(f"🔍 Task {task_id} - Ready: {task_result.ready()}")
+        print(f"🔍 Task {task_id} - Successful: {task_result.successful() if task_result.ready() else 'N/A'}")
+
+        if task_result.state == "PENDING":
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "status": "PENDING",
+                    "task_id": task_id,
+                    "message": "La modification est en cours..."
+                }
+            )
+
+        elif task_result.state == "SUCCESS":
+            result = task_result.result
+
+            return ModifyFlashcardResponse(
+                success=result.get("success", True),
+                mind_map=result.get("mind_map", {}),
                 templates_used=result.get("templates_used", 0),
                 prompt=result.get("prompt", "")
             )

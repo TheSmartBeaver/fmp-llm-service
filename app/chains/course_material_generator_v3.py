@@ -235,6 +235,13 @@ RÈGLES CRITIQUES:
 7. ✅ Utilise des couleurs et styles sobres et professionnels
 8. 🚫 NE génère PAS de JavaScript
 9. 🚫 NE génère PAS de liens externes non fournis dans les données
+10. ⚠️ GESTION DES MÉDIAS - RÈGLE CRITIQUE:
+    - Certaines valeurs sont des URLs de médias, identifiables par le préfixe "//media:"
+    - ✅ Retire le préfixe "//media:" pour obtenir l'URL réelle
+    - ✅ Génère une balise <img> pour les images
+    - ✅ Génère une balise <video controls> pour les vidéos
+    - ✅ Génère une balise <iframe> pour les vidéos YouTube ou Vimeo
+    - 🚫 NE affiche JAMAIS l'URL brute comme du texte
 
 STYLE RECOMMANDÉ:
 - Police: system-ui, sans-serif

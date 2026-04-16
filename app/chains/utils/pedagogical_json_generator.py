@@ -155,14 +155,20 @@ RÈGLES CRITIQUES:
 4. ✅ Regroupe les informations par thèmes logiques et cohérents
 5. ✅ Explicite les liens entre les concepts (similitudes, différences, relations)
 6. ✅ Enrichis avec des exemples concrets et pertinents
-8. 🚫 INTERDICTION ABSOLUE: NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
-9. ✅ Utilise un langage clair et pédagogique, adapté à l'apprentissage
-10. ⚠️ RÈGLE STRUCTURELLE CRITIQUE: Les clés (noms de propriétés) du JSON ne doivent JAMAIS représenter des valeurs ou du contenu réel
+7. 🚫 INTERDICTION ABSOLUE: NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
+8. ✅ Utilise un langage clair et pédagogique, adapté à l'apprentissage
+9. ⚠️ RÈGLE STRUCTURELLE CRITIQUE: Les clés (noms de propriétés) du JSON ne doivent JAMAIS représenter des valeurs ou du contenu réel
     - ❌ INTERDIT: {{"Principe de responsabilité unique": "explication..."}}
     - ❌ INTERDIT: {{"SRP": "définition...", "OCP": "définition..."}}
     - ✅ CORRECT: {{"concepts": [{{"name": "Principe de responsabilité unique", "explanation": "..."}}]}}
     - ✅ CORRECT: {{"principles": [{{"acronym": "SRP", "definition": "..."}}]}}
     - Les clés doivent être des CATÉGORIES ou des RÔLES génériques, jamais des valeurs spécifiques
+10. ⚠️ INTÉGRATION DES MÉDIAS - RÈGLE CRITIQUE:
+    - 🚫 NE regroupe PAS tous les médias dans une section ou clé unique à la fin du JSON
+    - ✅ Intègre chaque média AU SEIN de la section ou du concept auquel il se rapporte
+    - ✅ Pour chaque section/concept qui a un média associé, ajoute une propriété "media" contenant une liste d'URLs
+    - ✅ Chaque URL de média est déjà préfixée par "//media:"
+    - ✅ Place le média là où il est le PLUS PERTINENT pédagogiquement, pas à la fin
 """
 
     user_prompt = """Voici les notes de cours brutes à transformer en JSON :

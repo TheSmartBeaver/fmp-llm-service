@@ -8,6 +8,7 @@ Ce générateur utilise une approche différente de V2 :
 - Génère du HTML pour chaque groupe en parallèle via LLM
 """
 import json
+import re
 import asyncio
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
@@ -200,6 +201,22 @@ class CourseMaterialGeneratorV3:
 
         return groups
 
+    @staticmethod
+    def _strip_media_prefix(html: str) -> str:
+        """
+        Retire le préfixe "//media:" des URLs dans le HTML généré par le LLM.
+
+        Le LLM peut laisser le préfixe dans les attributs src, href ou comme texte brut.
+        Ce parseur couvre les trois cas avec une regex sur l'ensemble du HTML.
+
+        Args:
+            html: HTML brut potentiellement contenant des occurrences de "//media:"
+
+        Returns:
+            HTML avec toutes les occurrences de "//media:" supprimées
+        """
+        return re.sub(r'//media:', '', html)
+
     async def _generate_html_for_group(
         self, group_name: str, group_paths: Dict[str, Any], retry_count: int = 0
     ) -> str:
@@ -237,7 +254,6 @@ RÈGLES CRITIQUES:
 9. 🚫 NE génère PAS de liens externes non fournis dans les données
 10. ⚠️ GESTION DES MÉDIAS - RÈGLE CRITIQUE:
     - Certaines valeurs sont des URLs de médias, identifiables par le préfixe "//media:"
-    - ✅ Retire le préfixe "//media:" pour obtenir l'URL réelle
     - ✅ Génère une balise <img> pour les images
     - ✅ Génère une balise <video controls> pour les vidéos
     - ✅ Génère une balise <iframe> pour les vidéos YouTube ou Vimeo
@@ -301,7 +317,7 @@ Retourne UNIQUEMENT le HTML de la div, sans explications."""
                 else:
                     html_content = str(response).strip()
 
-            return html_content
+            return self._strip_media_prefix(html_content)
 
         except Exception as e:
             # En cas d'erreur, réessayer une fois

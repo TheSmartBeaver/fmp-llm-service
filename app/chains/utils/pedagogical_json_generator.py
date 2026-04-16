@@ -166,7 +166,7 @@ RÈGLES CRITIQUES:
 10. ⚠️ INTÉGRATION DES MÉDIAS - RÈGLE CRITIQUE:
     - 🚫 NE regroupe PAS tous les médias dans une section ou clé unique à la fin du JSON
     - ✅ Intègre chaque média AU SEIN de la section ou du concept auquel il se rapporte
-    - ✅ Pour chaque section/concept qui a un média associé, ajoute une propriété "media" contenant une liste d'URLs
+    - ✅ Pour chaque section/concept qui a un média associé, ajoute une propriété "media" contenant une URL seulement
     - ✅ Chaque URL de média est déjà préfixée par "//media:"
     - ✅ Place le média là où il est le PLUS PERTINENT pédagogiquement, pas à la fin
 """

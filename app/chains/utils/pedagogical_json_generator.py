@@ -3,9 +3,13 @@ Utilitaire pour générer un JSON pédagogique enrichi à partir de UserEntryDto
 
 Ce module fournit une fonction réutilisable pour la génération du JSON pédagogique,
 partagée entre les différentes versions de générateurs de supports de cours.
+
+Deux modes sont disponibles :
+- "structured" : découpe le contenu en sections thématiques (défaut historique)
+- "narrative"  : génère un récit continu segmenté (narrative / aside / media)
 """
 import json
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Literal, Tuple
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
@@ -109,35 +113,7 @@ def format_media_for_prompt(images: List[Dict], videos: List[Dict]) -> str:
     return "\n".join(formatted_parts)
 
 
-async def generate_pedagogical_json(
-    user_entry: UserEntryDto,
-    pedagogical_llm: Any,
-) -> Tuple[Dict[str, Any], str]:
-    """
-    Génère un JSON pédagogique enrichi à partir de UserEntryDto.
-
-    Ce JSON contient des explications complètes, contextualisées, sans phrases courtes.
-    Il structure le contenu de manière optimale pour l'apprentissage.
-
-    Args:
-        user_entry: Données d'entrée de l'utilisateur
-        pedagogical_llm: LLM à utiliser pour la génération (UniversalLLM ou autre)
-
-    Returns:
-        Tuple contenant:
-        - Dict: JSON pédagogique enrichi
-        - str: Le prompt complet envoyé au LLM
-    """
-    # Agréger le contenu brut
-    aggregated_content = aggregate_content(user_entry)
-
-    # Formater les médias pour le prompt
-    media_description = format_media_for_prompt(
-        aggregated_content["images"], aggregated_content["videos"]
-    )
-
-    # Créer le prompt système
-    system_prompt = """Tu es un expert spécialisé dans la reformulation et enrichissement de contenu éducatif.
+_STRUCTURED_SYSTEM_PROMPT = """Tu es un expert spécialisé dans la reformulation et enrichissement de contenu éducatif.
 
 CONTEXTE PÉDAGOGIQUE:
 - Cours: {course}
@@ -171,12 +147,102 @@ RÈGLES CRITIQUES:
     - ✅ Place le média là où il est le PLUS PERTINENT pédagogiquement, pas à la fin
 """
 
-    user_prompt = """Voici les notes de cours brutes à transformer en JSON :
+_STRUCTURED_USER_PROMPT = """Voici les notes de cours brutes à transformer en JSON :
 
 CONTENU TEXTUEL:
 {text}
 
 Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Développe les explications, ajoute du contexte, ne fais pas de phrases courtes."""
+
+
+_NARRATIVE_SYSTEM_PROMPT = """Tu es un expert en narration pédagogique. Tu transformes des notes de cours en un récit vivant et continu.
+
+CONTEXTE PÉDAGOGIQUE:
+- Cours: {course}
+- Chemin du sujet: {topic_path}
+
+MÉDIAS DISPONIBLES:
+{media_description}
+
+Ta mission : transformer les notes de cours en un JSON narratif — un récit qui se lit d'une traite, ponctué de remarques explicatives et de médias au bon endroit.
+
+FORMAT DE SORTIE OBLIGATOIRE:
+Le JSON doit avoir exactement cette structure racine :
+{{
+  "segments": [ ... ]
+}}
+
+Chaque élément du tableau "segments" est un objet avec un champ "type" qui vaut l'une de ces trois valeurs :
+
+1. TYPE "narrative" — le fil du récit, rédigé comme une prose fluide :
+   {{"type": "narrative", "content": "Texte narratif continu..."}}
+   - Plusieurs phrases développées, style récit / explication en prose
+   - PAS de listes à puces, PAS de titres, PAS de tableaux
+   - Connecteurs logiques entre les idées (ainsi, c'est pourquoi, en conséquence...)
+
+2. TYPE "aside" — une interruption courte pour approfondir, définir ou remarquer :
+   {{"type": "aside", "label": "Remarque | Définition | Exemple | Attention", "content": "Texte de l'encadré..."}}
+   - Interrompt le récit pour donner un éclairage complémentaire
+   - Doit être court et autonome (1 à 4 phrases max)
+   - Le "label" résume le rôle : "Remarque", "Définition", "Exemple concret", "Attention", "À retenir"
+
+3. TYPE "media" — insertion d'un média au moment le plus pertinent :
+   {{"type": "media", "url": "//media:...", "caption": "Légende décrivant ce que montre le média"}}
+   - Placer le média juste APRÈS le segment narratif qui y fait référence
+   - Ne jamais regrouper tous les médias à la fin
+
+RÈGLES CRITIQUES:
+- ✅ L'ordre des segments doit suivre le fil logique et chronologique du contenu
+- ✅ Alterner naturellement narrative → aside → narrative → media → narrative...
+- ✅ Le récit doit rester fluide même si on retire tous les "aside" et "media"
+- ✅ Développe chaque segment "narrative" avec plusieurs phrases riches en contexte
+- 🚫 INTERDICTION ABSOLUE: NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
+- 🚫 NE commence PAS chaque segment "narrative" par un titre ou une annonce du thème
+- 🚫 NE regroupe PAS tous les médias dans un même segment ou à la fin
+"""
+
+_NARRATIVE_USER_PROMPT = """Voici les notes de cours brutes à transformer en récit pédagogique :
+
+CONTENU TEXTUEL:
+{text}
+
+Génère le JSON avec la clé racine "segments" contenant la liste des segments ordonnés. Chaque segment a un "type" parmi : "narrative", "aside", "media". Respecte STRICTEMENT le format décrit."""
+
+
+async def generate_pedagogical_json(
+    user_entry: UserEntryDto,
+    pedagogical_llm: Any,
+    mode: Literal["structured", "narrative"] = "structured",
+) -> Tuple[Dict[str, Any], str]:
+    """
+    Génère un JSON pédagogique enrichi à partir de UserEntryDto.
+
+    Args:
+        user_entry: Données d'entrée de l'utilisateur
+        pedagogical_llm: LLM à utiliser pour la génération (UniversalLLM ou autre)
+        mode: "structured" (défaut) — sections thématiques ;
+              "narrative" — récit continu segmenté (narrative / aside / media)
+
+    Returns:
+        Tuple contenant:
+        - Dict: JSON pédagogique enrichi
+        - str: Le prompt complet envoyé au LLM
+    """
+    # Agréger le contenu brut
+    aggregated_content = aggregate_content(user_entry)
+
+    # Formater les médias pour le prompt
+    media_description = format_media_for_prompt(
+        aggregated_content["images"], aggregated_content["videos"]
+    )
+
+    # Sélectionner les prompts selon le mode
+    if mode == "narrative":
+        system_prompt = _NARRATIVE_SYSTEM_PROMPT
+        user_prompt = _NARRATIVE_USER_PROMPT
+    else:
+        system_prompt = _STRUCTURED_SYSTEM_PROMPT
+        user_prompt = _STRUCTURED_USER_PROMPT
 
     # Créer le prompt template
     prompt = ChatPromptTemplate.from_messages(
@@ -194,16 +260,12 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
     # Préparer le prompt complet pour le retour
     full_prompt = prompt.format(**inputs)
 
-    # Pour les modèles Codex, on ne peut pas utiliser le chain operator avec JsonOutputParser
-    # car il appelle la méthode sync en interne. On appelle directement le LLM.
     from app.chains.llm.universal_llm import UniversalLLM
 
     if isinstance(pedagogical_llm, UniversalLLM) and pedagogical_llm.use_codex_route:
-        # Appel direct pour Codex (pas de chain)
         messages = prompt.format_messages(**inputs)
         response = await pedagogical_llm.ainvoke(messages)
 
-        # Parser manuellement le JSON de la réponse
         if hasattr(response, 'content'):
             json_text = response.content
         else:
@@ -211,7 +273,6 @@ Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Dével
 
         result = json.loads(json_text)
     else:
-        # Pour les autres modèles, utiliser la chaîne normale
         chain = prompt | pedagogical_llm | JsonOutputParser()
         result = await chain.ainvoke(inputs)
 

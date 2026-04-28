@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 from app.chains.llm.llm_factory import LLMModel, LLMModelFactory
 from app.models.dto.llm_config.all_llm_models import AllLLMModels
@@ -25,6 +25,16 @@ class LLMConfigDto(BaseModel):
     pedagogical_json_model: Optional[Union[AllLLMModels, LLMModel, str]] = Field(
         default=None,
         description="Modèle LLM pour la génération du JSON pédagogique (_generate_pedagogical_json). Accepte AllLLMModels, LLMModel enum ou string"
+    )
+
+    pedagogical_json_mode: Literal["structured", "narrative"] = Field(
+        default="structured",
+        description=(
+            "Mode de génération du JSON pédagogique. "
+            "'structured': découpe le contenu en sections thématiques (défaut). "
+            "'narrative': génère un récit continu sous forme de segments ordonnés "
+            "(narrative, aside, media), interrompus de remarques et explications."
+        )
     )
 
     group_json_model: Optional[Union[AllLLMModels, LLMModel, str]] = Field(

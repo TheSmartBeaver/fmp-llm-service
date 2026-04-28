@@ -59,6 +59,7 @@ class CourseMaterialGeneratorV3:
         # LLM pour la génération du JSON pédagogique
         pedagogical_model = self.llm_config.get_pedagogical_json_model()
         self.pedagogical_llm = create_universal_llm(pedagogical_model)
+        self.pedagogical_mode = self.llm_config.pedagogical_json_mode
 
         # LLM pour la génération du HTML par groupe
         path_groups_model = self.llm_config.get_path_groups_model()
@@ -110,7 +111,13 @@ class CourseMaterialGeneratorV3:
         pedagogical_json, pedagogical_prompt = await generate_pedagogical_json(
             user_entry=user_entry,
             pedagogical_llm=self.pedagogical_llm,
+            mode=self.pedagogical_mode,
         )
+
+        if self.pedagogical_mode == "narrative":
+            return await self._generate_from_narrative_json(
+                pedagogical_json, pedagogical_prompt
+            )
 
         # Étape 2: Construire le mapping chemin -> valeur
         path_to_value_map = build_path_to_value_map(pedagogical_json)
@@ -143,6 +150,95 @@ class CourseMaterialGeneratorV3:
                 "num_paths": len(path_to_value_map),
             },
         }
+
+    async def _generate_from_narrative_json(
+        self,
+        pedagogical_json: Dict[str, Any],
+        pedagogical_prompt: str,
+    ) -> Dict[str, Any]:
+        """
+        Construit le résultat HTML à partir d'un JSON narratif segmenté.
+
+        Les segments sont rendus séquentiellement en un seul bloc HTML continu,
+        préservant l'ordre et le fil du récit.
+        """
+        segments = pedagogical_json.get("segments", [])
+        html_parts = [self._render_narrative_segment(seg) for seg in segments]
+        narrative_html = "\n".join(html_parts)
+
+        return {
+            "htmlSupports": {"narrative": narrative_html},
+            "pedagogical_json": pedagogical_json,
+            "debug_info": {
+                "pedagogical_prompt": pedagogical_prompt,
+                "mode": "narrative",
+                "num_segments": len(segments),
+            },
+        }
+
+    @staticmethod
+    def _render_narrative_segment(segment: Dict[str, Any]) -> str:
+        """Convertit un segment narratif en HTML inline."""
+        seg_type = segment.get("type", "narrative")
+
+        if seg_type == "narrative":
+            content = segment.get("content", "")
+            return (
+                f'<p style="font-family: system-ui, sans-serif; font-size: 1rem; '
+                f'line-height: 1.75; color: #1a1a1a; margin: 0 0 1.25em 0;">'
+                f'{content}</p>'
+            )
+
+        if seg_type == "aside":
+            label = segment.get("label", "Remarque")
+            content = segment.get("content", "")
+            return (
+                f'<aside style="border-left: 4px solid #4a7fcb; background: #f0f5ff; '
+                f'padding: 12px 16px; margin: 1.5em 0; border-radius: 0 6px 6px 0; '
+                f'font-family: system-ui, sans-serif;">'
+                f'<strong style="display: block; color: #2d5fa8; font-size: 0.8rem; '
+                f'text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">'
+                f'{label}</strong>'
+                f'<p style="margin: 0; color: #1a1a1a; line-height: 1.6; font-size: 0.95rem;">'
+                f'{content}</p>'
+                f'</aside>'
+            )
+
+        if seg_type == "media":
+            url = segment.get("url", "")
+            caption = segment.get("caption", "")
+            # Retirer le préfixe //media: si présent
+            clean_url = url.replace("//media:", "")
+            is_video = any(ext in clean_url.lower() for ext in [".mp4", ".webm", ".ogg"])
+            is_youtube = "youtube.com" in clean_url or "youtu.be" in clean_url
+            is_vimeo = "vimeo.com" in clean_url
+
+            if is_youtube or is_vimeo:
+                media_tag = (
+                    f'<iframe src="{clean_url}" style="width:100%; aspect-ratio:16/9; '
+                    f'border:none; border-radius:6px;" allowfullscreen></iframe>'
+                )
+            elif is_video:
+                media_tag = (
+                    f'<video controls style="width:100%; border-radius:6px;">'
+                    f'<source src="{clean_url}"></video>'
+                )
+            else:
+                media_tag = (
+                    f'<img src="{clean_url}" alt="{caption}" '
+                    f'style="max-width:100%; border-radius:6px; display:block; margin:0 auto;">'
+                )
+
+            return (
+                f'<figure style="margin: 1.5em 0; text-align: center;">'
+                f'{media_tag}'
+                f'<figcaption style="font-family: system-ui, sans-serif; font-size: 0.85rem; '
+                f'color: #555; margin-top: 8px; font-style: italic;">{caption}</figcaption>'
+                f'</figure>'
+            )
+
+        # Segment de type inconnu — rendu brut
+        return f'<div style="margin: 1em 0;">{json.dumps(segment, ensure_ascii=False)}</div>'
 
     def _group_paths_by_first_prefix(
         self, path_to_value_map: Dict[str, Any]

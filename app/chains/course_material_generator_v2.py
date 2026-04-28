@@ -55,6 +55,7 @@ class CourseMaterialGeneratorV2:
         # ✅ Utilise UniversalLLM pour supporter TOUS les modèles (LangChain + Codex + O-series)
         pedagogical_model = self.llm_config.get_pedagogical_json_model()
         self.pedagogical_llm = create_universal_llm(pedagogical_model)
+        self.pedagogical_mode = self.llm_config.pedagogical_json_mode
         # Créer le TemplateStructureGenerator avec la config LLM
         self.template_structure_generator = TemplateStructureGenerator(
             db_session=db_session,
@@ -105,6 +106,7 @@ class CourseMaterialGeneratorV2:
         pedagogical_json, pedagogical_prompt = await generate_pedagogical_json(
             user_entry=user_entry,
             pedagogical_llm=self.pedagogical_llm,
+            mode=self.pedagogical_mode,
         )
         
         # pedagogical_json = shit_test2

@@ -18,10 +18,10 @@ rsync -az --delete \
 echo "==> Copying .env from prod..."
 ssh "$VPS_HOST" "cp /opt/fmp-llm-service/.env $VPS_DIR/.env"
 
-echo "==> Removing existing debug container..."
-ssh "$VPS_HOST" "docker rm -f $CONTAINER_NAME 2>/dev/null || true"
+echo "==> Removing existing debug containers..."
+ssh "$VPS_HOST" "docker rm -f $CONTAINER_NAME fmp-celery-worker fmp-redis 2>/dev/null || true"
 
-echo "==> Building and starting debug container on VPS..."
+echo "==> Building and starting debug stack on VPS..."
 ssh "$VPS_HOST" "cd $VPS_DIR && docker compose -f docker-compose.debug.yml up --build -d"
 
 echo "==> Container logs (last 20 lines):"

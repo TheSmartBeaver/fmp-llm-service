@@ -1,4 +1,32 @@
 services:
+  fmp-redis:
+    image: redis:7-alpine
+    container_name: fmp-redis
+    restart: "no"
+    networks:
+      - fmp-network
+
+  fmp-celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.debug
+    container_name: fmp-celery-worker
+    restart: "no"
+    command: celery -A app.workers.tasks worker --loglevel=info --concurrency=4
+    env_file:
+      - .env
+    volumes:
+      - ./dl_models:/app/dl_models
+      - ./config/firebase-credentials.json:/app/config/firebase-credentials.json:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=fmp-redis
+      - REDIS_PORT=6379
+    networks:
+      - fmp-network
+    depends_on:
+      - fmp-redis
+
   fmp-llm-service-debug:
     build:
       context: .
@@ -19,6 +47,8 @@ services:
       - REDIS_PORT=6379
     networks:
       - fmp-network
+    depends_on:
+      - fmp-redis
 
 networks:
   fmp-network:

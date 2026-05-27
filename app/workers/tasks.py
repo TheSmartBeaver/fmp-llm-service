@@ -879,15 +879,25 @@ def generate_quiz_task(
     redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
     print(f"📥 Starting quiz generation for task {task_id}")
+    print(f"📥 request_dict keys: {list(request_dict.keys())}")
+    print(f"📥 llm_config_dict: {llm_config_dict}")
+    print(f"📥 auth_uid: {auth_uid}")
 
     db = SessionLocal()
 
     try:
+        print(f"🔧 Deserializing QuizGenerationRequestDto...")
         request = QuizGenerationRequestDto(**request_dict)
-        llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else LLMConfigDto()
+        print(f"🔧 Request deserialized — mode: {'modification' if request.quiz_items is not None else 'création'}, quiz_items count: {len(request.quiz_items) if request.quiz_items else 0}")
+        print(f"🔧 courseName={request.courseName}, topicPath={request.topicPath}, additional_instructions={request.additional_instructions}")
+        print(f"🔧 pedagogical_json keys: {list(request.pedagogical_json.keys()) if isinstance(request.pedagogical_json, dict) else type(request.pedagogical_json)}")
 
+        llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else LLMConfigDto()
         quiz_model = llm_config.get_quiz_model()
+        print(f"🤖 Using LLM model: {quiz_model}")
+
         llm = create_universal_llm(quiz_model)
+        print(f"🤖 LLM instance created: {type(llm).__name__}")
 
         pedagogical_json_str = json.dumps(request.pedagogical_json, ensure_ascii=False)
         course_context = ""
@@ -899,6 +909,7 @@ def generate_quiz_task(
             course_context += f"Instructions supplémentaires : {request.additional_instructions}\n"
 
         is_creation_mode = request.quiz_items is None
+        print(f"📝 Mode: {'création' if is_creation_mode else 'modification'}")
 
         if is_creation_mode:
             prompt = f"""Tu es un expert en pédagogie. Génère un quiz complet à partir du contenu pédagogique fourni.
@@ -994,12 +1005,15 @@ Règles :
 - Les réponses incorrectes doivent être suffisamment proches de la bonne réponse pour rendre le choix difficile
 - Ne génère que du JSON, aucun texte autour"""
 
-        print(f"📤 Sending prompt to LLM (model: {quiz_model})...")
+        print(f"📤 Sending prompt to LLM (model: {quiz_model}), prompt length: {len(prompt)} chars...")
         raw_response = llm.invoke(prompt)
+        print(f"📩 Raw response type: {type(raw_response).__name__}, has 'content' attr: {hasattr(raw_response, 'content')}")
         response_text = raw_response.content if hasattr(raw_response, "content") else str(raw_response)
+        print(f"📩 Raw response text (first 500 chars): {response_text[:500]}")
 
         response_text = response_text.strip()
         if response_text.startswith("```"):
+            print(f"🧹 Stripping markdown code fences...")
             response_text = response_text.split("```")[1]
             if response_text.startswith("json"):
                 response_text = response_text[4:]
@@ -1007,18 +1021,31 @@ Règles :
         if response_text.endswith("```"):
             response_text = response_text[:-3].strip()
 
-        parsed = json.loads(response_text)
-        raw_items = parsed.get("quiz_items", [])
+        print(f"🔍 Parsing JSON response (length: {len(response_text)} chars)...")
+        try:
+            parsed = json.loads(response_text)
+        except json.JSONDecodeError as json_err:
+            print(f"❌ JSON parse error: {json_err}")
+            print(f"❌ Offending text (first 1000 chars): {response_text[:1000]}")
+            raise
 
-        quiz_items = [
-            QuizOutputItemDto(
-                questionJson=item["questionJson"],
-                answersJson=item["answersJson"],
-                explanationJson=item["explanationJson"],
-                correctAnswerOrder=item["correctAnswerOrder"],
-            )
-            for item in raw_items
-        ]
+        raw_items = parsed.get("quiz_items", [])
+        print(f"🔍 Parsed {len(raw_items)} quiz items from LLM response")
+
+        quiz_items = []
+        for i, item in enumerate(raw_items):
+            print(f"🔧 Deserializing item {i}: keys={list(item.keys())}")
+            try:
+                quiz_items.append(QuizOutputItemDto(
+                    questionJson=item["questionJson"],
+                    answersJson=item["answersJson"],
+                    explanationJson=item["explanationJson"],
+                    correctAnswerOrder=item["correctAnswerOrder"],
+                ))
+            except Exception as item_err:
+                print(f"❌ Failed to deserialize item {i}: {item_err}")
+                print(f"❌ Item content: {json.dumps(item, ensure_ascii=False)}")
+                raise
 
         result = {
             "success": True,
@@ -1026,6 +1053,7 @@ Règles :
         }
 
         print(f"✅ Quiz generation completed for task {task_id}: {len(quiz_items)} items")
+        print(f"✅ Result: {json.dumps(result, indent=2, ensure_ascii=False)}")
 
         redis.publish(
             "quiz_events",
@@ -1069,7 +1097,9 @@ Règles :
         return result
 
     except Exception as e:
-        print(f"❌ Error generating quiz for task {task_id}: {str(e)}")
+        import traceback
+        print(f"❌ Error generating quiz for task {task_id}: {type(e).__name__}: {str(e)}")
+        print(f"❌ Traceback:\n{traceback.format_exc()}")
 
         redis.publish(
             "quiz_events",

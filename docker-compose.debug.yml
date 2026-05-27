@@ -6,7 +6,7 @@ services:
     container_name: fmp-llm-service-debug
     restart: "no"
     ports:
-      - "8003:8003"
+      - "8004:8003"
       - "5678:5678"
     env_file:
       - .env

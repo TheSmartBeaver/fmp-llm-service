@@ -47,6 +47,11 @@ class LLMConfigDto(BaseModel):
         description="Modèle LLM pour la génération des groupes de chemins (_generate_path_groups_with_llm). Accepte AllLLMModels, LLMModel enum ou string"
     )
 
+    quiz_model: Optional[Union[AllLLMModels, LLMModel, str]] = Field(
+        default=None,
+        description="Modèle LLM pour la génération de quiz. Accepte AllLLMModels, LLMModel enum ou string. Fallback sur pedagogical_json_model puis le modèle par défaut."
+    )
+
     def get_pedagogical_json_model(self) -> Union[AllLLMModels, LLMModel, str]:
         """Retourne le modèle pour la génération du JSON pédagogique (avec fallback sur défaut)"""
         if self.pedagogical_json_model:
@@ -71,6 +76,14 @@ class LLMConfigDto(BaseModel):
                 return self.path_groups_model.value
             return self.path_groups_model
         return LLMModelFactory.get_default_model()
+
+    def get_quiz_model(self) -> Union[AllLLMModels, LLMModel, str]:
+        """Retourne le modèle pour la génération de quiz (fallback sur pedagogical_json_model puis défaut)"""
+        if self.quiz_model:
+            if isinstance(self.quiz_model, AllLLMModels):
+                return self.quiz_model.value
+            return self.quiz_model
+        return self.get_pedagogical_json_model()
 
     class Config:
         json_schema_extra = {

@@ -16,6 +16,7 @@ from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.dto.user_entry.pedagogical_context_entry_dto import PedagogicalContextEntryDto
 from app.models.dto.user_entry.flashcard_modification_entry_dto import FlashcardModificationEntryDto
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
+from app.models.dto.quiz.quiz_dto import QuizGenerationRequestDto, QuizItemDto, QuizOutputItemDto
 from app.models.db.fmp_models import AppUsers, DeviceTokens
 
 from .celery_app import celery
@@ -861,4 +862,246 @@ def generate_course_material_html_task(
 
     finally:
         # Close database session
+        db.close()
+
+
+@celery.task(name="generate.quiz")
+def generate_quiz_task(
+    task_id: str, request_dict: dict, auth_uid: str, llm_config_dict: dict = None
+):
+    """
+    Tâche Celery pour générer un quiz à partir d'un JSON pédagogique.
+
+    Deux modes :
+    - Création (quiz_items is None) : génère N questions depuis le pedagogical_json
+    - Modification (quiz_items fourni) : régénère chaque item en tenant compte du contenu existant
+    """
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
+    print(f"📥 Starting quiz generation for task {task_id}")
+
+    db = SessionLocal()
+
+    try:
+        request = QuizGenerationRequestDto(**request_dict)
+        llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else LLMConfigDto()
+
+        quiz_model = llm_config.get_quiz_model()
+        llm = create_universal_llm(quiz_model)
+
+        pedagogical_json_str = json.dumps(request.pedagogical_json, ensure_ascii=False)
+        course_context = ""
+        if request.courseName:
+            course_context += f"Cours : {request.courseName}\n"
+        if request.topicPath:
+            course_context += f"Topic : {request.topicPath}\n"
+        if request.additional_instructions:
+            course_context += f"Instructions supplémentaires : {request.additional_instructions}\n"
+
+        is_creation_mode = request.quiz_items is None
+
+        if is_creation_mode:
+            prompt = f"""Tu es un expert en pédagogie. Génère un quiz complet à partir du contenu pédagogique fourni.
+
+{course_context}
+JSON pédagogique :
+{pedagogical_json_str}
+
+Génère autant de questions que nécessaire pour couvrir les points clés du contenu.
+Chaque question doit avoir entre 2 et 4 réponses possibles. Les réponses incorrectes doivent être plausibles et difficiles à distinguer de la bonne réponse.
+
+Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format :
+{{
+  "quiz_items": [
+    {{
+      "questionJson": {{"type": "simpleText", "version": 1, "content": "TEXTE_DE_LA_QUESTION"}},
+      "answersJson": {{
+        "type": "simpleText",
+        "version": 1,
+        "content": [
+          {{"order": 1, "text": "RÉPONSE_1"}},
+          {{"order": 2, "text": "RÉPONSE_2"}}
+        ]
+      }},
+      "explanationJson": {{
+        "type": "simpleText",
+        "version": 1,
+        "content": [
+          {{"order": 0, "text": "EXPLICATION_GÉNÉRALE"}},
+          {{"order": 1, "text": "EXPLICATION_RÉPONSE_1"}},
+          {{"order": 2, "text": "EXPLICATION_RÉPONSE_2"}}
+        ]
+      }},
+      "correctAnswerOrder": 1
+    }}
+  ]
+}}
+
+Règles :
+- correctAnswerOrder correspond à l'order de la bonne réponse dans answersJson.content
+- explanationJson.content doit avoir order 0 (explication générale) + un order par réponse
+- Les réponses incorrectes doivent être suffisamment proches de la bonne réponse pour rendre le choix difficile
+- Ne génère que du JSON, aucun texte autour"""
+        else:
+            items_str = json.dumps(
+                [item.model_dump() for item in request.quiz_items],
+                ensure_ascii=False,
+                indent=2
+            )
+            prompt = f"""Tu es un expert en pédagogie. Modifie et améliore les items de quiz fournis en te basant sur le JSON pédagogique.
+
+{course_context}
+JSON pédagogique :
+{pedagogical_json_str}
+
+Items de quiz existants à modifier :
+{items_str}
+
+Pour chaque item, régénère questionJson, answersJson, explanationJson et correctAnswerOrder.
+Chaque question doit avoir entre 2 et 4 réponses possibles. Les réponses incorrectes doivent être plausibles et difficiles à distinguer de la bonne réponse.
+Tiens compte du contenu existant des items et des instructions supplémentaires pour améliorer la qualité.
+
+Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format (un item par item existant, dans le même ordre) :
+{{
+  "quiz_items": [
+    {{
+      "questionJson": {{"type": "simpleText", "version": 1, "content": "TEXTE_DE_LA_QUESTION"}},
+      "answersJson": {{
+        "type": "simpleText",
+        "version": 1,
+        "content": [
+          {{"order": 1, "text": "RÉPONSE_1"}},
+          {{"order": 2, "text": "RÉPONSE_2"}}
+        ]
+      }},
+      "explanationJson": {{
+        "type": "simpleText",
+        "version": 1,
+        "content": [
+          {{"order": 0, "text": "EXPLICATION_GÉNÉRALE"}},
+          {{"order": 1, "text": "EXPLICATION_RÉPONSE_1"}},
+          {{"order": 2, "text": "EXPLICATION_RÉPONSE_2"}}
+        ]
+      }},
+      "correctAnswerOrder": 1
+    }}
+  ]
+}}
+
+Règles :
+- correctAnswerOrder correspond à l'order de la bonne réponse dans answersJson.content
+- explanationJson.content doit avoir order 0 (explication générale) + un order par réponse
+- Les réponses incorrectes doivent être suffisamment proches de la bonne réponse pour rendre le choix difficile
+- Ne génère que du JSON, aucun texte autour"""
+
+        print(f"📤 Sending prompt to LLM (model: {quiz_model})...")
+        raw_response = llm.invoke(prompt)
+        response_text = raw_response.content if hasattr(raw_response, "content") else str(raw_response)
+
+        response_text = response_text.strip()
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+            response_text = response_text.strip()
+        if response_text.endswith("```"):
+            response_text = response_text[:-3].strip()
+
+        parsed = json.loads(response_text)
+        raw_items = parsed.get("quiz_items", [])
+
+        quiz_items = [
+            QuizOutputItemDto(
+                questionJson=item["questionJson"],
+                answersJson=item["answersJson"],
+                explanationJson=item["explanationJson"],
+                correctAnswerOrder=item["correctAnswerOrder"],
+            )
+            for item in raw_items
+        ]
+
+        result = {
+            "success": True,
+            "quiz_items": [item.model_dump() for item in quiz_items],
+        }
+
+        print(f"✅ Quiz generation completed for task {task_id}: {len(quiz_items)} items")
+
+        redis.publish(
+            "quiz_events",
+            json.dumps({
+                "event": "quiz_generated",
+                "type": "message",
+                "task_id": task_id,
+                "num_items": len(quiz_items),
+            }),
+        )
+
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+                .all()
+            )
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+                fcm_result = fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Quiz généré",
+                    body=f"{len(quiz_items)} question(s) générée(s) avec succès",
+                    data={
+                        "task_id": task_id,
+                        "event": "quiz_generation",
+                        "num_items": str(len(quiz_items)),
+                    },
+                    notification_id=task_id,
+                )
+                print(
+                    f"📱 FCM notifications sent: {fcm_result['success_count']} succeeded, {fcm_result['failure_count']} failed"
+                )
+            else:
+                print(f"⚠️ No active devices found for user {auth_uid}")
+        else:
+            print(f"⚠️ User not found with auth_uid: {auth_uid}")
+
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating quiz for task {task_id}: {str(e)}")
+
+        redis.publish(
+            "quiz_events",
+            json.dumps({"event": "quiz_error", "task_id": task_id, "error": str(e)}),
+        )
+
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+                    .all()
+                )
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de génération",
+                        body="Une erreur s'est produite lors de la génération du quiz",
+                        data={
+                            "task_id": task_id,
+                            "event": "quiz_generation",
+                            "error": str(e),
+                        },
+                        notification_id=task_id,
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
+
+        raise
+
+    finally:
         db.close()

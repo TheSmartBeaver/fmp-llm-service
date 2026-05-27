@@ -27,7 +27,7 @@ class LLMConfigDto(BaseModel):
         description="Modèle LLM pour la génération du JSON pédagogique (_generate_pedagogical_json). Accepte AllLLMModels, LLMModel enum ou string"
     )
 
-    pedagogical_json_mode: Literal["structured", "narrative"] = Field(
+    pedagogical_json_mode: Optional[Literal["structured", "narrative"]] = Field(
         default="structured",
         description=(
             "Mode de génération du JSON pédagogique. "

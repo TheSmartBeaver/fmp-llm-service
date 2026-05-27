@@ -1,0 +1,25 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir debugpy
+
+COPY ./app ./app
+COPY ./config ./config
+
+RUN mkdir -p /app/dl_models
+
+EXPOSE 8003
+EXPOSE 5678
+
+ENV PYTHONUNBUFFERED=1
+
+CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", \
+     "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8003"]

@@ -1,16 +1,13 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: FastAPI (uvicorn)",
+            "name": "Python: FastAPI local (uvicorn)",
             "type": "debugpy",
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "app.main:app",  // Adjust this to the correct import path of your FastAPI app
+                "app.main:app",
                 "--host",
                 "127.0.0.1",
                 "--port",
@@ -21,6 +18,22 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }
+        },
+        {
+            "name": "Python: Remote Debug (VPS)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "justMyCode": true
         }
     ]
 }

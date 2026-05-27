@@ -1,0 +1,42 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: fmp-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - fmp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  fmp-llm-service-debug:
+    build:
+      context: .
+      dockerfile: Dockerfile.debug
+    container_name: fmp-llm-service-debug
+    restart: "no"
+    ports:
+      - "8003:8003"
+      - "5678:5678"
+    env_file:
+      - .env
+    volumes:
+      - ./dl_models:/app/dl_models
+      - ./config/firebase-credentials.json:/app/config/firebase-credentials.json:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - fmp-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+networks:
+  fmp-network:
+    external: true

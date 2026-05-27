@@ -25,7 +25,7 @@ echo "==> Building and starting debug container on VPS..."
 ssh "$VPS_HOST" "cd $VPS_DIR && docker compose -f docker-compose.debug.yml up --build -d"
 
 echo "==> Container logs (last 20 lines):"
-ssh "$VPS_HOST" "docker logs --tail 20 $CONTAINER_NAME"
+ssh "$VPS_HOST" "docker logs --tail 20 $CONTAINER_NAME 2>&1"
 
 echo ""
 echo "==> Debug ready. Open SSH tunnel in a terminal:"

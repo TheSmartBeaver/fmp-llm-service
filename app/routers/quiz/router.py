@@ -9,6 +9,7 @@ from app.models.dto.quiz.quiz_dto import (
     QuizOutputItemDto,
     QuizResultResponse,
     QuizTaskResponse,
+    shuffle_quiz_item_answers,
 )
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 from app.workers.tasks import generate_quiz_task
@@ -205,12 +206,12 @@ Règles :
         raw_items = parsed.get("quiz_items", [])
 
         quiz_items = [
-            QuizOutputItemDto(
+            shuffle_quiz_item_answers(QuizOutputItemDto(
                 questionJson=item["questionJson"],
                 answersJson=item["answersJson"],
                 explanationJson=item["explanationJson"],
                 correctAnswerOrder=item["correctAnswerOrder"],
-            )
+            ))
             for item in raw_items
         ]
 

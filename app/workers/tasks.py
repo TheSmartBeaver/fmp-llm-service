@@ -16,7 +16,7 @@ from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.dto.user_entry.pedagogical_context_entry_dto import PedagogicalContextEntryDto
 from app.models.dto.user_entry.flashcard_modification_entry_dto import FlashcardModificationEntryDto
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
-from app.models.dto.quiz.quiz_dto import QuizGenerationRequestDto, QuizItemDto, QuizOutputItemDto
+from app.models.dto.quiz.quiz_dto import QuizGenerationRequestDto, QuizItemDto, QuizOutputItemDto, shuffle_quiz_item_answers
 from app.models.db.fmp_models import AppUsers, DeviceTokens
 
 from .celery_app import celery
@@ -1046,6 +1046,9 @@ Règles :
                 print(f"❌ Failed to deserialize item {i}: {item_err}")
                 print(f"❌ Item content: {json.dumps(item, ensure_ascii=False)}")
                 raise
+
+        quiz_items = [shuffle_quiz_item_answers(item) for item in quiz_items]
+        print(f"🔀 Answers shuffled for all {len(quiz_items)} items")
 
         result = {
             "success": True,

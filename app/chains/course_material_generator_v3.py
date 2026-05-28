@@ -84,6 +84,83 @@ class CourseMaterialGeneratorV3:
         """
         return asyncio.run(self.generate_course_material_async(user_entry=user_entry))
 
+    def modify_course_material(
+        self,
+        pedagogical_json: Dict[str, Any],
+        modification_instructions: str,
+    ) -> Dict[str, Any]:
+        """Version synchrone de modify_course_material_async. Utilisée par Celery."""
+        return asyncio.run(
+            self.modify_course_material_async(pedagogical_json, modification_instructions)
+        )
+
+    async def modify_course_material_async(
+        self,
+        pedagogical_json: Dict[str, Any],
+        modification_instructions: str,
+    ) -> Dict[str, Any]:
+        """
+        Modifie un JSON pédagogique narratif existant selon des instructions libres,
+        puis régénère le HTML correspondant.
+
+        Args:
+            pedagogical_json: JSON narratif déjà généré (avec clé "segments")
+            modification_instructions: Instructions libres de modification
+
+        Returns:
+            Dict contenant htmlSupports, pedagogical_json modifié, debug_info
+        """
+        system_prompt = """Tu es un expert en narration pédagogique et design visuel éducatif.
+
+Ton rôle est de MODIFIER un JSON narratif pédagogique existant selon les instructions fournies.
+
+RÈGLES ABSOLUES:
+1. Tu dois MODIFIER le JSON existant, pas en créer un nouveau de zéro
+2. Conserve tous les segments non concernés par les modifications
+3. La clé racine doit rester "segments" (tableau ordonné)
+4. Chaque segment doit toujours avoir un champ "type"
+5. Tu peux ajouter, supprimer, réordonner ou modifier des segments
+6. Tu peux inventer de nouveaux types de segments si les instructions le demandent
+7. Dans les champs textuels, utilise **mot** pour le gras et ==mot== pour le surlignage
+8. Les URLs de médias gardent leur préfixe "//media:" intact
+9. 🚫 INTERDICTION ABSOLUE : NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
+"""
+
+        user_prompt = """Voici le JSON narratif pédagogique existant à modifier :
+
+{existing_json}
+
+INSTRUCTIONS DE MODIFICATION :
+{instructions}
+
+Génère le JSON modifié avec la clé racine "segments". Retourne UNIQUEMENT le JSON valide, sans explications."""
+
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", system_prompt), ("human", user_prompt)]
+        )
+
+        inputs = {
+            "existing_json": json.dumps(pedagogical_json, ensure_ascii=False, indent=2),
+            "instructions": modification_instructions,
+        }
+
+        from langchain_core.output_parsers import JsonOutputParser
+
+        if isinstance(self.pedagogical_llm, UniversalLLM) and self.pedagogical_llm.use_codex_route:
+            messages = prompt.format_messages(**inputs)
+            response = await self.pedagogical_llm.ainvoke(messages)
+            json_text = response.content if hasattr(response, "content") else str(response)
+            modified_json = json.loads(json_text)
+        else:
+            chain = prompt | self.pedagogical_llm | JsonOutputParser()
+            modified_json = await chain.ainvoke(inputs)
+
+        modification_prompt = prompt.format(**inputs)
+
+        result = await self._generate_from_narrative_json(modified_json, modification_prompt)
+        result["debug_info"]["modification_instructions"] = modification_instructions
+        return result
+
     async def generate_course_material_async(
         self,
         user_entry: UserEntryDto,

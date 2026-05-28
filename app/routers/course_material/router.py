@@ -8,7 +8,7 @@ from celery.result import AsyncResult
 
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
-from app.workers.tasks import generate_course_material_task, generate_course_material_html_task
+from app.workers.tasks import generate_course_material_task, generate_course_material_html_task, modify_course_material_html_task
 from app.workers.celery_app import celery
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.course_material_generator import CourseMaterialGenerator
@@ -550,6 +550,90 @@ async def get_course_material_html_result(task_id: str):
             status_code=500,
             detail=f"Erreur lors de la récupération du résultat: {str(e)}"
         )
+
+
+@course_material_router.post("/modify_html_CELERY", response_model=CourseMaterialTaskResponse)
+async def modify_course_material_html_celery(
+    pedagogical_json: dict,
+    modification_instructions: str,
+    llm_config: Optional[LLMConfigDto] = None,
+    auth_uid: str = Header(..., alias="X-Auth-Uid"),
+):
+    """
+    Lance une modification asynchrone d'un support de cours HTML via Celery.
+
+    Args:
+        pedagogical_json: JSON narratif déjà généré (avec clé "segments")
+        modification_instructions: Instructions libres de modification
+        llm_config: Configuration optionnelle des modèles LLM
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+
+    Returns:
+        CourseMaterialTaskResponse avec l'ID de la tâche Celery
+
+    Note:
+        Utilisez GET /html_modify_result/{task_id} pour récupérer le résultat.
+    """
+    task_id = str(uuid.uuid4())
+    llm_config_dict = llm_config.model_dump() if llm_config else None
+
+    modify_course_material_html_task.apply_async(
+        args=[task_id, pedagogical_json, modification_instructions, auth_uid, llm_config_dict],
+        task_id=task_id,
+    )
+
+    return CourseMaterialTaskResponse(task_id=task_id, status="pending")
+
+
+@course_material_router.get("/html_modify_result/{task_id}", response_model=CourseMaterialResponseV3)
+async def get_course_material_html_modify_result(task_id: str):
+    """
+    Récupère le résultat d'une tâche de modification de support HTML via son task_id.
+
+    Args:
+        task_id: ID unique de la tâche Celery
+
+    Returns:
+        CourseMaterialResponseV3 avec le support HTML modifié
+
+    Raises:
+        HTTPException 202: Si la tâche est en cours (PENDING)
+        HTTPException 500: Si la tâche a échoué (FAILURE) ou erreur interne
+    """
+    try:
+        task_result = AsyncResult(task_id, app=celery)
+
+        if task_result.state == "PENDING":
+            raise HTTPException(
+                status_code=202,
+                detail={"status": "PENDING", "task_id": task_id, "message": "La modification est en cours..."},
+            )
+
+        elif task_result.state == "SUCCESS":
+            result = task_result.result
+            return CourseMaterialResponseV3(
+                success=result.get("success", True),
+                html_supports=result.get("html_supports", {}),
+                pedagogical_json=result.get("pedagogical_json", {}),
+                debug_info=result.get("debug_info", {}),
+            )
+
+        elif task_result.state == "FAILURE":
+            raise HTTPException(
+                status_code=500,
+                detail={"status": "FAILURE", "task_id": task_id, "error": str(task_result.info)},
+            )
+
+        else:
+            raise HTTPException(
+                status_code=202,
+                detail={"status": task_result.state, "task_id": task_id, "message": f"État actuel: {task_result.state}"},
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération du résultat: {str(e)}")
 
 
 @course_material_router.get("/health")

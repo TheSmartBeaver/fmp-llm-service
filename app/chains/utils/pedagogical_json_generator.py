@@ -180,22 +180,9 @@ Tu peux inventer n'importe quel type de segment et la structure de données qui 
   Récit de base :
   - {{"type": "narrative", "content": "..."}}  → prose continue, fil directeur
 
-  Pauses visuelles enrichies :
+  Pauses visuelles enrichies (CE SONT DES EXEMPLES, SOIS CRÉATIF, NE REPRODUIS PAS LES MÊMES) :
   - {{"type": "highlight_box", "color": "#e8f4e8", "border_color": "#2d8a4e", "label": "Point clé", "content": "..."}}
-  - {{"type": "warning_box", "content": "..."}}
-  - {{"type": "definition", "term": "...", "definition": "..."}}
-  - {{"type": "quote", "text": "...", "author": "..."}}
-  - {{"type": "key_concept", "concept": "...", "explanation": "..."}}
-
-  Structures tabulaires et listes :
-  - {{"type": "table", "caption": "...", "headers": ["col1", "col2"], "rows": [["val1", "val2"]]}}
   - {{"type": "comparison", "title": "...", "left_label": "...", "right_label": "...", "rows": [{{"aspect": "...", "left": "...", "right": "..."}}]}}
-  - {{"type": "bullet_list", "title": "...", "items": ["...", "..."]}}
-  - {{"type": "numbered_list", "title": "...", "items": ["...", "..."]}}
-
-  Éléments temporels et visuels :
-  - {{"type": "timeline", "title": "...", "events": [{{"date": "...", "label": "...", "description": "..."}}]}}
-  - {{"type": "steps", "title": "...", "steps": [{{"number": 1, "title": "...", "content": "..."}}]}}
 
   Médias :
   - {{"type": "media", "url": "//media:...", "caption": "..."}}

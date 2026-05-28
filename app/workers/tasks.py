@@ -865,6 +865,114 @@ def generate_course_material_html_task(
         db.close()
 
 
+@celery.task(name="modify.course_material_html")
+def modify_course_material_html_task(
+    task_id: str, pedagogical_json_dict: dict, modification_instructions: str,
+    auth_uid: str, llm_config_dict: dict = None
+):
+    """
+    Tâche Celery pour modifier un support de cours HTML existant selon des instructions libres.
+
+    Args:
+        task_id: Identifiant unique de la tâche
+        pedagogical_json_dict: JSON pédagogique narratif déjà généré (avec clé "segments")
+        modification_instructions: Instructions libres de modification
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+        llm_config_dict: Dictionnaire LLMConfigDto optionnel
+    """
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
+    print(f"📥 Starting course material HTML modification for task {task_id}")
+
+    db = SessionLocal()
+
+    try:
+        llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else None
+
+        generator = CourseMaterialGeneratorV3(
+            db_session=db,
+            embedding_model=embedding_model,
+            llm_config=llm_config,
+        )
+
+        result_v3 = generator.modify_course_material(
+            pedagogical_json=pedagogical_json_dict,
+            modification_instructions=modification_instructions,
+        )
+
+        result = {
+            "success": True,
+            "html_supports": result_v3["htmlSupports"],
+            "pedagogical_json": result_v3["pedagogical_json"],
+            "debug_info": result_v3["debug_info"],
+        }
+
+        print(f"📥 Course material HTML modification completed for task {task_id}")
+
+        redis.publish(
+            "course_material_html_events",
+            json.dumps({
+                "event": "course_material_html_modified",
+                "type": "message",
+                "task_id": task_id,
+            }),
+        )
+
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+                .all()
+            )
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+                fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Support modifié",
+                    body="Le support de cours a été modifié avec succès",
+                    data={"task_id": task_id, "event": "course_material_html_modified"},
+                    notification_id=task_id,
+                )
+
+        return result
+
+    except Exception as e:
+        print(f"❌ Error modifying course material HTML for task {task_id}: {str(e)}")
+
+        redis.publish(
+            "course_material_html_events",
+            json.dumps({"event": "course_material_html_error", "task_id": task_id, "error": str(e)}),
+        )
+
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+                    .all()
+                )
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de modification",
+                        body="Une erreur s'est produite lors de la modification du support",
+                        data={"task_id": task_id, "event": "course_material_html_error", "error": str(e)},
+                        notification_id=task_id,
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
+
+        raise
+
+    finally:
+        db.close()
+
+
 @celery.task(name="generate.quiz")
 def generate_quiz_task(
     task_id: str, request_dict: dict, auth_uid: str, llm_config_dict: dict = None

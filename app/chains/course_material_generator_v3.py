@@ -159,11 +159,14 @@ class CourseMaterialGeneratorV3:
         """
         Construit le résultat HTML à partir d'un JSON narratif segmenté.
 
-        Les segments sont rendus séquentiellement en un seul bloc HTML continu,
-        préservant l'ordre et le fil du récit.
+        Chaque segment est rendu via un appel LLM indépendant (en parallèle),
+        ce qui permet de gérer n'importe quelle structure de segment inventée
+        par le LLM de génération.
         """
         segments = pedagogical_json.get("segments", [])
-        html_parts = [self._render_narrative_segment(seg) for seg in segments]
+
+        tasks = [self._render_narrative_segment_llm(seg, i) for i, seg in enumerate(segments)]
+        html_parts = await asyncio.gather(*tasks)
         narrative_html = "\n".join(html_parts)
 
         return {
@@ -176,69 +179,143 @@ class CourseMaterialGeneratorV3:
             },
         }
 
-    @staticmethod
-    def _render_narrative_segment(segment: Dict[str, Any]) -> str:
-        """Convertit un segment narratif en HTML inline."""
-        seg_type = segment.get("type", "narrative")
+    async def _render_narrative_segment_llm(
+        self, segment: Dict[str, Any], index: int, retry_count: int = 0
+    ) -> str:
+        """
+        Génère le HTML d'un segment narratif via LLM.
 
+        Accepte n'importe quelle structure de segment JSON — le LLM de rendu
+        adapte le visuel à la structure qu'il reçoit.
+        """
+        seg_type = segment.get("type", "unknown")
+
+        # Les segments "narrative" purs sont rendus directement sans appel LLM
+        # pour éviter de surcharger inutilement et préserver la fluidité du texte.
         if seg_type == "narrative":
             content = segment.get("content", "")
+            content = self._render_inline_markers(content)
             return (
                 f'<p style="font-family: system-ui, sans-serif; font-size: 1rem; '
                 f'line-height: 1.75; color: #1a1a1a; margin: 0 0 1.25em 0;">'
                 f'{content}</p>'
             )
 
-        if seg_type == "aside":
-            label = segment.get("label", "Remarque")
-            content = segment.get("content", "")
-            return (
-                f'<aside style="border-left: 4px solid #4a7fcb; background: #f0f5ff; '
-                f'padding: 12px 16px; margin: 1.5em 0; border-radius: 0 6px 6px 0; '
-                f'font-family: system-ui, sans-serif;">'
-                f'<strong style="display: block; color: #2d5fa8; font-size: 0.8rem; '
-                f'text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">'
-                f'{label}</strong>'
-                f'<p style="margin: 0; color: #1a1a1a; line-height: 1.6; font-size: 0.95rem;">'
-                f'{content}</p>'
-                f'</aside>'
-            )
-
+        # Les segments "media" sont rendus directement (logique déterministe sur l'URL)
         if seg_type == "media":
-            url = segment.get("url", "")
-            caption = segment.get("caption", "")
-            # Retirer le préfixe //media: si présent
-            clean_url = url.replace("//media:", "")
-            is_video = any(ext in clean_url.lower() for ext in [".mp4", ".webm", ".ogg"])
-            is_youtube = "youtube.com" in clean_url or "youtu.be" in clean_url
-            is_vimeo = "vimeo.com" in clean_url
+            return self._render_media_segment(segment)
 
-            if is_youtube or is_vimeo:
-                media_tag = (
-                    f'<iframe src="{clean_url}" style="width:100%; aspect-ratio:16/9; '
-                    f'border:none; border-radius:6px;" allowfullscreen></iframe>'
-                )
-            elif is_video:
-                media_tag = (
-                    f'<video controls style="width:100%; border-radius:6px;">'
-                    f'<source src="{clean_url}"></video>'
-                )
-            else:
-                media_tag = (
-                    f'<img src="{clean_url}" alt="{caption}" '
-                    f'style="max-width:100%; border-radius:6px; display:block; margin:0 auto;">'
-                )
+        try:
+            system_prompt = """Tu es un expert en design HTML pédagogique et visuel.
 
-            return (
-                f'<figure style="margin: 1.5em 0; text-align: center;">'
-                f'{media_tag}'
-                f'<figcaption style="font-family: system-ui, sans-serif; font-size: 0.85rem; '
-                f'color: #555; margin-top: 8px; font-style: italic;">{caption}</figcaption>'
-                f'</figure>'
+Ta mission : générer le rendu HTML d'UN segment pédagogique à partir de sa structure JSON.
+
+RÈGLES CRITIQUES:
+1. ✅ Génère UNIQUEMENT le fragment HTML du segment (pas de <!DOCTYPE>, <html>, <head>, <body>)
+2. ✅ Écris le CSS directement dans les balises HTML (style="...") — PAS de classes CSS
+3. ✅ Adapte créativement le rendu visuel au type et au contenu du segment
+4. ✅ Utilise des éléments HTML sémantiques appropriés (table, ul, ol, aside, figure, blockquote, etc.)
+5. ✅ Le rendu doit être visuellement riche, lisible et pédagogiquement efficace
+6. ✅ Assure-toi que le HTML est valide et bien formaté
+7. 🚫 NE génère PAS de JavaScript
+8. 🚫 NE génère PAS de liens externes non fournis dans les données
+9. ⚠️ GESTION DES MÉDIAS:
+   - Les URLs de médias ont le préfixe "//media:" — retire-le dans les attributs src
+   - ✅ Génère <img> pour les images, <video controls> pour les vidéos, <iframe> pour YouTube/Vimeo
+   - 🚫 NE affiche JAMAIS l'URL brute comme du texte
+10. ⚠️ MISE EN VALEUR INLINE:
+    - **mot** dans le texte → <strong>mot</strong>
+    - ==mot== dans le texte → <mark style="background:#fff176; padding:0 2px;">mot</mark>
+
+GUIDE DE STYLE:
+- Police: system-ui, sans-serif
+- Espacement généreux, marges verticales entre 1em et 2em
+- Encadrés: border-radius 6-8px, padding 12-20px
+- Tableaux: border-collapse collapse, alternance de fond sur les lignes
+- Frises chronologiques: disposition horizontale ou verticale avec connecteurs visuels
+- Citations: border-left colorée, italique, couleur atténuée
+- Couleurs d'accent: choisis parmi bleu (#4a7fcb), vert (#2d8a4e), orange (#e07b39), violet (#7c5cbf), rouge (#c0392b) selon le ton du segment
+"""
+
+            user_prompt = """Génère le rendu HTML de ce segment pédagogique :
+
+TYPE: {seg_type}
+
+DONNÉES JSON:
+{segment_json}
+
+Retourne UNIQUEMENT le fragment HTML, sans explications ni balises de code markdown."""
+
+            prompt = ChatPromptTemplate.from_messages(
+                [("system", system_prompt), ("human", user_prompt)]
             )
 
-        # Segment de type inconnu — rendu brut
-        return f'<div style="margin: 1em 0;">{json.dumps(segment, ensure_ascii=False)}</div>'
+            inputs = {
+                "seg_type": seg_type,
+                "segment_json": json.dumps(segment, ensure_ascii=False, indent=2),
+            }
+
+            if isinstance(self.path_groups_llm, UniversalLLM) and self.path_groups_llm.use_codex_route:
+                messages = prompt.format_messages(**inputs)
+                response = await self.path_groups_llm.ainvoke(messages)
+                html_content = response.content.strip() if hasattr(response, "content") else str(response).strip()
+            else:
+                chain = prompt | self.path_groups_llm
+                response = await chain.ainvoke(inputs)
+                html_content = response.content.strip() if hasattr(response, "content") else str(response).strip()
+
+            return self._strip_media_prefix(html_content)
+
+        except Exception as e:
+            if retry_count < 1:
+                return await self._render_narrative_segment_llm(segment, index, retry_count + 1)
+            # Fallback lisible en cas d'échec persistant
+            return (
+                f'<div style="border:1px solid #ddd; padding:12px; margin:1em 0; '
+                f'border-radius:6px; font-family:system-ui,sans-serif; color:#555;">'
+                f'{json.dumps(segment, ensure_ascii=False)}</div>'
+            )
+
+    @staticmethod
+    def _render_inline_markers(text: str) -> str:
+        """Convertit **gras** et ==surligné== en balises HTML inline."""
+        text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+        text = re.sub(r'==(.+?)==', r'<mark style="background:#fff176;padding:0 2px;">\1</mark>', text)
+        return text
+
+    @staticmethod
+    def _render_media_segment(segment: Dict[str, Any]) -> str:
+        """Rendu déterministe d'un segment media (image, vidéo, iframe)."""
+        url = segment.get("url", "")
+        caption = segment.get("caption", "")
+        clean_url = url.replace("//media:", "")
+        is_video = any(ext in clean_url.lower() for ext in [".mp4", ".webm", ".ogg"])
+        is_youtube = "youtube.com" in clean_url or "youtu.be" in clean_url
+        is_vimeo = "vimeo.com" in clean_url
+
+        if is_youtube or is_vimeo:
+            media_tag = (
+                f'<iframe src="{clean_url}" style="width:100%; aspect-ratio:16/9; '
+                f'border:none; border-radius:6px;" allowfullscreen></iframe>'
+            )
+        elif is_video:
+            media_tag = (
+                f'<video controls style="width:100%; border-radius:6px;">'
+                f'<source src="{clean_url}"></video>'
+            )
+        else:
+            media_tag = (
+                f'<img src="{clean_url}" alt="{caption}" '
+                f'style="max-width:100%; border-radius:6px; display:block; margin:0 auto;">'
+            )
+
+        return (
+            f'<figure style="margin: 1.5em 0; text-align: center;">'
+            f'{media_tag}'
+            f'<figcaption style="font-family: system-ui, sans-serif; font-size: 0.85rem; '
+            f'color: #555; margin-top: 8px; font-style: italic;">{caption}</figcaption>'
+            f'</figure>'
+        )
 
     def _group_paths_by_first_prefix(
         self, path_to_value_map: Dict[str, Any]

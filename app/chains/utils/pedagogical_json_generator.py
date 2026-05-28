@@ -155,7 +155,7 @@ CONTENU TEXTUEL:
 Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Développe les explications, ajoute du contexte, ne fais pas de phrases courtes."""
 
 
-_NARRATIVE_SYSTEM_PROMPT = """Tu es un expert en narration pédagogique. Tu transformes des notes de cours en un récit vivant et continu.
+_NARRATIVE_SYSTEM_PROMPT = """Tu es un expert en narration pédagogique ET en design visuel éducatif. Tu transformes des notes de cours en un récit vivant, riche visuellement et pédagogiquement optimal.
 
 CONTEXTE PÉDAGOGIQUE:
 - Cours: {course}
@@ -164,7 +164,7 @@ CONTEXTE PÉDAGOGIQUE:
 MÉDIAS DISPONIBLES:
 {media_description}
 
-Ta mission : transformer les notes de cours en un JSON narratif — un récit qui se lit d'une traite, ponctué de remarques explicatives et de médias au bon endroit.
+Ta mission : transformer les notes de cours en un JSON narratif — un récit qui se lit d'une traite, ponctué de "pauses pédagogiques" visuellement variées et créatives.
 
 FORMAT DE SORTIE OBLIGATOIRE:
 Le JSON doit avoir exactement cette structure racine :
@@ -172,33 +172,48 @@ Le JSON doit avoir exactement cette structure racine :
   "segments": [ ... ]
 }}
 
-Chaque élément du tableau "segments" est un objet avec un champ "type" qui vaut l'une de ces trois valeurs :
+Chaque élément du tableau "segments" est un objet JSON avec a minima un champ "type" (string) que TU INVENTES librement selon ce qui sert le mieux la compréhension à cet endroit du récit.
 
-1. TYPE "narrative" — le fil du récit, rédigé comme une prose fluide :
-   {{"type": "narrative", "content": "Texte narratif continu..."}}
-   - Plusieurs phrases développées, style récit / explication en prose
-   - PAS de listes à puces, PAS de titres, PAS de tableaux
-   - Connecteurs logiques entre les idées (ainsi, c'est pourquoi, en conséquence...)
+LIBERTÉ TOTALE SUR LES TYPES DE SEGMENTS:
+Tu peux inventer n'importe quel type de segment et la structure de données qui va avec. Voici des exemples pour t'inspirer — ce ne sont PAS des contraintes, juste des idées de départ :
 
-2. TYPE "aside" — une interruption courte pour approfondir, définir ou remarquer :
-   {{"type": "aside", "label": "Remarque | Définition | Exemple | Attention", "content": "Texte de l'encadré..."}}
-   - Interrompt le récit pour donner un éclairage complémentaire
-   - Doit être court et autonome (1 à 4 phrases max)
-   - Le "label" résume le rôle : "Remarque", "Définition", "Exemple concret", "Attention", "À retenir"
+  Récit de base :
+  - {{"type": "narrative", "content": "..."}}  → prose continue, fil directeur
 
-3. TYPE "media" — insertion d'un média au moment le plus pertinent :
-   {{"type": "media", "url": "//media:...", "caption": "Légende décrivant ce que montre le média"}}
-   - Placer le média juste APRÈS le segment narratif qui y fait référence
-   - Ne jamais regrouper tous les médias à la fin
+  Pauses visuelles enrichies :
+  - {{"type": "highlight_box", "color": "#e8f4e8", "border_color": "#2d8a4e", "label": "Point clé", "content": "..."}}
+  - {{"type": "warning_box", "content": "..."}}
+  - {{"type": "definition", "term": "...", "definition": "..."}}
+  - {{"type": "quote", "text": "...", "author": "..."}}
+  - {{"type": "key_concept", "concept": "...", "explanation": "..."}}
 
-RÈGLES CRITIQUES:
-- ✅ L'ordre des segments doit suivre le fil logique et chronologique du contenu
-- ✅ Alterner naturellement narrative → aside → narrative → media → narrative...
-- ✅ Le récit doit rester fluide même si on retire tous les "aside" et "media"
-- ✅ Développe chaque segment "narrative" avec plusieurs phrases riches en contexte
-- 🚫 INTERDICTION ABSOLUE: NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
-- 🚫 NE commence PAS chaque segment "narrative" par un titre ou une annonce du thème
-- 🚫 NE regroupe PAS tous les médias dans un même segment ou à la fin
+  Structures tabulaires et listes :
+  - {{"type": "table", "caption": "...", "headers": ["col1", "col2"], "rows": [["val1", "val2"]]}}
+  - {{"type": "comparison", "title": "...", "left_label": "...", "right_label": "...", "rows": [{{"aspect": "...", "left": "...", "right": "..."}}]}}
+  - {{"type": "bullet_list", "title": "...", "items": ["...", "..."]}}
+  - {{"type": "numbered_list", "title": "...", "items": ["...", "..."]}}
+
+  Éléments temporels et visuels :
+  - {{"type": "timeline", "title": "...", "events": [{{"date": "...", "label": "...", "description": "..."}}]}}
+  - {{"type": "steps", "title": "...", "steps": [{{"number": 1, "title": "...", "content": "..."}}]}}
+
+  Médias :
+  - {{"type": "media", "url": "//media:...", "caption": "..."}}
+
+  Mise en valeur inline dans le contenu textuel :
+  - Dans les champs "content" textuels, utilise **mot** pour le gras et ==mot== pour le surlignage jaune.
+
+Tu peux aussi inventer des types complètement nouveaux si le contenu le justifie : "character_card", "map_legend", "formula_block", "fun_fact", "analogy"...
+
+RÈGLES ABSOLUES (les seules contraintes):
+- ✅ La clé racine du JSON est TOUJOURS "segments" (tableau ordonné)
+- ✅ Chaque segment a TOUJOURS un champ "type" (string)
+- ✅ L'ordre des segments suit le fil logique et chronologique du contenu
+- ✅ Le récit principal doit rester intelligible même sans les pauses
+- ✅ Intègre les médias disponibles AU BON ENDROIT dans le récit (pas tous à la fin)
+- ✅ Les URLs de médias gardent leur préfixe "//media:" intact
+- 🚫 INTERDICTION ABSOLUE : NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
+- 🚫 NE commence PAS chaque segment narratif par un titre ou une annonce du thème
 """
 
 _NARRATIVE_USER_PROMPT = """Voici les notes de cours brutes à transformer en récit pédagogique :
@@ -206,7 +221,7 @@ _NARRATIVE_USER_PROMPT = """Voici les notes de cours brutes à transformer en r�
 CONTENU TEXTUEL:
 {text}
 
-Génère le JSON avec la clé racine "segments" contenant la liste des segments ordonnés. Chaque segment a un "type" parmi : "narrative", "aside", "media". Respecte STRICTEMENT le format décrit."""
+Génère le JSON avec la clé racine "segments". Chaque segment a un "type" que tu choisis librement pour servir au mieux la compréhension. Sois créatif sur les formats visuels : tableaux, listes, frises, encadrés colorés, définitions, comparaisons, étapes... Utilise **gras** et ==surlignage== dans les textes pour mettre en valeur les mots importants."""
 
 
 async def generate_pedagogical_json(

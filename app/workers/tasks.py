@@ -867,19 +867,18 @@ def generate_course_material_html_task(
 
 @celery.task(name="modify.course_material_html")
 def modify_course_material_html_task(
-    task_id: str, pedagogical_json_dict: dict, modification_instructions: str,
-    auth_uid: str, llm_config_dict: dict = None
+    task_id: str, modification_entry_dict: dict, auth_uid: str
 ):
     """
     Tâche Celery pour modifier un support de cours HTML existant selon des instructions libres.
 
     Args:
         task_id: Identifiant unique de la tâche
-        pedagogical_json_dict: JSON pédagogique narratif déjà généré (avec clé "segments")
-        modification_instructions: Instructions libres de modification
+        modification_entry_dict: Dictionnaire CourseMaterialModificationEntryDto
         auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
-        llm_config_dict: Dictionnaire LLMConfigDto optionnel
     """
+    from app.models.dto.user_entry.course_material_modification_entry_dto import CourseMaterialModificationEntryDto
+
     redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
     print(f"📥 Starting course material HTML modification for task {task_id}")
@@ -887,7 +886,9 @@ def modify_course_material_html_task(
     db = SessionLocal()
 
     try:
-        llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else None
+        entry = CourseMaterialModificationEntryDto(**modification_entry_dict)
+        llm_config = entry.llm_config
+        user_entry = entry.user_entry
 
         generator = CourseMaterialGeneratorV3(
             db_session=db,
@@ -896,8 +897,9 @@ def modify_course_material_html_task(
         )
 
         result_v3 = generator.modify_course_material(
-            pedagogical_json=pedagogical_json_dict,
-            modification_instructions=modification_instructions,
+            pedagogical_json=entry.pedagogical_json,
+            modification_instructions=entry.modification_instructions,
+            user_entry=user_entry,
         )
 
         result = {

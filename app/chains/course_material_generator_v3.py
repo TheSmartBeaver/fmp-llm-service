@@ -88,16 +88,18 @@ class CourseMaterialGeneratorV3:
         self,
         pedagogical_json: Dict[str, Any],
         modification_instructions: str,
+        user_entry: Optional["UserEntryDto"] = None,
     ) -> Dict[str, Any]:
         """Version synchrone de modify_course_material_async. Utilisée par Celery."""
         return asyncio.run(
-            self.modify_course_material_async(pedagogical_json, modification_instructions)
+            self.modify_course_material_async(pedagogical_json, modification_instructions, user_entry)
         )
 
     async def modify_course_material_async(
         self,
         pedagogical_json: Dict[str, Any],
         modification_instructions: str,
+        user_entry: Optional["UserEntryDto"] = None,
     ) -> Dict[str, Any]:
         """
         Modifie un JSON pédagogique narratif existant selon des instructions libres,
@@ -106,10 +108,25 @@ class CourseMaterialGeneratorV3:
         Args:
             pedagogical_json: JSON narratif déjà généré (avec clé "segments")
             modification_instructions: Instructions libres de modification
+            user_entry: Données source optionnelles (peut contenir de nouveaux médias ou textes)
 
         Returns:
             Dict contenant htmlSupports, pedagogical_json modifié, debug_info
         """
+        from app.chains.utils.pedagogical_json_generator import aggregate_content, format_media_for_prompt
+
+        source_block = ""
+        if user_entry is not None:
+            aggregated = aggregate_content(user_entry)
+            media_description = format_media_for_prompt(aggregated["images"], aggregated["videos"])
+            source_block = f"""
+CONTENU SOURCE (peut contenir de nouvelles informations à intégrer) :
+{aggregated["text"]}
+
+MÉDIAS DISPONIBLES :
+{media_description}
+"""
+
         system_prompt = """Tu es un expert en narration pédagogique et design visuel éducatif.
 
 Ton rôle est de MODIFIER un JSON narratif pédagogique existant selon les instructions fournies.
@@ -129,7 +146,7 @@ RÈGLES ABSOLUES:
         user_prompt = """Voici le JSON narratif pédagogique existant à modifier :
 
 {existing_json}
-
+{source_block}
 INSTRUCTIONS DE MODIFICATION :
 {instructions}
 
@@ -141,6 +158,7 @@ Génère le JSON modifié avec la clé racine "segments". Retourne UNIQUEMENT le
 
         inputs = {
             "existing_json": json.dumps(pedagogical_json, ensure_ascii=False, indent=2),
+            "source_block": source_block,
             "instructions": modification_instructions,
         }
 

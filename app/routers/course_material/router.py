@@ -9,6 +9,7 @@ from celery.result import AsyncResult
 from app.models.dto.user_entry.user_entry_dto import UserEntryDto
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 from app.workers.tasks import generate_course_material_task, generate_course_material_html_task, modify_course_material_html_task
+from app.models.dto.user_entry.course_material_modification_entry_dto import CourseMaterialModificationEntryDto
 from app.workers.celery_app import celery
 from app.chains.llm.open_ai_gpt5_mini_llm import OpenAiGPT5MiniLlm
 from app.chains.course_material_generator import CourseMaterialGenerator
@@ -554,18 +555,18 @@ async def get_course_material_html_result(task_id: str):
 
 @course_material_router.post("/modify_html_CELERY", response_model=CourseMaterialTaskResponse)
 async def modify_course_material_html_celery(
-    pedagogical_json: dict,
-    modification_instructions: str,
-    llm_config: Optional[LLMConfigDto] = None,
+    request: CourseMaterialModificationEntryDto,
     auth_uid: str = Header(..., alias="X-Auth-Uid"),
 ):
     """
     Lance une modification asynchrone d'un support de cours HTML via Celery.
 
     Args:
-        pedagogical_json: JSON narratif déjà généré (avec clé "segments")
-        modification_instructions: Instructions libres de modification
-        llm_config: Configuration optionnelle des modèles LLM
+        request: CourseMaterialModificationEntryDto contenant :
+            - pedagogical_json : JSON narratif déjà généré (avec clé "segments")
+            - modification_instructions : instructions libres de modification
+            - user_entry : optionnel, données source (nouveaux médias, nouveau texte)
+            - llm_config : optionnel, configuration des modèles LLM
         auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
 
     Returns:
@@ -575,10 +576,9 @@ async def modify_course_material_html_celery(
         Utilisez GET /html_modify_result/{task_id} pour récupérer le résultat.
     """
     task_id = str(uuid.uuid4())
-    llm_config_dict = llm_config.model_dump() if llm_config else None
 
     modify_course_material_html_task.apply_async(
-        args=[task_id, pedagogical_json, modification_instructions, auth_uid, llm_config_dict],
+        args=[task_id, request.model_dump(), auth_uid],
         task_id=task_id,
     )
 

@@ -76,6 +76,7 @@ def aggregate_content(user_entry: UserEntryDto) -> Dict[str, Any]:
         "context": {
             "course": user_entry.context_entry.course,
             "topic_path": user_entry.context_entry.topic_path,
+            "additional_instructions": user_entry.context_entry.additional_instructions or "",
         },
     }
 
@@ -118,7 +119,7 @@ _STRUCTURED_SYSTEM_PROMPT = """Tu es un expert spécialisé dans la reformulatio
 CONTEXTE PÉDAGOGIQUE:
 - Cours: {course}
 - Chemin du sujet: {topic_path}
-
+{additional_instructions_block}
 MÉDIAS DISPONIBLES:
 {media_description}
 
@@ -160,7 +161,7 @@ _NARRATIVE_SYSTEM_PROMPT = """Tu es un expert en narration pédagogique ET en de
 CONTEXTE PÉDAGOGIQUE:
 - Cours: {course}
 - Chemin du sujet: {topic_path}
-
+{additional_instructions_block}
 MÉDIAS DISPONIBLES:
 {media_description}
 
@@ -252,9 +253,17 @@ async def generate_pedagogical_json(
     )
 
     # Préparer les inputs
+    additional_instructions = aggregated_content["context"]["additional_instructions"]
+    additional_instructions_block = (
+        f"INSTRUCTIONS SUPPLÉMENTAIRES:\n{additional_instructions}\n"
+        if additional_instructions
+        else ""
+    )
+
     inputs = {
         "course": aggregated_content["context"]["course"],
         "topic_path": aggregated_content["context"]["topic_path"],
+        "additional_instructions_block": additional_instructions_block,
         "media_description": media_description,
         "text": aggregated_content["text"],
     }

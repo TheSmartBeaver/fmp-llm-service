@@ -20,6 +20,9 @@ class LLMModel(str, Enum):
 
     # ============ OpenAI models ============
     # GPT-5 series
+    GPT_5_5 = "gpt-5.5"
+    GPT_5_4 = "gpt-5.4"
+    GPT_5_3_CHAT_LATEST = "gpt-5.3-chat-latest"
     GPT_5_2 = "gpt-5.2"
     GPT_5_1 = "gpt-5.1"
     GPT_5 = "gpt-5"
@@ -31,6 +34,8 @@ class LLMModel(str, Enum):
 
     # GPT-5 Codex - ⚠️ DÉSACTIVÉS : Ces modèles utilisent /v1/responses au lieu de /v1/chat/completions
     # Ils ne sont pas compatibles avec ChatOpenAI de LangChain
+    # GPT_5_3_CODEX = "gpt-5.3-codex"
+    # GPT_5_2_CODEX = "gpt-5.2-codex"
     # GPT_5_1_CODEX_MAX = "gpt-5.1-codex-max"
     # GPT_5_1_CODEX = "gpt-5.1-codex"
     # GPT_5_CODEX = "gpt-5-codex"
@@ -76,7 +81,11 @@ class LLMModel(str, Enum):
     # Claude 4 series
     CLAUDE_SONNET_4_20250514 = "claude-sonnet-4-20250514"
     CLAUDE_SONNET_4_5_20250929 = "claude-sonnet-4-5-20250929"
+    CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
+    CLAUDE_OPUS_4_6 = "claude-opus-4-6"
+    CLAUDE_OPUS_4_7 = "claude-opus-4-7"
+    CLAUDE_OPUS_4_8 = "claude-opus-4-8"
 
 
 class LLMModelFactory:
@@ -98,7 +107,11 @@ class LLMModelFactory:
         LLMModel.CLAUDE_3_7_SONNET_20250219,
         LLMModel.CLAUDE_SONNET_4_20250514,
         LLMModel.CLAUDE_SONNET_4_5_20250929,
+        LLMModel.CLAUDE_SONNET_4_6,
         LLMModel.CLAUDE_OPUS_4_5,
+        LLMModel.CLAUDE_OPUS_4_6,
+        LLMModel.CLAUDE_OPUS_4_7,
+        LLMModel.CLAUDE_OPUS_4_8,
     }
 
     _GOOGLE_MODELS = {

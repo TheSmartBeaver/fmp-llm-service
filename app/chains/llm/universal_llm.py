@@ -41,6 +41,8 @@ class UniversalLLM(BaseChatModel):
 
     # Modèles qui nécessitent la route Codex
     CODEX_MODELS: ClassVar[set] = {
+        "gpt-5.3-codex",
+        "gpt-5.2-codex",
         "gpt-5.1-codex-max",
         "gpt-5.1-codex",
         "gpt-5-codex",

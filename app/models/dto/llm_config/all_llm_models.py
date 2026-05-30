@@ -2,11 +2,11 @@
 Enum complet de TOUS les modèles LLM supportés par l'application.
 
 Inclut:
-- 34 modèles LangChain standard (via LLMModelFactory)
-- 5 modèles Codex (via route /api/utils/codex)
+- 38 modèles LangChain standard (via LLMModelFactory)
+- 7 modèles Codex (via route /api/utils/codex)
 - 5 modèles O-series (via route /api/utils/codex)
 
-Total: 44 modèles disponibles avec une seule interface grâce à UniversalLLM.
+Total: 50 modèles disponibles avec une seule interface grâce à UniversalLLM.
 """
 
 from enum import Enum
@@ -38,8 +38,11 @@ class AllLLMModels(str, Enum):
     GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite"
 
     # ============================================================================
-    # OpenAI - GPT-5 Series (8 modèles)
+    # OpenAI - GPT-5 Series (11 modèles)
     # ============================================================================
+    GPT_5_5 = "gpt-5.5"
+    GPT_5_4 = "gpt-5.4"
+    GPT_5_3_CHAT_LATEST = "gpt-5.3-chat-latest"
     GPT_5_2 = "gpt-5.2"
     GPT_5_1 = "gpt-5.1"
     GPT_5 = "gpt-5"
@@ -50,8 +53,10 @@ class AllLLMModels(str, Enum):
     GPT_5_CHAT_LATEST = "gpt-5-chat-latest"
 
     # ============================================================================
-    # OpenAI - GPT-5 Codex (5 modèles) - Via UniversalLLM
+    # OpenAI - GPT-5 Codex (7 modèles) - Via UniversalLLM
     # ============================================================================
+    GPT_5_3_CODEX = "gpt-5.3-codex"
+    GPT_5_2_CODEX = "gpt-5.2-codex"
     GPT_5_1_CODEX_MAX = "gpt-5.1-codex-max"
     GPT_5_1_CODEX = "gpt-5.1-codex"
     GPT_5_CODEX = "gpt-5-codex"
@@ -104,15 +109,21 @@ class AllLLMModels(str, Enum):
     CLAUDE_3_7_SONNET_20250219 = "claude-3-7-sonnet-20250219"
 
     # ============================================================================
-    # Anthropic - Claude 4 Series (3 modèles)
+    # Anthropic - Claude 4 Series (7 modèles)
     # ============================================================================
     CLAUDE_SONNET_4_20250514 = "claude-sonnet-4-20250514"
     CLAUDE_SONNET_4_5_20250929 = "claude-sonnet-4-5-20250929"
+    CLAUDE_SONNET_4_6 = "claude-sonnet-4-6"
     CLAUDE_OPUS_4_5 = "claude-opus-4-5"
+    CLAUDE_OPUS_4_6 = "claude-opus-4-6"
+    CLAUDE_OPUS_4_7 = "claude-opus-4-7"
+    CLAUDE_OPUS_4_8 = "claude-opus-4-8"
 
 
 # Modèles qui nécessitent la route Codex (pour référence)
 CODEX_MODELS = {
+    AllLLMModels.GPT_5_3_CODEX,
+    AllLLMModels.GPT_5_2_CODEX,
     AllLLMModels.GPT_5_1_CODEX_MAX,
     AllLLMModels.GPT_5_1_CODEX,
     AllLLMModels.GPT_5_CODEX,

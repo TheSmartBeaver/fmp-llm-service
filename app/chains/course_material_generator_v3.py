@@ -292,7 +292,7 @@ Génère le JSON modifié avec la clé racine "segments". Retourne UNIQUEMENT le
             content = self._render_inline_markers(content)
             return (
                 f'<p style="font-family: system-ui, sans-serif; font-size: 1rem; '
-                f'line-height: 1.75; color: #1a1a1a; margin: 0 0 1.25em 0;">'
+                f'line-height: 1.75; color: #1a1a1a; margin: 0 0 1.25em 0; white-space: pre-wrap;">'
                 f'{content}</p>'
             )
 

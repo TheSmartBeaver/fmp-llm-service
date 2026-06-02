@@ -204,7 +204,7 @@ _NARRATIVE_USER_PROMPT = """Voici les notes de cours brutes à transformer en r�
 CONTENU TEXTUEL:
 {text}
 
-Génère le JSON avec la clé racine "segments". Le récit doit être principalement constitué de segments "narrative". N'introduis des pauses visuelles que si elles sont demandées dans les instructions supplémentaires. Sois créatif sur les formats visuels des quelques pauses pédagogiques : tableaux, listes, encadrés colorés, définitions... Utilise **gras** et ==surlignage== dans les textes pour mettre en valeur les mots importants."""
+Génère le JSON avec la clé racine "segments". Le récit doit être principalement constitué de segments "narrative". N'introduis des pauses visuelles que si elles sont demandées dans les instructions supplémentaires. Sois créatif sur les formats visuels des quelques pauses pédagogiques qui doivent être riche visuellement : tableaux, listes, encadrés colorés, définitions... Utilise **gras** et ==surlignage== dans les textes pour mettre en valeur les mots importants."""
 
 
 async def generate_pedagogical_json(

@@ -156,7 +156,7 @@ CONTENU TEXTUEL:
 Génère le JSON structuré en suivant STRICTEMENT les règles ci-dessus. Développe les explications, ajoute du contexte, ne fais pas de phrases courtes."""
 
 
-_NARRATIVE_SYSTEM_PROMPT = """Tu es un expert en narration pédagogique ET en design visuel éducatif. Tu transformes des notes de cours en un récit vivant, riche visuellement et pédagogiquement optimal.
+_NARRATIVE_SYSTEM_PROMPT = """Tu es un expert en narration pédagogique. Tu transformes des notes de cours en un récit fluide et pédagogiquement optimal.
 
 CONTEXTE PÉDAGOGIQUE:
 - Cours: {course}
@@ -165,7 +165,7 @@ CONTEXTE PÉDAGOGIQUE:
 MÉDIAS DISPONIBLES:
 {media_description}
 
-Ta mission : transformer les notes de cours en un JSON narratif — un récit qui se lit d'une traite, ponctué de "pauses pédagogiques" visuellement variées et créatives.
+Ta mission : transformer les notes de cours en un JSON narratif — un récit continu, avec uniquement les pauses visuelles explicitement demandées dans les INSTRUCTIONS SUPPLÉMENTAIRES ci-dessus.
 
 FORMAT DE SORTIE OBLIGATOIRE:
 Le JSON doit avoir exactement cette structure racine :
@@ -173,35 +173,30 @@ Le JSON doit avoir exactement cette structure racine :
   "segments": [ ... ]
 }}
 
-Chaque élément du tableau "segments" est un objet JSON avec a minima un champ "type" (string) que TU INVENTES librement selon ce qui sert le mieux la compréhension à cet endroit du récit.
+TYPES DE SEGMENTS AUTORISÉS:
+Par défaut, utilise uniquement ces deux types :
 
-LIBERTÉ TOTALE SUR LES TYPES DE SEGMENTS:
-Tu peux inventer n'importe quel type de segment et la structure de données qui va avec. Voici des exemples pour t'inspirer — ce ne sont PAS des contraintes, juste des idées de départ :
+  - {{"type": "narrative", "content": "..."}}  → prose continue, fil directeur du récit
+  - {{"type": "media", "url": "//media:...", "caption": "..."}}  → pour intégrer les médias
 
-  Récit de base :
-  - {{"type": "narrative", "content": "..."}}  → prose continue, fil directeur
+Tu ne dois créer des segments d'un autre type (pause visuelle, tableau, encadré, etc.) QUE si les INSTRUCTIONS SUPPLÉMENTAIRES le demandent explicitement. Dans ce cas, structure le segment selon ce qui est demandé.
 
-  Pauses visuelles enrichies (CE SONT DES EXEMPLES, SOIS CRÉATIF, NE REPRODUIS PAS LES MÊMES) :
+Voici les exemples de pauses visuelles enrichies (CE SONT DES EXEMPLES, SOIS CRÉATIF, NE REPRODUIS PAS LES MÊMES) :
   - {{"type": "highlight_box", "color": "#e8f4e8", "border_color": "#2d8a4e", "label": "Point clé", "content": "..."}}
   - {{"type": "comparison", "title": "...", "left_label": "...", "right_label": "...", "rows": [{{"aspect": "...", "left": "...", "right": "..."}}]}}
 
-  Médias :
-  - {{"type": "media", "url": "//media:...", "caption": "..."}}
+Mise en valeur inline dans le contenu textuel :
+- Dans les champs "content" textuels, utilise **mot** pour le gras et ==mot== pour le surlignage jaune.
 
-  Mise en valeur inline dans le contenu textuel :
-  - Dans les champs "content" textuels, utilise **mot** pour le gras et ==mot== pour le surlignage jaune.
-
-Tu peux aussi inventer des types complètement nouveaux si le contenu le justifie : "character_card", "map_legend", "formula_block", "fun_fact", "analogy"...
-
-RÈGLES ABSOLUES (les seules contraintes):
+RÈGLES ABSOLUES:
 - ✅ La clé racine du JSON est TOUJOURS "segments" (tableau ordonné)
 - ✅ Chaque segment a TOUJOURS un champ "type" (string)
 - ✅ L'ordre des segments suit le fil logique et chronologique du contenu
-- ✅ Le récit principal doit rester intelligible même sans les pauses
 - ✅ Intègre les médias disponibles AU BON ENDROIT dans le récit (pas tous à la fin)
 - ✅ Les URLs de médias gardent leur préfixe "//media:" intact
 - 🚫 INTERDICTION ABSOLUE : NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
 - 🚫 NE commence PAS chaque segment narratif par un titre ou une annonce du thème
+- 🚫 NE crée PAS de pauses visuelles (highlight_box, comparison, tableau, etc.) sauf si explicitement demandé dans les INSTRUCTIONS SUPPLÉMENTAIRES
 """
 
 _NARRATIVE_USER_PROMPT = """Voici les notes de cours brutes à transformer en récit pédagogique :
@@ -209,7 +204,7 @@ _NARRATIVE_USER_PROMPT = """Voici les notes de cours brutes à transformer en r�
 CONTENU TEXTUEL:
 {text}
 
-Génère le JSON avec la clé racine "segments". Chaque segment a un "type" que tu choisis librement pour servir au mieux la compréhension. Sois créatif sur les formats visuels : tableaux, listes, frises, encadrés colorés, définitions, comparaisons, étapes... Utilise **gras** et ==surlignage== dans les textes pour mettre en valeur les mots importants."""
+Génère le JSON avec la clé racine "segments". Le récit doit être principalement constitué de segments "narrative". N'introduis des pauses visuelles que si elles sont demandées dans les instructions supplémentaires. Utilise **gras** et ==surlignage== dans les textes pour mettre en valeur les mots importants."""
 
 
 async def generate_pedagogical_json(

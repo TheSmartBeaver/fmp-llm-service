@@ -291,8 +291,12 @@ Génère le JSON modifié avec la clé racine "segments". Retourne UNIQUEMENT le
             content = segment.get("content", "")
             content = self._render_inline_markers(content)
             return (
-                f'<p style="font-family: system-ui, sans-serif; font-size: 1rem; '
-                f'line-height: 1.75; color: #1a1a1a; margin: 0 0 1.25em 0; white-space: pre-wrap;">'
+                f'<p style="max-width: 38rem; margin: 0 auto; padding: 2rem 1.5rem; '
+                f'font-family: \'Iowan Old Style\', \'Palatino Linotype\', Palatino, Georgia, serif; '
+                f'font-size: 1.1875rem; line-height: 1.75; color: #2b2926; background: #faf8f5; '
+                f'text-align: justify; text-wrap: pretty; hyphens: auto; '
+                f'-webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; '
+                f'white-space: pre-wrap;">'
                 f'{content}</p>'
             )
 

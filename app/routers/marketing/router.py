@@ -54,7 +54,11 @@ async def send_promotional_notification(
             language_code = DEFAULT_LANGUAGE_CODE
         user_skus_by_language[language_code].append(user.SKU)
 
-    notification_data = {"event": PROMOTIONAL_EVENT_NAME, **request.data}
+    notification_data = {
+        "event": PROMOTIONAL_EVENT_NAME,
+        "route": request.route,
+        **request.extra_data
+    }
 
     fcm_service = FCMService()
     devices_found = 0

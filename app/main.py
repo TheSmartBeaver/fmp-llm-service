@@ -16,6 +16,7 @@ from app.routers.course_material.router import course_material_router
 from app.routers.device.router import device_router
 from app.routers.utils.router import utils_router
 from app.routers.quiz.router import quiz_router
+from app.routers.marketing.router import marketing_router
 from app.services.lifespan import customlifespan
 from app.services.socket import sio
 
@@ -40,6 +41,7 @@ app.include_router(course_material_router)
 app.include_router(device_router)
 app.include_router(utils_router)
 app.include_router(quiz_router)
+app.include_router(marketing_router)
 
 @app.get("/")
 def root():

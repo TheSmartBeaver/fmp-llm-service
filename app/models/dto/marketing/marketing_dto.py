@@ -31,7 +31,7 @@ class PromotionalNotificationRequest(BaseModel):
                     "fr": {"title": "Nouveauté !", "body": "Découvrez les nouveautés de l'application."}
                 },
                 "data": {
-                    "action": "open_promo"
+                    "event": "promotional_notification"
                 }
             }
         }

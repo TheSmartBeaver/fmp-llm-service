@@ -16,6 +16,7 @@ marketing_router = APIRouter(prefix="/marketing", tags=["marketing"])
 
 DEFAULT_LANGUAGE_CODE = "en"
 SUPPORTED_LANGUAGE_CODES = ["en", "fr"]
+PROMOTIONAL_EVENT_NAME = "promotional_notification"
 
 
 def resolve_language_code(language_code: Optional[str]) -> str:
@@ -53,6 +54,8 @@ async def send_promotional_notification(
             language_code = DEFAULT_LANGUAGE_CODE
         user_skus_by_language[language_code].append(user.SKU)
 
+    notification_data = {"event": PROMOTIONAL_EVENT_NAME, **request.data}
+
     fcm_service = FCMService()
     devices_found = 0
     success_count = 0
@@ -75,7 +78,7 @@ async def send_promotional_notification(
             tokens=tokens,
             title=content.title,
             body=content.body,
-            data=request.data,
+            data=notification_data,
             notification_id=f"promo-{uuid.uuid4()}"
         )
         success_count += result["success_count"]

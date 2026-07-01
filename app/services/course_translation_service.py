@@ -184,15 +184,17 @@ class CourseTranslationService:
                 # Réaligner sur l'ordre d'entrée via les id.
                 by_id = {item["id"]: item["text"] for item in parsed}
                 return [by_id.get(i, chunk[i]) for i in range(len(chunk))]
-            except Exception:
+            except Exception as e:
                 # En cas d'échec (LLM ou parsing), on dégrade en gardant le texte
                 # source plutôt que de faire échouer tout le clonage.
                 logger.error(
                     "Échec de la traduction d'un chunk (%s -> %s), fallback sur le "
-                    "texte source pour %d entrée(s)",
+                    "texte source pour %d entrée(s) : %s: %s",
                     source_language,
                     target_language,
                     len(chunk),
+                    type(e).__name__,
+                    e,
                     exc_info=True,
                 )
                 return list(chunk)
@@ -328,10 +330,22 @@ class CourseTranslationService:
     def _clone_group_chain(self, group: Groups) -> None:
         """Clone un Group et sa chaîne de parents (arbre via ParentSKU)."""
         chain: List[Groups] = []
+        seen: set[uuid.UUID] = set()
         current: Optional[Groups] = group
-        while current is not None and current.SKU not in self.sku_map:
+        while (
+            current is not None
+            and current.SKU not in self.sku_map
+            and current.SKU not in seen
+        ):
+            seen.add(current.SKU)
             chain.append(current)
             current = current.Groups  # parent
+        if current is not None and current.SKU in seen:
+            logger.warning(
+                "Cycle détecté dans la hiérarchie des Groups (SKU=%s), "
+                "arrêt de la remontée des parents.",
+                current.SKU,
+            )
         # Cloner depuis la racine vers la feuille pour que les parents existent d'abord.
         for g in reversed(chain):
             self.db.add(
@@ -378,22 +392,26 @@ class CourseTranslationService:
                 mode = "sync"
 
             self.db.commit()
-        except CourseTranslationError:
+        except CourseTranslationError as e:
             # Erreur métier attendue : loggée en warning, gérée par le router (400).
             logger.warning(
-                "Traduction refusée pour CourseCode=%s (%s -> %s)",
+                "Traduction refusée pour CourseCode=%s (%s -> %s) : %s: %s",
                 course_code,
                 source_language,
                 target_language,
+                type(e).__name__,
+                e,
                 exc_info=True,
             )
             raise
-        except Exception:
+        except Exception as e:
             logger.error(
-                "Échec de la traduction du cours CourseCode=%s (%s -> %s)",
+                "Échec de la traduction du cours CourseCode=%s (%s -> %s) : %s: %s",
                 course_code,
                 source_language,
                 target_language,
+                type(e).__name__,
+                e,
                 exc_info=True,
             )
             raise

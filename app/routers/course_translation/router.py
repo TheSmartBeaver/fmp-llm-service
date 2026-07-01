@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,6 +15,8 @@ from app.services.course_translation_service import (
     CourseTranslationService,
 )
 
+
+logger = logging.getLogger(__name__)
 
 course_translation_router = APIRouter(prefix="/courses", tags=["course-translation"])
 
@@ -57,9 +60,26 @@ async def translate_course(
         )
     except CourseTranslationError as e:
         db.rollback()
+        logger.warning(
+            "Traduction refusée (CourseCode=%s, %s -> %s) : %s: %s",
+            request.course_code,
+            request.source_language,
+            request.target_language,
+            type(e).__name__,
+            e,
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         db.rollback()
+        logger.error(
+            "Erreur lors de la traduction du cours (CourseCode=%s, %s -> %s) : %s: %s",
+            request.course_code,
+            request.source_language,
+            request.target_language,
+            type(e).__name__,
+            e,
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors de la traduction du cours: {str(e)}",

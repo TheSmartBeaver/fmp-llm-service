@@ -21,6 +21,7 @@ Modes :
 import asyncio
 import datetime
 import json
+import logging
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -45,6 +46,9 @@ from app.models.db.fmp_models import (
     t_AssemblyCategoryHtmlContent,
     t_FileContentHtmlContent,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime.datetime:
@@ -165,20 +169,33 @@ class CourseTranslationService:
                 "en conservant les mêmes 'id'.\n\n"
                 f"Entrées :\n{payload}"
             )
-            raw = await self.llm.ainvoke(prompt)
-            content = raw.content if hasattr(raw, "content") else str(raw)
-            content = content.strip()
-            if content.startswith("```"):
-                content = content.split("```")[1]
-                if content.startswith("json"):
-                    content = content[4:]
+            try:
+                raw = await self.llm.ainvoke(prompt)
+                content = raw.content if hasattr(raw, "content") else str(raw)
                 content = content.strip()
-            if content.endswith("```"):
-                content = content[:-3].strip()
-            parsed = json.loads(content)
-            # Réaligner sur l'ordre d'entrée via les id.
-            by_id = {item["id"]: item["text"] for item in parsed}
-            return [by_id.get(i, chunk[i]) for i in range(len(chunk))]
+                if content.startswith("```"):
+                    content = content.split("```")[1]
+                    if content.startswith("json"):
+                        content = content[4:]
+                    content = content.strip()
+                if content.endswith("```"):
+                    content = content[:-3].strip()
+                parsed = json.loads(content)
+                # Réaligner sur l'ordre d'entrée via les id.
+                by_id = {item["id"]: item["text"] for item in parsed}
+                return [by_id.get(i, chunk[i]) for i in range(len(chunk))]
+            except Exception:
+                # En cas d'échec (LLM ou parsing), on dégrade en gardant le texte
+                # source plutôt que de faire échouer tout le clonage.
+                logger.error(
+                    "Échec de la traduction d'un chunk (%s -> %s), fallback sur le "
+                    "texte source pour %d entrée(s)",
+                    source_language,
+                    target_language,
+                    len(chunk),
+                    exc_info=True,
+                )
+                return list(chunk)
 
         chunks = [texts[i : i + CHUNK] for i in range(0, len(texts), CHUNK)]
         results = await asyncio.gather(*(translate_chunk(c) for c in chunks))
@@ -340,17 +357,55 @@ class CourseTranslationService:
                 "La langue source et la langue cible doivent être différentes."
             )
 
-        source_course = self._load_source_course(course_code, source_language)
-        target_course = self._find_target_course(course_code, target_language)
+        logger.info(
+            "Début de traduction du cours CourseCode=%s (%s -> %s)",
+            course_code,
+            source_language,
+            target_language,
+        )
 
-        if target_course is None:
-            result = await self._clone_course(source_course, target_language)
-            mode = "clone"
-        else:
-            result = await self._sync_course(source_course, target_course, target_language)
-            mode = "sync"
+        try:
+            source_course = self._load_source_course(course_code, source_language)
+            target_course = self._find_target_course(course_code, target_language)
 
-        self.db.commit()
+            if target_course is None:
+                result = await self._clone_course(source_course, target_language)
+                mode = "clone"
+            else:
+                result = await self._sync_course(
+                    source_course, target_course, target_language
+                )
+                mode = "sync"
+
+            self.db.commit()
+        except CourseTranslationError:
+            # Erreur métier attendue : loggée en warning, gérée par le router (400).
+            logger.warning(
+                "Traduction refusée pour CourseCode=%s (%s -> %s)",
+                course_code,
+                source_language,
+                target_language,
+                exc_info=True,
+            )
+            raise
+        except Exception:
+            logger.error(
+                "Échec de la traduction du cours CourseCode=%s (%s -> %s)",
+                course_code,
+                source_language,
+                target_language,
+                exc_info=True,
+            )
+            raise
+
+        logger.info(
+            "Traduction terminée (mode=%s) pour CourseCode=%s (%s -> %s) : %s",
+            mode,
+            course_code,
+            source_language,
+            target_language,
+            self.stats,
+        )
 
         return {
             "success": True,

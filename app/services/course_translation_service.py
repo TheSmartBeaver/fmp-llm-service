@@ -25,7 +25,7 @@ import logging
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, or_, select
 from sqlalchemy.orm import Session
 
 from app.chains.llm.universal_llm import create_universal_llm
@@ -134,12 +134,38 @@ class CourseTranslationService:
             .all()
         )
 
-    def _load_course_materials(self, topic_skus: List[uuid.UUID]) -> List[CourseMaterials]:
-        if not topic_skus:
+    def _load_course_materials(
+        self,
+        topics: List[Topics],
+        course_sku: Optional[uuid.UUID] = None,
+    ) -> List[CourseMaterials]:
+        """
+        Charge TOUS les CourseMaterials rattachés à un cours, quelle que soit la
+        direction de la relation :
+          - CourseMaterials.CourseSKU -> Courses
+          - CourseMaterials.TopicSKU  -> Topics du cours
+          - Topics.CourseMaterialSKU  -> CourseMaterials (relation inverse)
+        Un CourseMaterial atteint uniquement par la relation inverse échapperait
+        sinon au clonage, laissant Topics.CourseMaterialSKU pointer vers le SKU
+        source (-> violation de l'index unique IX_Topics_CourseMaterialSKU).
+        """
+        topic_skus = [t.SKU for t in topics]
+        material_skus = {t.CourseMaterialSKU for t in topics if t.CourseMaterialSKU}
+
+        conditions = []
+        if course_sku is not None:
+            conditions.append(CourseMaterials.CourseSKU == course_sku)
+        if topic_skus:
+            conditions.append(CourseMaterials.TopicSKU.in_(topic_skus))
+        if material_skus:
+            conditions.append(CourseMaterials.SKU.in_(material_skus))
+
+        if not conditions:
             return []
+
         return (
             self.db.query(CourseMaterials)
-            .filter(CourseMaterials.TopicSKU.in_(topic_skus))
+            .filter(or_(*conditions))
             .all()
         )
 
@@ -458,8 +484,7 @@ class CourseTranslationService:
     ) -> Dict[str, Any]:
         source_language = source_course.LanguageCode
         topics = self._load_topics(source_course.SKU)
-        topic_skus = [t.SKU for t in topics]
-        materials = self._load_course_materials(topic_skus)
+        materials = self._load_course_materials(topics, source_course.SKU)
 
         # --- 1. Collecte des textes à traduire (course + topics) ---
         texts_to_translate = [source_course.Title, source_course.Description]
@@ -650,7 +675,7 @@ class CourseTranslationService:
         # car Topics.CourseMaterialSKU (unique) <-> CourseMaterials.TopicSKU se
         # référencent mutuellement (cf. _clone_course).
         missing_materials = (
-            self._load_course_materials([st.SKU for st in missing_source_topics])
+            self._load_course_materials(missing_source_topics)
             if missing_source_topics
             else []
         )

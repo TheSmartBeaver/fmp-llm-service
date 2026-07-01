@@ -59,6 +59,125 @@ class CourseTranslationError(Exception):
     """Erreur métier lors de la traduction d'un cours."""
 
 
+def build_translation_extraction_sql(
+    db: Session, course_code: str, language: str
+) -> Dict[str, Any]:
+    """
+    Construit les SELECT SQL extrayant les contenus lourds restant à traduire d'un
+    cours dans une langue donnée (clonés bruts lors de la traduction) :
+    CourseMaterialHtmlContents, QuizQuestions, flashcards HtmlContents et Cards.
+
+    On résout d'abord le Courses.SKU du couple (course_code, language) puis on ancre
+    toutes les requêtes sur ce SKU (la langue est garantie par l'ancrage, car seul
+    Courses porte LanguageCode). Le SKU est écrit inline : les requêtes sont
+    exécutables telles quelles. Aucune écriture n'est effectuée ici.
+
+    Raise:
+        CourseTranslationError si le cours (course_code + language) n'existe pas.
+    """
+    course = (
+        db.query(Courses)
+        .filter(Courses.CourseCode == course_code, Courses.LanguageCode == language)
+        .first()
+    )
+    if not course:
+        raise CourseTranslationError(
+            f"Cours introuvable (CourseCode={course_code}, LanguageCode={language})"
+        )
+
+    sku = str(course.SKU)
+
+    # CourseMaterials rattachés au cours : soit directement (CourseSKU), soit via un
+    # Topic du cours (TopicSKU), soit via la relation inverse (Topics.CourseMaterialSKU).
+    course_materials_cte = (
+        'SELECT cm."SKU", cm."HtmlContentSKU"\n'
+        '  FROM "CourseMaterials" cm\n'
+        f'  WHERE cm."CourseSKU" = \'{sku}\'\n'
+        '     OR cm."TopicSKU" IN (\n'
+        f'          SELECT t."SKU" FROM "Topics" t WHERE t."ParentCourseSKU" = \'{sku}\'\n'
+        '        )\n'
+        '     OR cm."SKU" IN (\n'
+        '          SELECT t."CourseMaterialSKU" FROM "Topics" t\n'
+        f'          WHERE t."ParentCourseSKU" = \'{sku}\' AND t."CourseMaterialSKU" IS NOT NULL\n'
+        '        )'
+    )
+
+    # 1. CourseMaterialHtmlContents (gros contenu pédagogique HTML)
+    sql_html_contents = (
+        'SELECT hc."SKU", hc."MaterialsJson", hc."MaterialsJsonType", hc."LastUpdated"\n'
+        'FROM "CourseMaterialHtmlContents" hc\n'
+        'WHERE hc."SKU" IN (\n'
+        f'  SELECT cm."HtmlContentSKU" FROM ({course_materials_cte}) cm\n'
+        '  WHERE cm."HtmlContentSKU" IS NOT NULL\n'
+        ');'
+    )
+
+    # 2. QuizQuestions (via CourseMaterialLinkedQuizzes -> QuizMaterials -> orders)
+    sql_quiz_questions = (
+        'SELECT qq."SKU", qq."QuestionJson", qq."AnswersJson", qq."ExplanationJson",\n'
+        '       qq."CorrectAnswerOrder", qq."LastUpdated"\n'
+        'FROM "QuizQuestions" qq\n'
+        'WHERE qq."SKU" IN (\n'
+        '  SELECT qmqo."QuizQuestionSKU"\n'
+        '  FROM "QuizMaterialQuestionOrders" qmqo\n'
+        '  WHERE qmqo."QuizMaterialSKU" IN (\n'
+        '    SELECT cmlq."QuizMaterialSKU"\n'
+        '    FROM "CourseMaterialLinkedQuizzes" cmlq\n'
+        f'    WHERE cmlq."CourseMaterialSKU" IN (SELECT cm."SKU" FROM ({course_materials_cte}) cm)\n'
+        '  )\n'
+        ');'
+    )
+
+    # 3. Flashcards HtmlContents (via Topics.HtmlContentSKU du cours)
+    sql_flashcard_html = (
+        'SELECT hc."SKU", hc."FullHtmlContent", hc."Recto", hc."Verso",\n'
+        '       hc."CardTemplatedJson", hc."LastUpdated"\n'
+        'FROM "HtmlContents" hc\n'
+        'WHERE hc."SKU" IN (\n'
+        f'  SELECT t."HtmlContentSKU" FROM "Topics" t\n'
+        f'  WHERE t."ParentCourseSKU" = \'{sku}\' AND t."HtmlContentSKU" IS NOT NULL\n'
+        ');'
+    )
+
+    # 4. Cards (via les flashcards HtmlContents ci-dessus)
+    sql_cards = (
+        'SELECT c."SKU", c."Tags", c."MnemotechnicHint", c."Path", c."LastUpdated"\n'
+        'FROM "Cards" c\n'
+        'WHERE c."HtmlContentSKU" IN (\n'
+        f'  SELECT t."HtmlContentSKU" FROM "Topics" t\n'
+        f'  WHERE t."ParentCourseSKU" = \'{sku}\' AND t."HtmlContentSKU" IS NOT NULL\n'
+        ');'
+    )
+
+    return {
+        "course_code": course_code,
+        "language": language,
+        "course_sku": course.SKU,
+        "queries": [
+            {
+                "entity": "CourseMaterialHtmlContents",
+                "description": "Contenus HTML pédagogiques (MaterialsJson) du cours",
+                "sql": sql_html_contents,
+            },
+            {
+                "entity": "QuizQuestions",
+                "description": "Questions/réponses/explications des quiz du cours",
+                "sql": sql_quiz_questions,
+            },
+            {
+                "entity": "HtmlContents",
+                "description": "Flashcards (HTML recto/verso) rattachées aux topics du cours",
+                "sql": sql_flashcard_html,
+            },
+            {
+                "entity": "Cards",
+                "description": "Cards (tags, indices mnémotechniques) des flashcards du cours",
+                "sql": sql_cards,
+            },
+        ],
+    }
+
+
 class CourseTranslationService:
     def __init__(self, db: Session, translation_model: Optional[str] = None):
         self.db = db

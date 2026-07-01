@@ -8,11 +8,14 @@ from app.database import get_db
 from app.models.dto.course_translation.course_translation_dto import (
     CourseTranslationRequestDto,
     CourseTranslationResponseDto,
+    TranslationSqlRequestDto,
+    TranslationSqlResponseDto,
 )
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
 from app.services.course_translation_service import (
     CourseTranslationError,
     CourseTranslationService,
+    build_translation_extraction_sql,
 )
 
 
@@ -93,3 +96,59 @@ async def translate_course(
         ),
         **result,
     )
+
+
+@course_translation_router.post(
+    "/translation-sql", response_model=TranslationSqlResponseDto
+)
+async def get_translation_extraction_sql(
+    request: TranslationSqlRequestDto,
+    db: Session = Depends(get_db),
+):
+    """
+    Renvoie les SELECT SQL permettant d'extraire les contenus lourds restant à
+    traduire d'un cours dans une langue donnée (clonés bruts lors de la traduction) :
+    CourseMaterialHtmlContents, QuizQuestions, flashcards HtmlContents et Cards.
+
+    La route ne traduit rien et n'écrit rien : elle résout le Courses.SKU du couple
+    (course_code, language) et retourne des requêtes SQL prêtes à exécuter (SKU inline),
+    destinées à un process de traduction ultérieur.
+
+    Args:
+        request: course_code + language (langue ciblée)
+        db: session de base de données
+
+    Returns:
+        TranslationSqlResponseDto avec la liste des requêtes d'extraction.
+    """
+    try:
+        result = build_translation_extraction_sql(
+            db=db,
+            course_code=request.course_code,
+            language=request.language,
+        )
+    except CourseTranslationError as e:
+        logger.warning(
+            "Génération SQL refusée (CourseCode=%s, langue=%s) : %s: %s",
+            request.course_code,
+            request.language,
+            type(e).__name__,
+            e,
+        )
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(
+            "Erreur lors de la génération des SQL d'extraction "
+            "(CourseCode=%s, langue=%s) : %s: %s",
+            request.course_code,
+            request.language,
+            type(e).__name__,
+            e,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la génération des requêtes SQL: {str(e)}",
+        )
+
+    return TranslationSqlResponseDto(**result)

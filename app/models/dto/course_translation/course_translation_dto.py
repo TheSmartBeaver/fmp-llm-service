@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 import uuid
 
 from pydantic import BaseModel, Field
@@ -50,3 +50,36 @@ class CourseTranslationResponseDto(BaseModel):
     files_shared: int = 0
 
     message: Optional[str] = None
+
+
+class TranslationSqlRequestDto(BaseModel):
+    """
+    Requête pour obtenir les SELECT SQL extrayant les contenus lourds restant à
+    traduire d'un cours dans une langue donnée (CourseMaterialHtmlContents,
+    QuizQuestions, flashcards HtmlContents/Cards).
+    """
+
+    course_code: str = Field(..., description="CourseCode du cours")
+    language: str = Field(..., description="LanguageCode ciblé (ex: 'en')")
+
+    class Config:
+        json_schema_extra = {
+            "example": {"course_code": "MON_COURS", "language": "en"}
+        }
+
+
+class TranslationSqlQueryDto(BaseModel):
+    """Une requête SQL d'extraction pour un type d'entité donné."""
+
+    entity: str = Field(..., description="Table/entité ciblée")
+    description: str = Field(..., description="Ce que la requête extrait")
+    sql: str = Field(..., description="SELECT prêt à exécuter (course_sku inline)")
+
+
+class TranslationSqlResponseDto(BaseModel):
+    """Ensemble des SELECT d'extraction pour un cours+langue."""
+
+    course_code: str
+    language: str
+    course_sku: uuid.UUID
+    queries: List[TranslationSqlQueryDto]

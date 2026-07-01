@@ -1,7 +1,8 @@
 import logging
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -103,6 +104,7 @@ async def translate_course(
 )
 async def get_translation_extraction_sql(
     request: TranslationSqlRequestDto,
+    format: Literal["json", "text"] = "json",
     db: Session = Depends(get_db),
 ):
     """
@@ -116,10 +118,12 @@ async def get_translation_extraction_sql(
 
     Args:
         request: course_code + language (langue ciblée)
+        format: 'json' (défaut) renvoie un objet structuré ; 'text' renvoie du texte
+                brut (text/plain) avec les requêtes non échappées, prêtes au copier-coller.
         db: session de base de données
 
     Returns:
-        TranslationSqlResponseDto avec la liste des requêtes d'extraction.
+        TranslationSqlResponseDto (format=json) ou une réponse text/plain (format=text).
     """
     try:
         result = build_translation_extraction_sql(
@@ -150,5 +154,16 @@ async def get_translation_extraction_sql(
             status_code=500,
             detail=f"Erreur lors de la génération des requêtes SQL: {str(e)}",
         )
+
+    if format == "text":
+        blocks = [
+            f"-- {q['entity']} : {q['description']}\n{q['sql']}"
+            for q in result["queries"]
+        ]
+        header = (
+            f"-- Course: {result['course_code']} | Language: {result['language']} | "
+            f"Course SKU: {result['course_sku']}\n\n"
+        )
+        return PlainTextResponse(content=header + "\n\n".join(blocks))
 
     return TranslationSqlResponseDto(**result)

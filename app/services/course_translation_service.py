@@ -64,7 +64,11 @@ class CourseTranslationService:
         self.db = db
         self.llm = create_universal_llm(translation_model or "gpt-5-mini")
         # Remapping global old_sku -> new_sku pour toute la durée du clonage.
+        # NB: un SKU présent ici est seulement RÉSERVÉ ; il n'implique pas que
+        # l'entité a déjà été insérée (cf. self.cloned).
         self.sku_map: Dict[uuid.UUID, uuid.UUID] = {}
+        # SKU sources dont l'entité a effectivement été insérée en DB (anti-doublon).
+        self.cloned: set[uuid.UUID] = set()
         # FileContents partagés (SKU réutilisés tels quels, pas dupliqués).
         self.shared_file_skus: set[uuid.UUID] = set()
         # Stats
@@ -211,6 +215,9 @@ class CourseTranslationService:
     # Clonage brut d'entités (sans traduction)
     # ------------------------------------------------------------------ #
     def _clone_html_content(self, hc: CourseMaterialHtmlContents) -> None:
+        if hc.SKU in self.cloned:
+            return
+        self.cloned.add(hc.SKU)
         new = CourseMaterialHtmlContents(
             SKU=self._new_sku(hc.SKU),
             AppUserSKU=hc.AppUserSKU,
@@ -231,6 +238,9 @@ class CourseTranslationService:
             )
 
     def _clone_quiz_material(self, qm: QuizMaterials) -> None:
+        if qm.SKU in self.cloned:
+            return
+        self.cloned.add(qm.SKU)
         self.db.add(
             QuizMaterials(
                 SKU=self._new_sku(qm.SKU),
@@ -241,7 +251,8 @@ class CourseTranslationService:
         for order in qm.QuizMaterialQuestionOrders:
             # Clone la question (sans traduction) si pas déjà clonée.
             question = order.QuizQuestions_
-            if question is not None and question.SKU not in self.sku_map:
+            if question is not None and question.SKU not in self.cloned:
+                self.cloned.add(question.SKU)
                 self.db.add(
                     QuizQuestions(
                         SKU=self._new_sku(question.SKU),
@@ -265,8 +276,9 @@ class CourseTranslationService:
 
     def _clone_flashcard_html(self, hc: HtmlContents) -> None:
         """Clone une flashcard HtmlContents (sans traduction) + ses liaisons + sa Card."""
-        if hc.SKU in self.sku_map:
+        if hc.SKU in self.cloned:
             return
+        self.cloned.add(hc.SKU)
         self.db.add(
             HtmlContents(
                 SKU=self._new_sku(hc.SKU),
@@ -314,8 +326,9 @@ class CourseTranslationService:
         self.stats["flashcards_cloned"] += 1
 
     def _clone_easter_egg(self, egg: EasterEggContents) -> None:
-        if egg.SKU in self.sku_map:
+        if egg.SKU in self.cloned:
             return
+        self.cloned.add(egg.SKU)
         self.db.add(
             EasterEggContents(
                 SKU=self._new_sku(egg.SKU),
@@ -334,7 +347,7 @@ class CourseTranslationService:
         current: Optional[Groups] = group
         while (
             current is not None
-            and current.SKU not in self.sku_map
+            and current.SKU not in self.cloned
             and current.SKU not in seen
         ):
             seen.add(current.SKU)
@@ -348,6 +361,7 @@ class CourseTranslationService:
             )
         # Cloner depuis la racine vers la feuille pour que les parents existent d'abord.
         for g in reversed(chain):
+            self.cloned.add(g.SKU)
             self.db.add(
                 Groups(
                     SKU=self._new_sku(g.SKU),
@@ -475,18 +489,26 @@ class CourseTranslationService:
             )
         )
 
-        # --- 3. Cloner l'arbre des Topics (parents d'abord) ---
-        # On pré-réserve les nouveaux SKU pour pouvoir remapper ParentSKU peu importe l'ordre.
+        # --- 3. Pré-réserver les SKU (Topics + CourseMaterials + leurs HtmlContents) ---
+        # Topic et CourseMaterial se référencent mutuellement (Topics.CourseMaterialSKU,
+        # unique, <-> CourseMaterials.TopicSKU). Il faut donc réserver tous les nouveaux
+        # SKU AVANT de cloner quoi que ce soit, pour que _map_existing renvoie le clone
+        # (et non le SKU source, ce qui violerait l'index unique IX_Topics_CourseMaterialSKU).
         for t in topics:
             self._new_sku(t.SKU)
+        for m in materials:
+            self._new_sku(m.SKU)
+            if m.HtmlContentSKU is not None:
+                self._new_sku(m.HtmlContentSKU)
 
+        # --- 4. Cloner l'arbre des Topics ---
         title_by_sku = {t.SKU: translated_topic_titles[i] for i, t in enumerate(topics)}
 
         for t in topics:
             self._clone_topic(t, new_course_sku, title_by_sku[t.SKU])
             self.stats["topics_created"] += 1
 
-        # --- 4. Cloner les CourseMaterials + HTML + Quiz ---
+        # --- 5. Cloner les CourseMaterials + HTML + Quiz ---
         for m in materials:
             self._clone_course_material(m, new_course_sku)
 
@@ -497,6 +519,9 @@ class CourseTranslationService:
     def _clone_topic(
         self, topic: Topics, new_course_sku: uuid.UUID, translated_title: str
     ) -> None:
+        if topic.SKU in self.cloned:
+            return
+        self.cloned.add(topic.SKU)
         # Cloner les entités satellites référencées par le topic.
         if topic.Groups is not None:
             self._clone_group_chain(topic.Groups)
@@ -529,10 +554,12 @@ class CourseTranslationService:
     def _clone_course_material(
         self, material: CourseMaterials, new_course_sku: uuid.UUID
     ) -> None:
-        # Cloner le HTML content (sans traduction) s'il existe et pas déjà cloné.
+        if material.SKU in self.cloned:
+            return
+        self.cloned.add(material.SKU)
+        # Cloner le HTML content (sans traduction). _clone_html_content est idempotent.
         if material.CourseMaterialHtmlContents is not None:
-            if material.HtmlContentSKU not in self.sku_map:
-                self._clone_html_content(material.CourseMaterialHtmlContents)
+            self._clone_html_content(material.CourseMaterialHtmlContents)
 
         self.db.add(
             CourseMaterials(
@@ -551,9 +578,9 @@ class CourseTranslationService:
         )
         self.stats["course_materials_cloned"] += 1
 
-        # Quiz liés
+        # Quiz liés. _clone_quiz_material est idempotent.
         for link in material.CourseMaterialLinkedQuizzes:
-            if link.QuizMaterials_ is not None and link.QuizMaterialSKU not in self.sku_map:
+            if link.QuizMaterials_ is not None:
                 self._clone_quiz_material(link.QuizMaterials_)
             self.db.add(
                 CourseMaterialLinkedQuizzes(
@@ -619,18 +646,29 @@ class CourseTranslationService:
                 self.stats["topics_updated"] += 1
 
         # Ajouter les topics manquants (clone complet de leur sous-graphe).
+        # Pré-réserver tous les SKU (topics + leurs materials + html) AVANT clonage,
+        # car Topics.CourseMaterialSKU (unique) <-> CourseMaterials.TopicSKU se
+        # référencent mutuellement (cf. _clone_course).
+        missing_materials = (
+            self._load_course_materials([st.SKU for st in missing_source_topics])
+            if missing_source_topics
+            else []
+        )
         for st in missing_source_topics:
             self._new_sku(st.SKU)
+        for m in missing_materials:
+            self._new_sku(m.SKU)
+            if m.HtmlContentSKU is not None:
+                self._new_sku(m.HtmlContentSKU)
+
         translated_missing = translated[missing_start:]
         for i, st in enumerate(missing_source_topics):
             self._clone_topic(st, target_course.SKU, translated_missing[i])
             self.stats["topics_created"] += 1
 
         # Cloner les CourseMaterials des topics nouvellement ajoutés.
-        if missing_source_topics:
-            new_topic_skus = [st.SKU for st in missing_source_topics]
-            for m in self._load_course_materials(new_topic_skus):
-                self._clone_course_material(m, target_course.SKU)
+        for m in missing_materials:
+            self._clone_course_material(m, target_course.SKU)
 
         self.stats["files_shared"] = len(self.shared_file_skus)
 

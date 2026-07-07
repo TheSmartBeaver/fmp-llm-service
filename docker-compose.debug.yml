@@ -2,7 +2,7 @@ services:
   fmp-redis:
     image: redis:7-alpine
     container_name: fmp-redis
-    restart: "no"
+    restart: "unless-stopped"
     networks:
       - fmp-network
 

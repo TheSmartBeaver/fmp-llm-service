@@ -6,6 +6,7 @@ WORKDIR /app
 # Installer les dépendances système nécessaires
 RUN apt-get update && apt-get install -y \
     build-essential \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Copier les fichiers de dépendances

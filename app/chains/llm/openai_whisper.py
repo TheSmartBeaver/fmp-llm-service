@@ -1,7 +1,7 @@
 import os
 from dotenv import find_dotenv, load_dotenv
 from openai import OpenAI
-from typing import Any, BinaryIO, List, Optional
+from typing import Any, BinaryIO, List, Optional, Tuple
 
 from app.models.dto.audio.transcription_dto import (
     TranscriptionGranularity,
@@ -101,3 +101,55 @@ class OpenAiWhisper:
             segments=segments,
             words=words,
         )
+
+
+def merge_transcriptions(
+    parts: List[Tuple[TranscriptionResponseDto, float]],
+) -> TranscriptionResponseDto:
+    """
+    Fusionne les transcriptions de plusieurs chunks en décalant les timecodes.
+
+    Args:
+        parts: Liste de (transcription, offset_secondes du chunk dans l'audio complet)
+
+    Returns:
+        Une TranscriptionResponseDto unique, timecodes recalés sur l'audio d'origine
+    """
+    if len(parts) == 1 and parts[0][1] == 0.0:
+        return parts[0][0]
+
+    texts: List[str] = []
+    segments: List[TranscriptionSegmentDto] = []
+    words: List[TranscriptionWordDto] = []
+    next_segment_id = 0
+
+    for dto, offset in parts:
+        if dto.text:
+            texts.append(dto.text.strip())
+
+        for s in dto.segments or []:
+            segments.append(
+                s.model_copy(update={
+                    "id": next_segment_id,
+                    "start": s.start + offset,
+                    "end": s.end + offset,
+                })
+            )
+            next_segment_id += 1
+
+        for w in dto.words or []:
+            words.append(
+                w.model_copy(update={"start": w.start + offset, "end": w.end + offset})
+            )
+
+    last_dto, last_offset = parts[-1]
+    duration = last_offset + last_dto.duration if last_dto.duration is not None else None
+
+    return TranscriptionResponseDto(
+        success=True,
+        text=" ".join(texts),
+        language=parts[0][0].language,
+        duration=duration,
+        segments=segments or None,
+        words=words or None,
+    )

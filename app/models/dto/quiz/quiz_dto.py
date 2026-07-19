@@ -26,6 +26,8 @@ class QuizOutputItemDto(BaseModel):
     answersJson: dict
     explanationJson: dict
     correctAnswerOrder: int
+    # ID du bloc du plan de quiz dont la question découle (génération depuis plan)
+    planBlock: Optional[str] = None
 
 
 def shuffle_quiz_item_answers(item: "QuizOutputItemDto") -> "QuizOutputItemDto":
@@ -90,6 +92,7 @@ def shuffle_quiz_item_answers(item: "QuizOutputItemDto") -> "QuizOutputItemDto":
         answersJson=new_answers_json,
         explanationJson=new_explanation_json,
         correctAnswerOrder=new_correct_order,
+        planBlock=item.planBlock,
     )
 
 

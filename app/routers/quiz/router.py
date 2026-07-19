@@ -12,12 +12,169 @@ from app.models.dto.quiz.quiz_dto import (
     shuffle_quiz_item_answers,
 )
 from app.models.dto.llm_config.llm_config_dto import LLMConfigDto
-from app.workers.tasks import generate_quiz_task
+from app.models.dto.assessment.assessment_plan_dtos import (
+    AssessmentPlanRequestDto,
+    EntityPlanRequestDto,
+    QuizFromPlanRequestDto,
+    QuizQuestionHtmlRequestDto,
+    QuizQuestionHtmlResultResponse,
+)
+from app.workers.tasks import (
+    generate_quiz_task,
+    generate_assessment_plan_task,
+    generate_entity_plan_task,
+    generate_quiz_from_plan_task,
+    generate_quiz_question_html_task,
+)
 from app.workers.celery_app import celery
 from app.chains.llm.universal_llm import create_universal_llm
 
 
 quiz_router = APIRouter(prefix="/quiz")
+
+
+@quiz_router.post("/generate_plan_CELERY", response_model=QuizTaskResponse)
+async def generate_quiz_plan(
+    request: AssessmentPlanRequestDto,
+    auth_uid: str = Header(..., alias="X-Auth-Uid"),
+):
+    """
+    Lance la génération asynchrone du PLAN GÉNÉRAL d'un quiz (1 bloc = 1
+    question esquissée) depuis le pedagogical_json du support de cours.
+
+    Le plan s'itère ensuite via POST /course_material/modify_plan_CELERY
+    (patchs ciblés, verrous "validated") et son résultat se récupère via
+    GET /course_material/plan_result/{task_id}.
+
+    Note:
+        request.kind doit valoir "quiz" (la même route DTO sert aussi aux
+        flashcards via /flashcard_generation/generate_plan_CELERY).
+    """
+    task_id = str(uuid.uuid4())
+    request.kind = "quiz"
+    generate_assessment_plan_task.apply_async(
+        args=[task_id, request.model_dump(), auth_uid],
+        task_id=task_id,
+    )
+    return QuizTaskResponse(task_id=task_id, status="pending")
+
+
+@quiz_router.post("/generate_question_plan_CELERY", response_model=QuizTaskResponse)
+async def generate_quiz_question_plan(
+    request: EntityPlanRequestDto,
+    auth_uid: str = Header(..., alias="X-Auth-Uid"),
+):
+    """
+    Lance la génération asynchrone du PLAN DE CONSTRUCTION d'UNE question de
+    quiz riche (mode HTML, slots question / answer_N / explanation_N).
+
+    Args:
+        request: kind="quiz_question_html" ; source_block optionnel (bloc du
+            plan général à développer) ; media optionnels (fichiers audio,
+            image, vidéo... préfixés //media: à intégrer dans l'énoncé et/ou
+            les réponses).
+
+    Résultat via GET /course_material/plan_result/{task_id}, itération via
+    POST /course_material/modify_plan_CELERY.
+    """
+    task_id = str(uuid.uuid4())
+    request.kind = "quiz_question_html"
+    generate_entity_plan_task.apply_async(
+        args=[task_id, request.model_dump(), auth_uid],
+        task_id=task_id,
+    )
+    return QuizTaskResponse(task_id=task_id, status="pending")
+
+
+@quiz_router.post("/generate_from_plan_CELERY", response_model=QuizTaskResponse)
+async def generate_quiz_from_plan(
+    request: QuizFromPlanRequestDto,
+    auth_uid: str = Header(..., alias="X-Auth-Uid"),
+):
+    """
+    Génère les questions (mode texte classique) des BLOCS CIBLÉS d'un plan
+    général de quiz. Chaque item produit porte planBlock (l'ID du bloc dont
+    il découle) pour permettre l'insertion ciblée côté client.
+
+    Résultat via GET /quiz/result/{task_id}.
+    """
+    task_id = str(uuid.uuid4())
+    generate_quiz_from_plan_task.apply_async(
+        args=[task_id, request.model_dump(), auth_uid],
+        task_id=task_id,
+    )
+    return QuizTaskResponse(task_id=task_id, status="pending")
+
+
+@quiz_router.post("/generate_question_html_CELERY", response_model=QuizTaskResponse)
+async def generate_quiz_question_html(
+    request: QuizQuestionHtmlRequestDto,
+    auth_uid: str = Header(..., alias="X-Auth-Uid"),
+):
+    """
+    Génération FINALE d'une question riche depuis son plan d'entité validé :
+    colonnes JSON (conventions type "html"/"simpleText") + HTML par slot.
+
+    Résultat via GET /quiz/question_html_result/{task_id}.
+    """
+    task_id = str(uuid.uuid4())
+    generate_quiz_question_html_task.apply_async(
+        args=[task_id, request.model_dump(), auth_uid],
+        task_id=task_id,
+    )
+    return QuizTaskResponse(task_id=task_id, status="pending")
+
+
+@quiz_router.get(
+    "/question_html_result/{task_id}",
+    response_model=QuizQuestionHtmlResultResponse,
+)
+async def get_quiz_question_html_result(task_id: str):
+    """
+    Récupère le résultat d'une génération de question riche.
+
+    Raises:
+        HTTPException 202: tâche en cours ; 500: échec.
+    """
+    try:
+        task_result = AsyncResult(task_id, app=celery)
+
+        if task_result.state == "PENDING":
+            raise HTTPException(
+                status_code=202,
+                detail={"status": "PENDING", "task_id": task_id,
+                        "message": "La génération de la question est en cours..."},
+            )
+        elif task_result.state == "SUCCESS":
+            result = task_result.result
+            return QuizQuestionHtmlResultResponse(
+                success=result.get("success", True),
+                question_json=result.get("question_json", {}),
+                answers_json=result.get("answers_json", {}),
+                explanation_json=result.get("explanation_json", {}),
+                correct_answer_order=result.get("correct_answer_order", 1),
+                slots=result.get("slots", {}),
+                debug_info=result.get("debug_info", {}),
+            )
+        elif task_result.state == "FAILURE":
+            raise HTTPException(
+                status_code=500,
+                detail={"status": "FAILURE", "task_id": task_id,
+                        "error": str(task_result.info)},
+            )
+        else:
+            raise HTTPException(
+                status_code=202,
+                detail={"status": task_result.state, "task_id": task_id,
+                        "message": f"État actuel: {task_result.state}"},
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la récupération du résultat: {str(e)}",
+        )
 
 
 @quiz_router.post("/generate", response_model=QuizTaskResponse)

@@ -1488,3 +1488,462 @@ Règles :
 
     finally:
         db.close()
+
+
+# ---------------------------------------------------------------------------
+# Plans d'évaluation (quiz / flashcards) et générations associées
+# ---------------------------------------------------------------------------
+
+def _notify_assessment(db, redis, auth_uid: str, task_id: str, event: str,
+                       title: str, body: str, extra_data: dict = None):
+    """Publie l'événement Redis + envoie la notification FCM (best effort)."""
+    payload = {"event": event, "type": "message", "task_id": task_id}
+    if extra_data:
+        payload.update(extra_data)
+    try:
+        redis.publish("assessment_plan_events", json.dumps(payload))
+    except Exception as redis_error:
+        print(f"⚠️ Redis publish failed: {redis_error}")
+
+    try:
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if not user:
+            print(f"⚠️ User not found with auth_uid: {auth_uid}")
+            return
+        active_devices = (
+            db.query(DeviceTokens)
+            .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+            .all()
+        )
+        if not active_devices:
+            print(f"⚠️ No active devices found for user {auth_uid}")
+            return
+        fcm_service = FCMService()
+        tokens = [device.FcmToken for device in active_devices]
+        data = {"task_id": task_id, "event": event}
+        if extra_data:
+            data.update({k: str(v) for k, v in extra_data.items()})
+        fcm_service.send_multicast_notification(
+            tokens=tokens, title=title, body=body, data=data,
+            notification_id=task_id,
+        )
+    except Exception as fcm_error:
+        print(f"❌ Error sending FCM notification: {str(fcm_error)}")
+
+
+@celery.task(name="generate.assessment_plan")
+def generate_assessment_plan_task(
+    task_id: str, request_dict: dict, auth_uid: str
+):
+    """
+    Génère le plan général d'un quiz ou d'un jeu de flashcards
+    (1 bloc = 1 entité esquissée) depuis le pedagogical_json du cours.
+
+    Résultat {"success", "plan_json", "debug_info"} — récupérable via
+    GET /course_material/plan_result/{task_id} (même forme que les plans de cours).
+    """
+    from app.chains.assessment_plan_generator import generate_assessment_plan
+    from app.models.dto.assessment.assessment_plan_dtos import AssessmentPlanRequestDto
+
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    print(f"📥 Starting assessment plan generation for task {task_id}")
+    db = SessionLocal()
+
+    try:
+        request = AssessmentPlanRequestDto(**request_dict)
+        llm_config = request.llm_config or LLMConfigDto()
+        plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+
+        plan_json, plan_prompt = asyncio.run(generate_assessment_plan(
+            kind=request.kind,
+            pedagogical_json=request.pedagogical_json,
+            plan_llm=plan_llm,
+            course_plan_json=request.course_plan_json,
+            course_name=request.courseName,
+            topic_path=request.topicPath,
+            additional_instructions=request.additional_instructions,
+        ))
+
+        result = {
+            "success": True,
+            "plan_json": plan_json,
+            "debug_info": {"plan_prompt": plan_prompt, "kind": request.kind},
+        }
+
+        num_blocks = sum(len(s.get("blocks", [])) for s in plan_json.get("sections", []))
+        label = "quiz" if request.kind == "quiz" else "flashcards"
+        print(f"📥 Assessment plan ({label}) completed for task {task_id} ({num_blocks} bloc(s))")
+
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="assessment_plan_generated",
+            title=f"Plan de {label} généré",
+            body=f"Le plan ({num_blocks} entité(s)) est prêt à être édité",
+            extra_data={"kind": request.kind, "num_blocks": num_blocks},
+        )
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating assessment plan for task {task_id}: {str(e)}")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="assessment_plan_error",
+            title="Erreur de génération du plan",
+            body="Une erreur s'est produite lors de la génération du plan",
+            extra_data={"error": str(e)},
+        )
+        raise
+    finally:
+        db.close()
+
+
+@celery.task(name="generate.entity_plan")
+def generate_entity_plan_task(
+    task_id: str, request_dict: dict, auth_uid: str
+):
+    """
+    Génère le plan de construction d'UNE entité : question de quiz HTML
+    (kind "quiz_question_html") ou flashcard full HTML (kind "flashcard_full_html").
+
+    Résultat {"success", "plan_json", "debug_info"} — récupérable via
+    GET /course_material/plan_result/{task_id}.
+    """
+    from app.chains.assessment_plan_generator import (
+        generate_quiz_question_plan,
+        generate_flashcard_plan,
+    )
+    from app.models.dto.assessment.assessment_plan_dtos import EntityPlanRequestDto
+
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    print(f"📥 Starting entity plan generation for task {task_id}")
+    db = SessionLocal()
+
+    try:
+        request = EntityPlanRequestDto(**request_dict)
+        llm_config = request.llm_config or LLMConfigDto()
+        plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+
+        media = [m.model_dump() for m in request.media] if request.media else None
+
+        if request.kind == "quiz_question_html":
+            plan_json, plan_prompt = asyncio.run(generate_quiz_question_plan(
+                plan_llm=plan_llm,
+                pedagogical_json=request.pedagogical_json,
+                source_block=request.source_block,
+                media=media,
+                course_name=request.courseName,
+                topic_path=request.topicPath,
+                additional_instructions=request.additional_instructions,
+            ))
+            label = "question de quiz"
+        else:
+            template_refs = (
+                [t.model_dump() for t in request.template_refs]
+                if request.template_refs else None
+            )
+            plan_json, plan_prompt = asyncio.run(generate_flashcard_plan(
+                plan_llm=plan_llm,
+                pedagogical_json=request.pedagogical_json,
+                source_block=request.source_block,
+                template_refs=template_refs,
+                media=media,
+                course_name=request.courseName,
+                topic_path=request.topicPath,
+                additional_instructions=request.additional_instructions,
+            ))
+            label = "flashcard"
+
+        result = {
+            "success": True,
+            "plan_json": plan_json,
+            "debug_info": {"plan_prompt": plan_prompt, "kind": request.kind},
+        }
+
+        print(f"📥 Entity plan ({label}) completed for task {task_id}")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="entity_plan_generated",
+            title=f"Plan de {label} généré",
+            body="Le plan de construction est prêt à être édité",
+            extra_data={"kind": request.kind},
+        )
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating entity plan for task {task_id}: {str(e)}")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="entity_plan_error",
+            title="Erreur de génération du plan",
+            body="Une erreur s'est produite lors de la génération du plan",
+            extra_data={"error": str(e)},
+        )
+        raise
+    finally:
+        db.close()
+
+
+@celery.task(name="generate.quiz_from_plan")
+def generate_quiz_from_plan_task(
+    task_id: str, request_dict: dict, auth_uid: str
+):
+    """
+    Génère les questions (mode texte classique) des blocs ciblés d'un plan de quiz.
+
+    Résultat {"success", "quiz_items"} (chaque item porte planBlock) —
+    récupérable via GET /quiz/result/{task_id}.
+    """
+    from app.chains.assessment_plan_generator import generate_quiz_from_plan
+    from app.models.dto.assessment.assessment_plan_dtos import QuizFromPlanRequestDto
+
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    print(f"📥 Starting quiz-from-plan generation for task {task_id}")
+    db = SessionLocal()
+
+    try:
+        request = QuizFromPlanRequestDto(**request_dict)
+        llm_config = request.llm_config or LLMConfigDto()
+        llm = create_universal_llm(llm_config.get_quiz_model())
+
+        raw_items, gen_prompt = asyncio.run(generate_quiz_from_plan(
+            plan_json=request.plan_json,
+            target_block_ids=request.target_block_ids,
+            pedagogical_json=request.pedagogical_json,
+            llm=llm,
+            course_name=request.courseName,
+            topic_path=request.topicPath,
+            additional_instructions=request.additional_instructions,
+        ))
+
+        quiz_items = []
+        for item in raw_items:
+            output = shuffle_quiz_item_answers(QuizOutputItemDto(
+                questionJson=item["questionJson"],
+                answersJson=item["answersJson"],
+                explanationJson=item["explanationJson"],
+                correctAnswerOrder=item["correctAnswerOrder"],
+                planBlock=item.get("planBlock"),
+            ))
+            quiz_items.append(output.model_dump())
+
+        result = {"success": True, "quiz_items": quiz_items}
+
+        print(f"📥 Quiz-from-plan completed for task {task_id} ({len(quiz_items)} question(s))")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="quiz_from_plan_generated",
+            title="Questions générées",
+            body=f"{len(quiz_items)} question(s) générée(s) depuis le plan",
+            extra_data={"num_items": len(quiz_items)},
+        )
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating quiz from plan for task {task_id}: {str(e)}")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="quiz_from_plan_error",
+            title="Erreur de génération",
+            body="Une erreur s'est produite lors de la génération des questions",
+            extra_data={"error": str(e)},
+        )
+        raise
+    finally:
+        db.close()
+
+
+@celery.task(name="generate.flashcards_from_plan")
+def generate_flashcards_from_plan_task(
+    task_id: str, request_dict: dict, auth_uid: str
+):
+    """
+    Génère les cartes full HTML des blocs ciblés d'un plan de flashcards.
+
+    Résultat {"success", "cards", "debug_info"} — récupérable via
+    GET /flashcard_generation/cards_html_result/{task_id}.
+    """
+    from app.chains.assessment_plan_generator import generate_flashcards_from_plan
+    from app.models.dto.assessment.assessment_plan_dtos import FlashcardsFromPlanRequestDto
+
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    print(f"📥 Starting flashcards-from-plan generation for task {task_id}")
+    db = SessionLocal()
+
+    try:
+        request = FlashcardsFromPlanRequestDto(**request_dict)
+        llm_config = request.llm_config or LLMConfigDto()
+        llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+
+        templates = (
+            [t.model_dump() for t in request.templates] if request.templates else None
+        )
+
+        cards, gen_prompt = asyncio.run(generate_flashcards_from_plan(
+            plan_json=request.plan_json,
+            target_block_ids=request.target_block_ids,
+            pedagogical_json=request.pedagogical_json,
+            llm=llm,
+            templates=templates,
+            course_name=request.courseName,
+            topic_path=request.topicPath,
+            additional_instructions=request.additional_instructions,
+        ))
+
+        result = {
+            "success": True,
+            "cards": cards,
+            "debug_info": {"generation_prompt": gen_prompt},
+        }
+
+        print(f"📥 Flashcards-from-plan completed for task {task_id} ({len(cards)} carte(s))")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="flashcards_html_generated",
+            title="Flashcards générées",
+            body=f"{len(cards)} carte(s) full HTML générée(s) depuis le plan",
+            extra_data={"num_cards": len(cards)},
+        )
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating flashcards from plan for task {task_id}: {str(e)}")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="flashcards_html_error",
+            title="Erreur de génération",
+            body="Une erreur s'est produite lors de la génération des cartes",
+            extra_data={"error": str(e)},
+        )
+        raise
+    finally:
+        db.close()
+
+
+@celery.task(name="generate.quiz_question_html")
+def generate_quiz_question_html_task(
+    task_id: str, request_dict: dict, auth_uid: str
+):
+    """
+    Génère UNE question de quiz riche (JSON + HTML par slot) depuis son plan d'entité.
+
+    Résultat — récupérable via GET /quiz/question_html_result/{task_id}.
+    """
+    from app.chains.assessment_plan_generator import generate_quiz_question_html_from_plan
+    from app.models.dto.assessment.assessment_plan_dtos import QuizQuestionHtmlRequestDto
+
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    print(f"📥 Starting quiz question HTML generation for task {task_id}")
+    db = SessionLocal()
+
+    try:
+        request = QuizQuestionHtmlRequestDto(**request_dict)
+        llm_config = request.llm_config or LLMConfigDto()
+        llm = create_universal_llm(llm_config.get_quiz_model())
+
+        generated, gen_prompt = asyncio.run(generate_quiz_question_html_from_plan(
+            entity_plan_json=request.plan_json,
+            llm=llm,
+            pedagogical_json=request.pedagogical_json,
+            course_name=request.courseName,
+            topic_path=request.topicPath,
+            additional_instructions=request.additional_instructions,
+        ))
+
+        result = {
+            "success": True,
+            "question_json": generated.get("question_json", {}),
+            "answers_json": generated.get("answers_json", {}),
+            "explanation_json": generated.get("explanation_json", {}),
+            "correct_answer_order": generated.get("correct_answer_order", 1),
+            "slots": generated.get("slots", {}),
+            "debug_info": {"generation_prompt": gen_prompt},
+        }
+
+        print(f"📥 Quiz question HTML completed for task {task_id} ({len(result['slots'])} slot(s) HTML)")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="quiz_question_html_generated",
+            title="Question générée",
+            body="La question de quiz riche a été générée",
+            extra_data={"num_slots": len(result["slots"])},
+        )
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating quiz question HTML for task {task_id}: {str(e)}")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="quiz_question_html_error",
+            title="Erreur de génération",
+            body="Une erreur s'est produite lors de la génération de la question",
+            extra_data={"error": str(e)},
+        )
+        raise
+    finally:
+        db.close()
+
+
+@celery.task(name="generate.flashcard_html")
+def generate_flashcard_html_task(
+    task_id: str, request_dict: dict, auth_uid: str
+):
+    """
+    Génère UNE carte full HTML depuis son plan d'entité (templates transplantés).
+
+    Résultat {"success", "cards", "debug_info"} — récupérable via
+    GET /flashcard_generation/cards_html_result/{task_id}.
+    """
+    from app.chains.assessment_plan_generator import generate_flashcard_html_from_plan
+    from app.models.dto.assessment.assessment_plan_dtos import FlashcardHtmlRequestDto
+
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    print(f"📥 Starting flashcard HTML generation for task {task_id}")
+    db = SessionLocal()
+
+    try:
+        request = FlashcardHtmlRequestDto(**request_dict)
+        llm_config = request.llm_config or LLMConfigDto()
+        llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+
+        templates = (
+            [t.model_dump() for t in request.templates] if request.templates else None
+        )
+
+        cards, gen_prompt = asyncio.run(generate_flashcard_html_from_plan(
+            entity_plan_json=request.plan_json,
+            llm=llm,
+            templates=templates,
+            pedagogical_json=request.pedagogical_json,
+            course_name=request.courseName,
+            topic_path=request.topicPath,
+            additional_instructions=request.additional_instructions,
+        ))
+
+        result = {
+            "success": True,
+            "cards": cards,
+            "debug_info": {"generation_prompt": gen_prompt},
+        }
+
+        print(f"📥 Flashcard HTML completed for task {task_id}")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="flashcards_html_generated",
+            title="Flashcard générée",
+            body="La carte full HTML a été générée",
+            extra_data={"num_cards": len(cards)},
+        )
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating flashcard HTML for task {task_id}: {str(e)}")
+        _notify_assessment(
+            db, redis, auth_uid, task_id,
+            event="flashcards_html_error",
+            title="Erreur de génération",
+            body="Une erreur s'est produite lors de la génération de la carte",
+            extra_data={"error": str(e)},
+        )
+        raise
+    finally:
+        db.close()

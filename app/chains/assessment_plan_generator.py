@@ -584,8 +584,8 @@ Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format :
   ]}},
   "correct_answer_order": 1,
   "slots": {{
-    "question": "<div>...</div>",
-    "answer_2": "<div>...</div>"
+    "question": "<!DOCTYPE html><html><head><meta charset=\\"utf-8\\"><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1\\"><style>...</style></head><body>...</body></html>",
+    "answer_2": "<!DOCTYPE html><html>...</html>"
   }}
 }}
 
@@ -594,7 +594,7 @@ Règles STRICTES :
 - Slot en "rendering": "text" → texte simple dans le JSON ("content" pour la question, "text" pour réponses/explications), et RIEN dans "slots".
 - Les réponses reprennent les "answer_order" du plan, dans l'ordre ; "correct_answer_order" = l'answer_order du bloc "correct": true du plan.
 - "explanation_json".content : order 0 = explication générale + un order par réponse quand le plan le prévoit.
-- HTML des slots : fragment HTML (pas de <html>/<head>/<body>), CSS inline, pas de JavaScript, responsive.
+- HTML des slots : un DOCUMENT HTML COMPLET ET AUTONOME (commence par <!DOCTYPE html>, avec les balises <html>, <head> incluant <meta charset> et <meta name="viewport"> pour le responsive, et <body>). Mets tout le CSS dans un <style> du <head>. Responsive, sans JavaScript. Chaque slot est une page HTML indépendante, servie et rendue seule.
 - Médias : génère <img>/<video controls>/<audio controls>/<iframe> selon le type ; retire le préfixe "//media:" dans les attributs src ; n'affiche JAMAIS l'URL brute comme texte.
 - Ne génère que du JSON, aucun texte autour."""
 

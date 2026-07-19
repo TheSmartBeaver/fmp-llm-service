@@ -68,6 +68,7 @@ class CourseMaterialGeneratorV3:
     def generate_course_material(
         self,
         user_entry: UserEntryDto,
+        plan_json: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Version synchrone qui appelle la version async.
@@ -75,6 +76,8 @@ class CourseMaterialGeneratorV3:
 
         Args:
             user_entry: Contient le contexte, le contenu textuel et les médias
+            plan_json: Plan de cours validé optionnel ({"sections": [...]}) ; s'il est
+                fourni, le JSON pédagogique est généré sous contrainte stricte du plan
 
         Returns:
             Dict contenant:
@@ -82,7 +85,9 @@ class CourseMaterialGeneratorV3:
             - pedagogical_json: Le JSON pédagogique généré
             - debug_info: Informations de debug
         """
-        return asyncio.run(self.generate_course_material_async(user_entry=user_entry))
+        return asyncio.run(
+            self.generate_course_material_async(user_entry=user_entry, plan_json=plan_json)
+        )
 
     def modify_course_material(
         self,
@@ -182,6 +187,7 @@ Génère le JSON modifié avec la clé racine "segments". Retourne UNIQUEMENT le
     async def generate_course_material_async(
         self,
         user_entry: UserEntryDto,
+        plan_json: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Version asynchrone - Génère des supports de cours HTML à partir d'un UserEntryDto.
@@ -195,6 +201,9 @@ Génère le JSON modifié avec la clé racine "segments". Retourne UNIQUEMENT le
 
         Args:
             user_entry: Contient le contexte, le contenu textuel et les médias
+            plan_json: Plan de cours validé optionnel ; s'il est fourni, le JSON
+                pédagogique est généré au format narratif sous contrainte du plan
+                (mêmes sections, mêmes blocs, mêmes formats, médias en place)
 
         Returns:
             Dict contenant:
@@ -202,6 +211,25 @@ Génère le JSON modifié avec la clé racine "segments". Retourne UNIQUEMENT le
             - pedagogical_json: Le JSON pédagogique généré
             - debug_info: Informations de debug
         """
+        # Mode plan : le pedagogical_json est contraint par le plan validé et
+        # sort au format narratif ("segments"), rendu par le pipeline narratif.
+        if plan_json is not None:
+            from app.chains.utils.pedagogical_json_generator import (
+                generate_pedagogical_json_from_plan,
+            )
+
+            pedagogical_json, pedagogical_prompt = await generate_pedagogical_json_from_plan(
+                user_entry=user_entry,
+                plan_json=plan_json,
+                pedagogical_llm=self.pedagogical_llm,
+            )
+            result = await self._generate_from_narrative_json(
+                pedagogical_json, pedagogical_prompt
+            )
+            result["debug_info"]["mode"] = "plan_constrained"
+            result["debug_info"]["plan_json"] = plan_json
+            return result
+
         # Étape 1: Générer le JSON pédagogique enrichi
         pedagogical_json, pedagogical_prompt = await generate_pedagogical_json(
             user_entry=user_entry,
@@ -303,6 +331,17 @@ Génère le JSON modifié avec la clé racine "segments". Retourne UNIQUEMENT le
         # Les segments "media" sont rendus directement (logique déterministe sur l'URL)
         if seg_type == "media":
             return self._render_media_segment(segment)
+
+        # Les titres de section (mode plan) sont rendus directement
+        if seg_type == "section_title":
+            title = self._render_inline_markers(segment.get("content", ""))
+            return (
+                f'<h2 style="max-width: 38rem; margin: 0 auto; padding: 2.5rem 1.5rem 0.5rem; '
+                f'font-family: system-ui, sans-serif; font-size: 1.5rem; font-weight: 700; '
+                f'color: #1a2733; border-bottom: 2px solid #4a7fcb; '
+                f'-webkit-font-smoothing: antialiased;">'
+                f'{title}</h2>'
+            )
 
         try:
             system_prompt = """Tu es un expert en design HTML pédagogique et visuel.

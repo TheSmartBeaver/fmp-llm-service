@@ -207,6 +207,123 @@ CONTENU TEXTUEL:
 Génère le JSON avec la clé racine "segments". Le récit doit être principalement constitué de segments "narrative". N'introduis des pauses visuelles que si elles sont demandées dans les instructions supplémentaires. Sois créatif sur les formats visuels des quelques pauses pédagogiques qui doivent être riche visuellement : tableaux, listes, encadrés colorés, définitions... Utilise **gras** et ==surlignage== dans les textes pour mettre en valeur les mots importants."""
 
 
+_PLAN_CONSTRAINED_SYSTEM_PROMPT = """Tu es un expert en narration pédagogique. Tu développes un plan de cours validé en un contenu pédagogique détaillé, en puisant dans les notes sources.
+
+CONTEXTE PÉDAGOGIQUE:
+- Cours: {course}
+- Chemin du sujet: {topic_path}
+{additional_instructions_block}
+MÉDIAS DISPONIBLES:
+{media_description}
+
+Tu reçois :
+1. Un PLAN VALIDÉ par l'utilisateur : sections et blocs, chacun avec un "id", un "pedagogical_format" et un "content" synthétique.
+2. Les NOTES SOURCES brutes desquelles puiser le détail.
+
+Ta mission : produire le JSON pédagogique détaillé qui suit STRICTEMENT le plan.
+
+FORMAT DE SORTIE OBLIGATOIRE:
+{{
+  "segments": [ ... ]
+}}
+
+RÈGLES DE CORRESPONDANCE AVEC LE PLAN (CRITIQUES):
+- ✅ Respecte EXACTEMENT l'ordre des sections et des blocs du plan
+- ✅ Chaque section du plan commence par un segment {{"type": "section_title", "content": "<titre>", "plan_block": "<id de la section>"}}
+- ✅ Chaque bloc du plan produit UN OU PLUSIEURS segments consécutifs ; chacun porte "plan_block": "<id du bloc>" (traçabilité obligatoire)
+- ✅ Le "pedagogical_format" du bloc dicte le type de segment :
+    - format textuel/narratif → {{"type": "narrative", "content": "...", "plan_block": "..."}}
+    - image / vidéo / audio → {{"type": "media", "url": "//media:...", "caption": "...", "plan_block": "..."}} (reprends l'URL du bloc)
+    - autres formats (tableau, encadré, comparaison, définition, frise...) → invente une structure de segment adaptée, avec toujours "type" et "plan_block"
+- ✅ Le "content" du bloc de plan est un résumé directif : développe-le en contenu complet et contextualisé grâce aux notes sources
+- 🚫 N'ajoute AUCUNE section ni aucun contenu hors plan ; n'omets AUCUN bloc du plan
+
+RÈGLES DE CONTENU:
+- ✅ Explications complètes et contextualisées, pas de phrases trop courtes
+- ✅ Dans les champs textuels, utilise **mot** pour le gras et ==mot== pour le surlignage
+- ✅ Les URLs de médias gardent leur préfixe "//media:" intact
+- 🚫 INTERDICTION ABSOLUE : NE crée PAS d'exercices, questions, QCM, quiz ou évaluations
+"""
+
+_PLAN_CONSTRAINED_USER_PROMPT = """PLAN VALIDÉ À SUIVRE STRICTEMENT :
+
+{plan_json}
+
+NOTES SOURCES:
+{text}
+
+Génère le JSON avec la clé racine "segments", en suivant strictement le plan et en développant chaque bloc grâce aux notes sources."""
+
+
+async def generate_pedagogical_json_from_plan(
+    user_entry: UserEntryDto,
+    plan_json: Dict[str, Any],
+    pedagogical_llm: Any,
+) -> Tuple[Dict[str, Any], str]:
+    """
+    Génère un JSON pédagogique détaillé (format narratif "segments") contraint
+    par un plan de cours validé par l'utilisateur.
+
+    Chaque segment produit porte une clé "plan_block" référençant l'ID du bloc
+    de plan dont il découle, ce qui garde la traçabilité plan → contenu → HTML.
+
+    Args:
+        user_entry: Données d'entrée de l'utilisateur (notes sources, médias)
+        plan_json: Plan validé ({"sections": [...]}, IDs attribués par le serveur)
+        pedagogical_llm: LLM à utiliser pour la génération
+
+    Returns:
+        Tuple contenant:
+        - Dict: JSON pédagogique ({"segments": [...]})
+        - str: Le prompt complet envoyé au LLM
+    """
+    aggregated_content = aggregate_content(user_entry)
+
+    media_description = format_media_for_prompt(
+        aggregated_content["images"], aggregated_content["videos"]
+    )
+
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", _PLAN_CONSTRAINED_SYSTEM_PROMPT), ("human", _PLAN_CONSTRAINED_USER_PROMPT)]
+    )
+
+    additional_instructions = aggregated_content["context"]["additional_instructions"]
+    additional_instructions_block = (
+        f"INSTRUCTIONS SUPPLÉMENTAIRES:\n{additional_instructions}\n"
+        if additional_instructions
+        else ""
+    )
+
+    inputs = {
+        "course": aggregated_content["context"]["course"],
+        "topic_path": aggregated_content["context"]["topic_path"],
+        "additional_instructions_block": additional_instructions_block,
+        "media_description": media_description,
+        "plan_json": json.dumps(plan_json, ensure_ascii=False, indent=2),
+        "text": aggregated_content["text"],
+    }
+
+    full_prompt = prompt.format(**inputs)
+
+    from app.chains.llm.universal_llm import UniversalLLM
+
+    if isinstance(pedagogical_llm, UniversalLLM) and pedagogical_llm.use_codex_route:
+        messages = prompt.format_messages(**inputs)
+        response = await pedagogical_llm.ainvoke(messages)
+
+        if hasattr(response, 'content'):
+            json_text = response.content
+        else:
+            json_text = str(response)
+
+        result = json.loads(json_text)
+    else:
+        chain = prompt | pedagogical_llm | JsonOutputParser()
+        result = await chain.ainvoke(inputs)
+
+    return result, full_prompt
+
+
 async def generate_pedagogical_json(
     user_entry: UserEntryDto,
     pedagogical_llm: Any,

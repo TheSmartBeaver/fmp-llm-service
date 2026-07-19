@@ -2321,7 +2321,7 @@ Génère maintenant le JSON structuré.""",
 
     def _extract_all_json_paths(
         self, data: Any, include_indices: bool = False, use_variables: bool = False
-    ) -> str:
+    ) -> List[str]:
         """
         Extrait récursivement tous les chemins disponibles dans un JSON.
 
@@ -2350,7 +2350,7 @@ Génère maintenant le JSON structuré.""",
 
     def _extract_paths_compact(
         self, structure: Any, use_variables: bool = False
-    ) -> str:
+    ) -> List[str]:
         """
         Extrait les chemins en notation compactée avec [] ou avec des variables [x], [y], [z].
 
@@ -2468,7 +2468,7 @@ Génère maintenant le JSON structuré.""",
         # formatted_paths = "\n".join([f"  - {path}" for path in unique_paths])
         return unique_paths
 
-    def _extract_paths_with_indices(self, data: Any) -> str:
+    def _extract_paths_with_indices(self, data: Any) -> List[str]:
         """
         Extrait tous les chemins avec les index réels des tableaux.
 

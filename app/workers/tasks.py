@@ -701,7 +701,8 @@ def generate_course_material_task(
 
 @celery.task(name="generate.course_material_html")
 def generate_course_material_html_task(
-    task_id: str, user_entry_dict: dict, auth_uid: str, llm_config_dict: dict = None
+    task_id: str, user_entry_dict: dict, auth_uid: str, llm_config_dict: dict = None,
+    plan_json: dict = None
 ):
     """
     Tâche Celery pour générer un support de cours HTML avec CourseMaterialGeneratorV3 et envoyer une notification FCM.
@@ -745,8 +746,10 @@ def generate_course_material_html_task(
             llm_config=llm_config
         )
 
-        # Generate course material HTML
-        result_v3 = generator.generate_course_material(user_entry=user_entry)
+        # Generate course material HTML (contraint par le plan validé si fourni)
+        result_v3 = generator.generate_course_material(
+            user_entry=user_entry, plan_json=plan_json
+        )
 
         # Adapter le format de retour
         result = {
@@ -964,6 +967,243 @@ def modify_course_material_html_task(
                         title="Erreur de modification",
                         body="Une erreur s'est produite lors de la modification du support",
                         data={"task_id": task_id, "event": "course_material_html_error", "error": str(e)},
+                        notification_id=task_id,
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
+
+        raise
+
+    finally:
+        db.close()
+
+
+@celery.task(name="generate.course_plan")
+def generate_course_plan_task(
+    task_id: str, user_entry_dict: dict, auth_uid: str, llm_config_dict: dict = None
+):
+    """
+    Tâche Celery pour générer un plan de cours (artefact intermédiaire éditable)
+    à partir des notes brutes, et envoyer une notification FCM.
+
+    Args:
+        task_id: Identifiant unique de la tâche
+        user_entry_dict: Dictionnaire UserEntryDto (contexte, contenu, médias)
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+        llm_config_dict: Dictionnaire LLMConfigDto optionnel
+    """
+    from app.chains.course_plan_generator import generate_course_plan
+
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
+    print(f"📥 Starting course plan generation for task {task_id}")
+
+    db = SessionLocal()
+
+    try:
+        user_entry = UserEntryDto(**user_entry_dict)
+        llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else LLMConfigDto()
+
+        plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+
+        plan_json, plan_prompt = asyncio.run(
+            generate_course_plan(user_entry=user_entry, plan_llm=plan_llm)
+        )
+
+        result = {
+            "success": True,
+            "plan_json": plan_json,
+            "debug_info": {"plan_prompt": plan_prompt},
+        }
+
+        num_sections = len(plan_json.get("sections", []))
+        print(f"📥 Course plan generation completed for task {task_id} ({num_sections} sections)")
+
+        redis.publish(
+            "course_plan_events",
+            json.dumps({
+                "event": "course_plan_generated",
+                "type": "message",
+                "task_id": task_id,
+                "num_sections": num_sections,
+            }),
+        )
+
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+                .all()
+            )
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+                fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Plan de cours généré",
+                    body=f"Le plan de cours ({num_sections} section(s)) est prêt à être édité",
+                    data={
+                        "task_id": task_id,
+                        "event": "course_plan_generated",
+                        "num_sections": str(num_sections),
+                    },
+                    notification_id=task_id,
+                )
+            else:
+                print(f"⚠️ No active devices found for user {auth_uid}")
+        else:
+            print(f"⚠️ User not found with auth_uid: {auth_uid}")
+
+        return result
+
+    except Exception as e:
+        print(f"❌ Error generating course plan for task {task_id}: {str(e)}")
+
+        redis.publish(
+            "course_plan_events",
+            json.dumps({"event": "course_plan_error", "task_id": task_id, "error": str(e)}),
+        )
+
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+                    .all()
+                )
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de génération du plan",
+                        body="Une erreur s'est produite lors de la génération du plan de cours",
+                        data={"task_id": task_id, "event": "course_plan_error", "error": str(e)},
+                        notification_id=task_id,
+                    )
+        except Exception as fcm_error:
+            print(f"❌ Error sending FCM error notification: {str(fcm_error)}")
+
+        raise
+
+    finally:
+        db.close()
+
+
+@celery.task(name="modify.course_plan")
+def modify_course_plan_task(
+    task_id: str, modification_entry_dict: dict, auth_uid: str
+):
+    """
+    Tâche Celery pour modifier partiellement un plan de cours existant.
+
+    Le LLM ne génère que des opérations de patch ciblées ; la fusion et le
+    respect des blocs verrouillés sont appliqués côté serveur.
+
+    Args:
+        task_id: Identifiant unique de la tâche
+        modification_entry_dict: Dictionnaire CoursePlanModificationEntryDto
+        auth_uid: AuthentUid de l'utilisateur pour envoyer les notifications FCM
+    """
+    from app.chains.course_plan_generator import modify_course_plan
+    from app.models.dto.user_entry.course_plan_modification_entry_dto import (
+        CoursePlanModificationEntryDto,
+    )
+
+    redis = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
+    print(f"📥 Starting course plan modification for task {task_id}")
+
+    db = SessionLocal()
+
+    try:
+        entry = CoursePlanModificationEntryDto(**modification_entry_dict)
+        llm_config = entry.llm_config or LLMConfigDto()
+
+        plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+
+        modification_result = asyncio.run(
+            modify_course_plan(
+                plan=entry.plan_json,
+                target_block_ids=entry.target_block_ids,
+                modification_instructions=entry.modification_instructions,
+                plan_llm=plan_llm,
+                user_entry=entry.user_entry,
+            )
+        )
+
+        result = {
+            "success": True,
+            "plan_json": modification_result["plan_json"],
+            "operations": modification_result["operations"],
+            "rejected_operations": modification_result["rejected_operations"],
+            "modified_block_ids": modification_result["modified_block_ids"],
+            "debug_info": {"plan_prompt": modification_result["prompt"]},
+        }
+
+        num_ops = len(result["operations"])
+        print(f"📥 Course plan modification completed for task {task_id} ({num_ops} opération(s))")
+
+        redis.publish(
+            "course_plan_events",
+            json.dumps({
+                "event": "course_plan_modified",
+                "type": "message",
+                "task_id": task_id,
+                "num_operations": num_ops,
+            }),
+        )
+
+        user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+        if user:
+            active_devices = (
+                db.query(DeviceTokens)
+                .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+                .all()
+            )
+            if active_devices:
+                fcm_service = FCMService()
+                tokens = [device.FcmToken for device in active_devices]
+                fcm_service.send_multicast_notification(
+                    tokens=tokens,
+                    title="Plan de cours modifié",
+                    body=f"{num_ops} modification(s) appliquée(s) au plan de cours",
+                    data={
+                        "task_id": task_id,
+                        "event": "course_plan_modified",
+                        "num_operations": str(num_ops),
+                    },
+                    notification_id=task_id,
+                )
+
+        return result
+
+    except Exception as e:
+        print(f"❌ Error modifying course plan for task {task_id}: {str(e)}")
+
+        redis.publish(
+            "course_plan_events",
+            json.dumps({"event": "course_plan_error", "task_id": task_id, "error": str(e)}),
+        )
+
+        try:
+            user = db.query(AppUsers).filter(AppUsers.AuthentUid == auth_uid).first()
+            if user:
+                active_devices = (
+                    db.query(DeviceTokens)
+                    .filter(DeviceTokens.AppUserSKU == user.SKU, DeviceTokens.IsActive == True)
+                    .all()
+                )
+                if active_devices:
+                    fcm_service = FCMService()
+                    tokens = [device.FcmToken for device in active_devices]
+                    fcm_service.send_multicast_notification(
+                        tokens=tokens,
+                        title="Erreur de modification du plan",
+                        body="Une erreur s'est produite lors de la modification du plan de cours",
+                        data={"task_id": task_id, "event": "course_plan_error", "error": str(e)},
                         notification_id=task_id,
                     )
         except Exception as fcm_error:

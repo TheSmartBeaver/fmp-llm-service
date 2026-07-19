@@ -208,19 +208,19 @@ Utilise exactement cette structure JSON :
     {{ "title": "Énoncé", "slot_group": "question",
        "blocks": [ {{ "pedagogical_format": "format", "content": "...", "rendering": "html" }} ] }},
     {{ "title": "Réponses", "slot_group": "answers",
-       "blocks": [ {{ "pedagogical_format": "réponse", "content": "...", "answer_order": 1, "correct": true, "rendering": "text" }} ] }},
+       "blocks": [ {{ "pedagogical_format": "réponse", "content": "...", "answer_order": 1, "correct": true, "rendering": "html" }} ] }},
     {{ "title": "Explications", "slot_group": "explanations",
-       "blocks": [ {{ "pedagogical_format": "explication", "content": "...", "explanation_order": 0, "rendering": "text" }} ] }}
+       "blocks": [ {{ "pedagogical_format": "explication", "content": "...", "explanation_order": 0, "rendering": "html" }} ] }}
   ]
 }}
 
 Contraintes :
 - Retourne uniquement le JSON, aucune métadonnée. N'ajoute NI "id" NI "validated".
 - EXACTEMENT trois sections, avec ces "slot_group" : "question", "answers", "explanations".
-- Section "question" : un ou plusieurs blocs décrivant l'énoncé (texte, tableau, extrait de code, média...). Un bloc média porte "url" (préfixe //media: intact) et "rendering": "html".
+- Section "question" : un ou plusieurs blocs décrivant l'énoncé (texte, tableau, extrait de code, média...). Un bloc média porte "url" (préfixe //media: intact).
 - Section "answers" : 2 à 4 blocs, "answer_order" séquentiel à partir de 1, EXACTEMENT un bloc avec "correct": true. Les mauvaises réponses doivent être plausibles.
 - Section "explanations" : un bloc "explanation_order": 0 (explication générale) + idéalement un bloc par réponse ("explanation_order" = answer_order correspondant).
-- "rendering": "html" seulement quand le rendu riche apporte quelque chose (média, tableau, mise en forme) ; sinon "text".
+- "rendering" : PAR DÉFAUT "html" pour TOUS les slots (énoncé, réponses ET explications), afin d'obtenir un rendu riche cohérent. Ne mets "rendering": "text" QUE si les instructions supplémentaires demandent explicitement du texte simple pour un slot donné.
 - Intègre les médias joints dans le slot le plus pertinent (énoncé et/ou réponses).
 - "content" reste synthétique : il décrit ce que le slot contiendra, le HTML final sera généré plus tard.
 """
@@ -590,6 +590,7 @@ Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format :
 }}
 
 Règles STRICTES :
+- Applique la règle "rendering" INDÉPENDAMMENT à CHAQUE slot : l'énoncé, CHAQUE réponse ("answer_N") et CHAQUE explication ("explanation_N") sont traités de la même façon. Un slot de réponse en "rendering": "html" produit un slot HTML au même titre que l'énoncé — ne réserve PAS le HTML au seul énoncé.
 - Slot en "rendering": "html" dans le plan → l'entrée JSON correspondante est {{"type": "html"}} (avec "order" pour réponses/explications) ET le HTML du slot est présent dans "slots" (clé "question", "answer_N" ou "explanation_N").
 - Slot en "rendering": "text" → texte simple dans le JSON ("content" pour la question, "text" pour réponses/explications), et RIEN dans "slots".
 - Les réponses reprennent les "answer_order" du plan, dans l'ordre ; "correct_answer_order" = l'answer_order du bloc "correct": true du plan.

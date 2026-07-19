@@ -16,15 +16,47 @@ Les CardTemplates ne voyagent dans les plans que par référence
 ({path, fields_usage}) ; leur HTML complet n'est fourni qu'à la génération
 finale, où il est transplanté verbatim (structure et CSS conservés).
 """
+import asyncio
 import json
 from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from app.chains.course_plan_generator import assign_plan_ids, _invoke_json
+from app.chains.course_plan_generator import assign_plan_ids, _find_block, _invoke_json
 
 
 ANSWER_HIDDEN_MARKER = "<!--ANSWER_HIDDEN-->"
+
+# Plafond de concurrence des appels LLM par lot de génération (quiz / cartes).
+# Chaque bloc ciblé donne lieu à un appel LLM indépendant ; on les lance en
+# parallèle sans dépasser cette limite pour ne pas saturer le fournisseur.
+_MAX_CONCURRENCY = 5
+
+
+def _single_block_plan(plan_json: Dict[str, Any], block_id: str) -> Dict[str, Any]:
+    """
+    Construit une vue du plan réduite au seul bloc ciblé (sa section ne
+    contenant que lui), pour un appel LLM focalisé sur une entité.
+    """
+    section, index = _find_block(plan_json, block_id)
+    if section is None:
+        return {"kind": plan_json.get("kind"), "sections": []}
+    focused_section = {
+        k: v for k, v in section.items() if k != "blocks"
+    }
+    focused_section["blocks"] = [section["blocks"][index]]
+    return {"kind": plan_json.get("kind"), "sections": [focused_section]}
+
+
+async def _gather_limited(coros: List[Any]) -> List[Any]:
+    """Exécute des coroutines en parallèle, plafonnées à _MAX_CONCURRENCY."""
+    semaphore = asyncio.Semaphore(_MAX_CONCURRENCY)
+
+    async def _run(coro):
+        async with semaphore:
+            return await coro
+
+    return await asyncio.gather(*[_run(c) for c in coros])
 
 
 # ---------------------------------------------------------------------------
@@ -217,11 +249,12 @@ Utilise exactement cette structure JSON :
 Contraintes :
 - Retourne uniquement le JSON, aucune métadonnée. N'ajoute NI "id" NI "validated".
 - EXACTEMENT trois sections, avec ces "slot_group" : "question", "answers", "explanations".
-- Section "question" : un ou plusieurs blocs décrivant l'énoncé (texte, tableau, extrait de code, média...). Un bloc média porte "url" (préfixe //media: intact).
+- Section "question" : un ou plusieurs blocs décrivant l'énoncé (texte, tableau, extrait de code...).
 - Section "answers" : 2 à 4 blocs, "answer_order" séquentiel à partir de 1, EXACTEMENT un bloc avec "correct": true. Les mauvaises réponses doivent être plausibles.
 - Section "explanations" : un bloc "explanation_order": 0 (explication générale) + idéalement un bloc par réponse ("explanation_order" = answer_order correspondant).
 - "rendering" : PAR DÉFAUT "html" pour TOUS les slots (énoncé, réponses ET explications), afin d'obtenir un rendu riche cohérent. Ne mets "rendering": "text" QUE si les instructions supplémentaires demandent explicitement du texte simple pour un slot donné.
-- Intègre les médias joints dans le slot le plus pertinent (énoncé et/ou réponses).
+- 🚫 MÉDIAS — RÈGLE ABSOLUE : ne crée un bloc média (avec "url") QUE pour une URL listée EXPLICITEMENT dans la section MÉDIAS JOINTS ci-dessus. S'il n'y a AUCUN média joint, n'inclus AUCUN bloc média et n'invente JAMAIS d'URL "//media:". Les URLs "//media:" présentes dans le CONTENU DE COURS appartiennent au support de cours : leurs fichiers ne sont PAS disponibles pour cette question, ne les réutilise JAMAIS.
+- S'il y a des médias joints, intègre chacun dans le slot le plus pertinent (énoncé et/ou réponses), avec son URL exacte (préfixe //media: intact).
 - "content" reste synthétique : il décrit ce que le slot contiendra, le HTML final sera généré plus tard.
 """
 
@@ -294,8 +327,10 @@ Utilise exactement cette structure JSON :
 Contraintes :
 - Retourne uniquement le JSON, aucune métadonnée. N'ajoute NI "id" NI "validated".
 - EXACTEMENT deux sections, avec ces "role" : "visible" puis "hidden".
-- Section visible : la question, avec son contexte rappelé sans trop donner d'indices. Un bloc média porte "url" (préfixe //media: intact).
+- Section visible : la question, avec son contexte rappelé sans trop donner d'indices.
 - Section hidden : la réponse — COURTE, UNIQUE, non ambiguë, révisable en quelques secondes.
+- 🚫 MÉDIAS — RÈGLE ABSOLUE : ne crée un bloc média (avec "url") QUE pour une URL listée EXPLICITEMENT dans la section MÉDIAS JOINTS ci-dessus. S'il n'y a AUCUN média joint, n'inclus AUCUN bloc média et n'invente JAMAIS d'URL "//media:". Les URLs "//media:" présentes dans le CONTENU DE COURS appartiennent au support de cours : leurs fichiers ne sont PAS disponibles pour cette carte, ne les réutilise JAMAIS.
+- S'il y a des médias joints, place chacun dans la section pertinente avec son URL exacte (préfixe //media: intact).
 - Pour utiliser un template fourni, crée un bloc {{"pedagogical_format": "template", "template_path": "<path>", "content": "consigne d'adaptation des champs"}}. Ne recopie JAMAIS de HTML de template : seule la référence par path compte, le HTML complet sera fourni à la génération finale.
 - "content" reste synthétique : il décrit ce que la carte contiendra, le HTML final sera généré plus tard.
 """
@@ -399,6 +434,30 @@ Règles :
 - Ne génère que du JSON, aucun texte autour"""
 
 
+async def _generate_one_quiz_item(
+    plan_json: Dict[str, Any],
+    block_id: str,
+    pedagogical_json: Dict[str, Any],
+    llm: Any,
+    context_block: str,
+) -> Optional[Dict[str, Any]]:
+    """Génère UNE question de quiz pour un seul bloc du plan (un appel LLM)."""
+    prompt = ChatPromptTemplate.from_messages([("human", _QUIZ_FROM_PLAN_PROMPT)])
+    inputs = {
+        "context_block": context_block,
+        "plan_json": json.dumps(_single_block_plan(plan_json, block_id), ensure_ascii=False),
+        "target_block_ids": block_id,
+        "pedagogical_json": json.dumps(pedagogical_json, ensure_ascii=False),
+    }
+    result = await _invoke_json(prompt, llm, inputs)
+    items = result.get("quiz_items", []) if isinstance(result, dict) else []
+    if not items:
+        return None
+    item = items[0]
+    item["planBlock"] = block_id  # garantit la traçabilité même si le LLM l'omet
+    return item
+
+
 async def generate_quiz_from_plan(
     plan_json: Dict[str, Any],
     target_block_ids: List[str],
@@ -408,17 +467,25 @@ async def generate_quiz_from_plan(
     topic_path: Optional[str] = None,
     additional_instructions: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], str]:
-    """Génère les questions (mode texte classique) des blocs ciblés du plan général."""
-    prompt = ChatPromptTemplate.from_messages([("human", _QUIZ_FROM_PLAN_PROMPT)])
-    inputs = {
-        "context_block": _context_block(course_name, topic_path, additional_instructions),
-        "plan_json": json.dumps(plan_json, ensure_ascii=False),
-        "target_block_ids": ", ".join(target_block_ids),
-        "pedagogical_json": json.dumps(pedagogical_json, ensure_ascii=False),
-    }
-    result = await _invoke_json(prompt, llm, inputs)
-    items = result.get("quiz_items", []) if isinstance(result, dict) else []
-    return items, prompt.format(**inputs)
+    """
+    Génère les questions (mode texte classique) des blocs ciblés du plan général.
+
+    Un appel LLM INDÉPENDANT par bloc, lancés en parallèle (plafond
+    _MAX_CONCURRENCY) : plus rapide et plus robuste qu'une seule grosse sortie.
+    """
+    context_block = _context_block(course_name, topic_path, additional_instructions)
+    results = await _gather_limited([
+        _generate_one_quiz_item(
+            plan_json, block_id, pedagogical_json, llm, context_block
+        )
+        for block_id in target_block_ids
+    ])
+    items = [item for item in results if item is not None]
+    debug_prompt = (
+        f"{len(target_block_ids)} question(s) générée(s) en parallèle "
+        f"(1 appel LLM/bloc, concurrence max {_MAX_CONCURRENCY})"
+    )
+    return items, debug_prompt
 
 
 # ---------------------------------------------------------------------------
@@ -432,7 +499,7 @@ _CARD_HTML_BASE_RULES = """RÈGLES DE LA CARTE (STRICTES) :
 - Rappelle le contexte dans la question sans trop donner d'indices.
 - Ajoute une classe "fmp-hidden" sur TOUS les éléments à cacher, pour qu'on ne voie que la question, pas la réponse.
 - Place le commentaire {marker} à la TOUTE FIN du HTML. C'est APRÈS ce commentaire que tu définis le code (ex: <style>) qui masque "fmp-hidden".
-- Les URLs de médias : retire le préfixe "//media:" dans les attributs src.
+- Médias : n'inclus un média QUE si son URL "//media:" figure dans le PLAN fourni. N'invente JAMAIS d'URL de média et ne réutilise JAMAIS une URL "//media:" venant du CONTENU PÉDAGOGIQUE (ses fichiers ne sont pas disponibles ici). Retire le préfixe "//media:" dans les attributs src.
 - Retourne uniquement le JSON demandé, aucun texte autour."""
 
 
@@ -478,41 +545,40 @@ Format de sortie :
 {{ "cards": [ {{ "plan_block": "root", "full_html": "<div>...</div>{marker}<style>.fmp-hidden{{visibility:hidden}}</style>" }} ] }}"""
 
 
-async def _generate_cards_html(
+async def _generate_one_card_html(
     prompt_template: str,
     inputs: Dict[str, Any],
     llm: Any,
-) -> Tuple[List[Dict[str, Any]], str]:
-    """Génère des cartes full HTML et valide la convention du marqueur (1 retry)."""
+    plan_block: str,
+) -> Dict[str, Any]:
+    """
+    Génère UNE carte full HTML (un appel LLM) et valide la convention du
+    marqueur, avec 1 retry ciblé sur cette carte en cas d'invalidité.
+    """
     prompt = ChatPromptTemplate.from_messages([("human", prompt_template)])
     result = await _invoke_json(prompt, llm, inputs)
     cards = result.get("cards", []) if isinstance(result, dict) else []
+    card = cards[0] if cards else {"plan_block": plan_block, "full_html": ""}
 
-    errors = []
-    for card in cards:
-        error = validate_full_html_marker(card.get("full_html", ""))
-        if error:
-            errors.append(f"[{card.get('plan_block', '?')}] {error}")
-
-    if errors:
+    error = validate_full_html_marker(card.get("full_html", ""))
+    if error:
         retry_template = prompt_template + (
             "\n\nATTENTION — ta précédente réponse était invalide :\n"
-            + "\n".join(errors)
-            + "\nCorrige ces problèmes et régénère TOUTES les cartes."
+            f"[{plan_block}] {error}\n"
+            "Corrige ce problème et régénère la carte."
         )
         retry_prompt = ChatPromptTemplate.from_messages([("human", retry_template)])
         result = await _invoke_json(retry_prompt, llm, inputs)
         cards = result.get("cards", []) if isinstance(result, dict) else []
-        remaining = [
-            e for card in cards
-            if (e := validate_full_html_marker(card.get("full_html", "")))
-        ]
+        card = cards[0] if cards else {"plan_block": plan_block, "full_html": ""}
+        remaining = validate_full_html_marker(card.get("full_html", ""))
         if remaining:
             raise ValueError(
-                "Cartes full HTML invalides après retry : " + " ; ".join(remaining)
+                f"Carte full HTML invalide après retry [{plan_block}] : {remaining}"
             )
 
-    return cards, prompt.format(**inputs)
+    card["plan_block"] = plan_block  # traçabilité garantie
+    return card
 
 
 async def generate_flashcards_from_plan(
@@ -525,16 +591,34 @@ async def generate_flashcards_from_plan(
     topic_path: Optional[str] = None,
     additional_instructions: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], str]:
-    """Génère les cartes full HTML des blocs ciblés du plan général."""
-    inputs = {
-        "context_block": _context_block(course_name, topic_path, additional_instructions),
-        "plan_json": json.dumps(plan_json, ensure_ascii=False),
-        "target_block_ids": ", ".join(target_block_ids),
-        "pedagogical_json": json.dumps(pedagogical_json, ensure_ascii=False),
-        "templates_block": _templates_full_block(templates),
-        "marker": ANSWER_HIDDEN_MARKER,
-    }
-    return await _generate_cards_html(_CARDS_FROM_PLAN_PROMPT, inputs, llm)
+    """
+    Génère les cartes full HTML des blocs ciblés du plan général.
+
+    Un appel LLM INDÉPENDANT par carte, lancés en parallèle (plafond
+    _MAX_CONCURRENCY), avec retry ciblé par carte invalide.
+    """
+    context_block = _context_block(course_name, topic_path, additional_instructions)
+    templates_block = _templates_full_block(templates)
+
+    def _inputs_for(block_id: str) -> Dict[str, Any]:
+        return {
+            "context_block": context_block,
+            "plan_json": json.dumps(_single_block_plan(plan_json, block_id), ensure_ascii=False),
+            "target_block_ids": block_id,
+            "pedagogical_json": json.dumps(pedagogical_json, ensure_ascii=False),
+            "templates_block": templates_block,
+            "marker": ANSWER_HIDDEN_MARKER,
+        }
+
+    cards = await _gather_limited([
+        _generate_one_card_html(_CARDS_FROM_PLAN_PROMPT, _inputs_for(block_id), llm, block_id)
+        for block_id in target_block_ids
+    ])
+    debug_prompt = (
+        f"{len(target_block_ids)} carte(s) générée(s) en parallèle "
+        f"(1 appel LLM/carte, concurrence max {_MAX_CONCURRENCY})"
+    )
+    return cards, debug_prompt
 
 
 async def generate_flashcard_html_from_plan(
@@ -554,7 +638,13 @@ async def generate_flashcard_html_from_plan(
         "templates_block": _templates_full_block(templates),
         "marker": ANSWER_HIDDEN_MARKER,
     }
-    return await _generate_cards_html(_CARD_HTML_FROM_ENTITY_PLAN_PROMPT, inputs, llm)
+    card = await _generate_one_card_html(
+        _CARD_HTML_FROM_ENTITY_PLAN_PROMPT, inputs, llm, plan_block="root"
+    )
+    debug_prompt = ChatPromptTemplate.from_messages(
+        [("human", _CARD_HTML_FROM_ENTITY_PLAN_PROMPT)]
+    ).format(**inputs)
+    return [card], debug_prompt
 
 
 # ---------------------------------------------------------------------------
@@ -596,7 +686,7 @@ Règles STRICTES :
 - Les réponses reprennent les "answer_order" du plan, dans l'ordre ; "correct_answer_order" = l'answer_order du bloc "correct": true du plan.
 - "explanation_json".content : order 0 = explication générale + un order par réponse quand le plan le prévoit.
 - HTML des slots : un DOCUMENT HTML COMPLET ET AUTONOME (commence par <!DOCTYPE html>, avec les balises <html>, <head> incluant <meta charset> et <meta name="viewport"> pour le responsive, et <body>). Mets tout le CSS dans un <style> du <head>. Responsive, sans JavaScript. Chaque slot est une page HTML indépendante, servie et rendue seule.
-- Médias : génère <img>/<video controls>/<audio controls>/<iframe> selon le type ; retire le préfixe "//media:" dans les attributs src ; n'affiche JAMAIS l'URL brute comme texte.
+- Médias : n'inclus un média QUE si son URL "//media:" figure dans le PLAN DE CONSTRUCTION VALIDÉ ci-dessus. N'invente JAMAIS d'URL de média et ne réutilise JAMAIS une URL "//media:" venant du CONTENU PÉDAGOGIQUE (ses fichiers ne sont pas disponibles ici). Pour un média du plan : génère <img>/<video controls>/<audio controls>/<iframe> selon le type ; retire le préfixe "//media:" dans les attributs src ; n'affiche JAMAIS l'URL brute comme texte.
 - Ne génère que du JSON, aucun texte autour."""
 
 

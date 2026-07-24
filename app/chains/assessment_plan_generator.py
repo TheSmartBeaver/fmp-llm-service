@@ -240,9 +240,9 @@ Utilise exactement cette structure JSON :
     {{ "title": "Énoncé", "slot_group": "question",
        "blocks": [ {{ "pedagogical_format": "format", "content": "...", "rendering": "html" }} ] }},
     {{ "title": "Réponses", "slot_group": "answers",
-       "blocks": [ {{ "pedagogical_format": "réponse", "content": "...", "answer_order": 1, "correct": true, "rendering": "html" }} ] }},
+       "blocks": [ {{ "pedagogical_format": "réponse", "content": "...", "answer_order": 1, "correct": true, "rendering": "text" }} ] }},
     {{ "title": "Explications", "slot_group": "explanations",
-       "blocks": [ {{ "pedagogical_format": "explication", "content": "...", "explanation_order": 0, "rendering": "html" }} ] }}
+       "blocks": [ {{ "pedagogical_format": "explication", "content": "...", "explanation_order": 0, "rendering": "text" }} ] }}
   ]
 }}
 
@@ -252,7 +252,10 @@ Contraintes :
 - Section "question" : un ou plusieurs blocs décrivant l'énoncé (texte, tableau, extrait de code...).
 - Section "answers" : 2 à 4 blocs, "answer_order" séquentiel à partir de 1, EXACTEMENT un bloc avec "correct": true. Les mauvaises réponses doivent être plausibles.
 - Section "explanations" : un bloc "explanation_order": 0 (explication générale) + idéalement un bloc par réponse ("explanation_order" = answer_order correspondant).
-- "rendering" : PAR DÉFAUT "html" pour TOUS les slots (énoncé, réponses ET explications), afin d'obtenir un rendu riche cohérent. Ne mets "rendering": "text" QUE si les instructions supplémentaires demandent explicitement du texte simple pour un slot donné.
+- "rendering" — CHOISIS LIBREMENT au cas par cas, slot par slot, la représentation qui sert le MIEUX le contenu :
+    - "html" quand le rendu riche apporte une vraie valeur : tableau, extrait de code, formule/notation, mise en forme structurée, comparaison visuelle, ou média.
+    - "text" quand un texte simple suffit (une phrase, un mot, une valeur courte) — c'est le cas le plus fréquent, notamment pour des réponses brèves.
+  N'impose ni l'un ni l'autre par principe : évalue chaque slot indépendamment. Un slot en "text" évite une génération HTML inutile.
 - 🚫 MÉDIAS — RÈGLE ABSOLUE : ne crée un bloc média (avec "url") QUE pour une URL listée EXPLICITEMENT dans la section MÉDIAS JOINTS ci-dessus. S'il n'y a AUCUN média joint, n'inclus AUCUN bloc média et n'invente JAMAIS d'URL "//media:". Les URLs "//media:" présentes dans le CONTENU DE COURS appartiennent au support de cours : leurs fichiers ne sont PAS disponibles pour cette question, ne les réutilise JAMAIS.
 - S'il y a des médias joints, intègre chacun dans le slot le plus pertinent (énoncé et/ou réponses), avec son URL exacte (préfixe //media: intact).
 - "content" reste synthétique : il décrit ce que le slot contiendra, le HTML final sera généré plus tard.

@@ -29,12 +29,43 @@ class CardTemplateFullDto(BaseModel):
     fields_usage: Optional[str] = None
 
 
+class CourseAssetDto(BaseModel):
+    """
+    Asset réutilisable du support de cours, extrait côté client par
+    reconnaissance de forme du pedagogical_json.
+
+    Deux natures :
+      - type "image" : un fichier déjà lié au support, réutilisable tel quel.
+        [filename] est le nom (avec extension) servi via "//media:".
+      - type "anchor" : une section du support HTML identifiée par [anchor]
+        ("#xxx"). Pour un PLAN, seul l'intitulé [heading] est fourni (le LLM
+        choisit d'après le pedagogical_json). Pour la GÉNÉRATION FINALE, le
+        fragment HTML de l'ancre est fourni dans [html_fragment] (extraction
+        ciblée côté client, dans la limite de taille).
+    """
+    type: Literal["image", "anchor"]
+    # image
+    filename: Optional[str] = Field(default=None, description='Nom du fichier (avec extension) réutilisable via //media:')
+    caption: Optional[str] = None
+    # anchor
+    anchor: Optional[str] = Field(default=None, description='Ancre HTML du support, ex "#petit-dejeuner"')
+    heading: Optional[str] = None
+    html_fragment: Optional[str] = Field(
+        default=None,
+        description="Génération finale uniquement : fragment HTML de l'ancre (extrait côté client, borné en taille)"
+    )
+
+
 class AssessmentPlanRequestDto(BaseModel):
     """Requête de plan général de quiz ou de flashcards."""
     kind: Literal["quiz", "flashcards"]
     pedagogical_json: dict
     course_plan_json: Optional[dict] = Field(
         default=None, description="Plan du cours, pour aligner le plan d'évaluation sur sa structure"
+    )
+    course_assets: Optional[List[CourseAssetDto]] = Field(
+        default=None,
+        description="Images et ancres réutilisables du support de cours (quiz uniquement)"
     )
     additional_instructions: Optional[str] = None
     courseName: Optional[str] = None
@@ -54,6 +85,10 @@ class EntityPlanRequestDto(BaseModel):
     )
     template_refs: Optional[List[CardTemplateRefDto]] = Field(
         default=None, description="Flashcards uniquement : templates référencés par {path, fields_usage}"
+    )
+    course_assets: Optional[List[CourseAssetDto]] = Field(
+        default=None,
+        description="Question uniquement : images et ancres réutilisables du support de cours"
     )
     additional_instructions: Optional[str] = None
     courseName: Optional[str] = None
@@ -88,6 +123,10 @@ class QuizQuestionHtmlRequestDto(BaseModel):
     """Génération finale d'une question riche depuis son plan d'entité."""
     plan_json: dict
     pedagogical_json: Optional[dict] = None
+    course_assets: Optional[List[CourseAssetDto]] = Field(
+        default=None,
+        description="Images (réutilisables via //media:) et ancres AVEC leur html_fragment déjà extrait"
+    )
     additional_instructions: Optional[str] = None
     courseName: Optional[str] = None
     topicPath: Optional[str] = None
@@ -136,5 +175,9 @@ class QuizQuestionHtmlResultResponse(BaseModel):
     slots: Dict[str, str] = Field(
         default_factory=dict,
         description='HTML par slot ("question", "answer_N", "explanation_N") pour les slots en rendering html',
+    )
+    dropped_anchors: List[str] = Field(
+        default_factory=list,
+        description="Ancres du cours référencées mais ignorées (fragment introuvable ou trop volumineux)",
     )
     debug_info: Dict[str, Any] = Field(default_factory=dict)

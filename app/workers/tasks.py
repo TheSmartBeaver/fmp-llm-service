@@ -1554,11 +1554,16 @@ def generate_assessment_plan_task(
         llm_config = request.llm_config or LLMConfigDto()
         plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
 
+        course_assets = (
+            [a.model_dump() for a in request.course_assets]
+            if request.course_assets else None
+        )
         plan_json, plan_prompt = asyncio.run(generate_assessment_plan(
             kind=request.kind,
             pedagogical_json=request.pedagogical_json,
             plan_llm=plan_llm,
             course_plan_json=request.course_plan_json,
+            course_assets=course_assets,
             course_name=request.courseName,
             topic_path=request.topicPath,
             additional_instructions=request.additional_instructions,
@@ -1624,6 +1629,10 @@ def generate_entity_plan_task(
         plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
 
         media = [m.model_dump() for m in request.media] if request.media else None
+        course_assets = (
+            [a.model_dump() for a in request.course_assets]
+            if request.course_assets else None
+        )
 
         if request.kind == "quiz_question_html":
             plan_json, plan_prompt = asyncio.run(generate_quiz_question_plan(
@@ -1631,6 +1640,7 @@ def generate_entity_plan_task(
                 pedagogical_json=request.pedagogical_json,
                 source_block=request.source_block,
                 media=media,
+                course_assets=course_assets,
                 course_name=request.courseName,
                 topic_path=request.topicPath,
                 additional_instructions=request.additional_instructions,
@@ -1840,14 +1850,28 @@ def generate_quiz_question_html_task(
         llm_config = request.llm_config or LLMConfigDto()
         llm = create_universal_llm(llm_config.get_quiz_model())
 
-        generated, gen_prompt = asyncio.run(generate_quiz_question_html_from_plan(
-            entity_plan_json=request.plan_json,
-            llm=llm,
-            pedagogical_json=request.pedagogical_json,
-            course_name=request.courseName,
-            topic_path=request.topicPath,
-            additional_instructions=request.additional_instructions,
-        ))
+        course_assets = (
+            [a.model_dump() for a in request.course_assets]
+            if request.course_assets else None
+        )
+        generated, gen_prompt, dropped_anchors = asyncio.run(
+            generate_quiz_question_html_from_plan(
+                entity_plan_json=request.plan_json,
+                llm=llm,
+                pedagogical_json=request.pedagogical_json,
+                course_assets=course_assets,
+                course_name=request.courseName,
+                topic_path=request.topicPath,
+                additional_instructions=request.additional_instructions,
+            )
+        )
+
+        debug_info = {"generation_prompt": gen_prompt}
+        if dropped_anchors:
+            # Ancres référencées mais ignorées (fragment introuvable ou trop
+            # volumineux) — signalées pour information.
+            debug_info["dropped_anchors"] = dropped_anchors
+            print(f"⚠️ Ancres ignorées (taille/introuvable) : {dropped_anchors}")
 
         result = {
             "success": True,
@@ -1856,7 +1880,8 @@ def generate_quiz_question_html_task(
             "explanation_json": generated.get("explanation_json", {}),
             "correct_answer_order": generated.get("correct_answer_order", 1),
             "slots": generated.get("slots", {}),
-            "debug_info": {"generation_prompt": gen_prompt},
+            "dropped_anchors": dropped_anchors,
+            "debug_info": debug_info,
         }
 
         print(f"📥 Quiz question HTML completed for task {task_id} ({len(result['slots'])} slot(s) HTML)")

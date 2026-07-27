@@ -154,6 +154,7 @@ async def get_quiz_question_html_result(task_id: str):
                 explanation_json=result.get("explanation_json", {}),
                 correct_answer_order=result.get("correct_answer_order", 1),
                 slots=result.get("slots", {}),
+                dropped_anchors=result.get("dropped_anchors", []),
                 debug_info=result.get("debug_info", {}),
             )
         elif task_result.state == "FAILURE":

@@ -86,6 +86,61 @@ def _media_block(media: Optional[List[Dict[str, Any]]]) -> str:
     return "\n".join(lines)
 
 
+def _course_assets_plan_block(assets: Optional[List[Dict[str, Any]]]) -> str:
+    """
+    Formate les assets réutilisables du cours pour un PROMPT DE PLAN : images
+    (par nom) et ancres (par intitulé). Sert au LLM à décider s'il réutilise un
+    visuel/une section du cours pour une question.
+    """
+    if not assets:
+        return "Aucun asset réutilisable du cours."
+    images = [a for a in assets if a.get("type") == "image"]
+    anchors = [a for a in assets if a.get("type") == "anchor"]
+    lines = ["ASSETS RÉUTILISABLES DU COURS (n'utilise QUE ceux listés ici) :"]
+    if images:
+        lines.append("  IMAGES DU COURS (référence par 'course_image': \"<filename>\") :")
+        for img in images:
+            cap = f" — {img.get('caption')}" if img.get("caption") else ""
+            lines.append(f"    - {img.get('filename')}{cap}")
+    if anchors:
+        lines.append("  SECTIONS DU COURS (référence par 'course_anchor': \"<anchor>\") :")
+        for anc in anchors:
+            head = f" — {anc.get('heading')}" if anc.get("heading") else ""
+            lines.append(f"    - {anc.get('anchor')}{head}")
+    return "\n".join(lines)
+
+
+def _course_assets_generation_block(assets: Optional[List[Dict[str, Any]]]) -> Tuple[str, List[str]]:
+    """
+    Formate les assets pour un PROMPT DE GÉNÉRATION FINALE : images (URL //media:
+    à réutiliser) et ancres AVEC leur fragment HTML déjà extrait. Retourne aussi
+    la liste des ancres SANS fragment (ignorées car introuvables ou trop
+    volumineuses), pour signalement dans le résultat.
+    """
+    if not assets:
+        return "Aucun asset réutilisable du cours.", []
+    images = [a for a in assets if a.get("type") == "image"]
+    anchors = [a for a in assets if a.get("type") == "anchor"]
+    dropped_anchors: List[str] = []
+    lines = ["ASSETS DU COURS À RÉUTILISER (n'utilise QUE ceux listés ici) :"]
+    if images:
+        lines.append("  IMAGES (insère <img src=\"//media:<filename>\"> — le préfixe sera retiré au rendu) :")
+        for img in images:
+            cap = f" — {img.get('caption')}" if img.get("caption") else ""
+            lines.append(f"    - //media:{img.get('filename')}{cap}")
+    for anc in anchors:
+        fragment = anc.get("html_fragment")
+        if fragment:
+            head = f" ({anc.get('heading')})" if anc.get("heading") else ""
+            lines.append(
+                f"  FRAGMENT HTML de la section {anc.get('anchor')}{head} — "
+                f"transplante-le tel quel si pertinent :\n{fragment}"
+            )
+        else:
+            dropped_anchors.append(anc.get("anchor") or "?")
+    return "\n".join(lines), dropped_anchors
+
+
 def _template_refs_block(template_refs: Optional[List[Dict[str, Any]]]) -> str:
     """Formate les références de CardTemplate (path + mode d'emploi, JAMAIS le HTML)."""
     if not template_refs:
@@ -149,6 +204,8 @@ _GENERAL_PLAN_SYSTEM = """Tu es un expert en ingénierie pédagogique. Tu constr
 CONTEXTE :
 {context_block}
 
+{course_assets_block}
+
 {kind_rules}
 
 Utilise exactement cette structure JSON :
@@ -167,7 +224,8 @@ _GENERAL_PLAN_KIND_RULES = {
     "quiz": """RÈGLES POUR UN PLAN DE QUIZ :
 - "pedagogical_format" décrit le type de question (ex: "QCM classique", "QCM piège", "vrai/faux", "cas pratique", ...).
 - "content" esquisse la question : l'angle testé, la bonne réponse attendue, et l'idée des distracteurs.
-- Couvre les points clés du contenu, du plus fondamental au plus subtil.""",
+- Couvre les points clés du contenu, du plus fondamental au plus subtil.
+- RÉUTILISATION DES ASSETS DU COURS : quand une image ou une section du cours (listées dans ASSETS RÉUTILISABLES) sert vraiment une question, ajoute au bloc "course_image": "<filename>" (image à afficher) et/ou "course_anchor": "<anchor>" (section dont le visuel HTML sera réutilisé). N'utilise QUE des filenames/anchors listés ; n'en invente JAMAIS. La plupart des questions n'en ont pas besoin : n'en ajoute que si c'est pertinent.""",
     "flashcards": """RÈGLES POUR UN PLAN DE FLASHCARDS :
 - "pedagogical_format" décrit le type de carte (ex: "définition", "texte à trou", "date clé", "formule", "cause→conséquence", ...).
 - "content" esquisse la carte : la question (avec son contexte, sans trop d'indices) et la réponse attendue — COURTE, UNIQUE et non ambiguë, pour une révision rapide.
@@ -185,6 +243,7 @@ async def generate_assessment_plan(
     pedagogical_json: Dict[str, Any],
     plan_llm: Any,
     course_plan_json: Optional[Dict[str, Any]] = None,
+    course_assets: Optional[List[Dict[str, Any]]] = None,
     course_name: Optional[str] = None,
     topic_path: Optional[str] = None,
     additional_instructions: Optional[str] = None,
@@ -201,6 +260,12 @@ async def generate_assessment_plan(
             + "\n"
         )
 
+    # Les assets ne concernent que le quiz (images/ancres réutilisables).
+    assets_block = (
+        _course_assets_plan_block(course_assets) if kind == "quiz"
+        else "Aucun asset réutilisable du cours."
+    )
+
     prompt = ChatPromptTemplate.from_messages(
         [("system", _GENERAL_PLAN_SYSTEM), ("human", _GENERAL_PLAN_USER)]
     )
@@ -210,6 +275,7 @@ async def generate_assessment_plan(
         "entity_singular": entity_singular,
         "kind_rules": _GENERAL_PLAN_KIND_RULES[kind],
         "context_block": _context_block(course_name, topic_path, additional_instructions),
+        "course_assets_block": assets_block,
         "pedagogical_json": json.dumps(pedagogical_json, ensure_ascii=False),
         "course_plan_block": course_plan_block,
     }
@@ -230,6 +296,8 @@ CONTEXTE :
 {context_block}
 
 {media_block}
+
+{course_assets_block}
 
 La question finale est composée de SLOTS : un énoncé, des réponses ordonnées, des explications. Chaque slot sera rendu soit en texte simple, soit en HTML riche.
 
@@ -253,11 +321,12 @@ Contraintes :
 - Section "answers" : 2 à 4 blocs, "answer_order" séquentiel à partir de 1, EXACTEMENT un bloc avec "correct": true. Les mauvaises réponses doivent être plausibles.
 - Section "explanations" : un bloc "explanation_order": 0 (explication générale) + idéalement un bloc par réponse ("explanation_order" = answer_order correspondant).
 - "rendering" — CHOISIS LIBREMENT au cas par cas, slot par slot, la représentation qui sert le MIEUX le contenu :
-    - "html" quand le rendu riche apporte une vraie valeur : tableau, extrait de code, formule/notation, mise en forme structurée, comparaison visuelle, ou média.
+    - "html" quand le rendu riche apporte une vraie valeur.
     - "text" quand un texte simple suffit (une phrase, un mot, une valeur courte) — c'est le cas le plus fréquent, notamment pour des réponses brèves.
   N'impose ni l'un ni l'autre par principe : évalue chaque slot indépendamment. Un slot en "text" évite une génération HTML inutile.
 - 🚫 MÉDIAS — RÈGLE ABSOLUE : ne crée un bloc média (avec "url") QUE pour une URL listée EXPLICITEMENT dans la section MÉDIAS JOINTS ci-dessus. S'il n'y a AUCUN média joint, n'inclus AUCUN bloc média et n'invente JAMAIS d'URL "//media:". Les URLs "//media:" présentes dans le CONTENU DE COURS appartiennent au support de cours : leurs fichiers ne sont PAS disponibles pour cette question, ne les réutilise JAMAIS.
 - S'il y a des médias joints, intègre chacun dans le slot le plus pertinent (énoncé et/ou réponses), avec son URL exacte (préfixe //media: intact).
+- RÉUTILISATION DES ASSETS DU COURS : si une image ou une section du cours (listées dans ASSETS RÉUTILISABLES) sert le slot, ajoute au bloc concerné "course_image": "<filename>" et/ou "course_anchor": "<anchor>". N'utilise QUE des filenames/anchors listés, jamais inventés ; le slot correspondant sera alors "rendering": "html".
 - "content" reste synthétique : il décrit ce que le slot contiendra, le HTML final sera généré plus tard.
 """
 
@@ -272,6 +341,7 @@ async def generate_quiz_question_plan(
     pedagogical_json: Optional[Dict[str, Any]] = None,
     source_block: Optional[Dict[str, Any]] = None,
     media: Optional[List[Dict[str, Any]]] = None,
+    course_assets: Optional[List[Dict[str, Any]]] = None,
     course_name: Optional[str] = None,
     topic_path: Optional[str] = None,
     additional_instructions: Optional[str] = None,
@@ -291,6 +361,7 @@ async def generate_quiz_question_plan(
     inputs = {
         "context_block": _context_block(course_name, topic_path, additional_instructions),
         "media_block": _media_block(media),
+        "course_assets_block": _course_assets_plan_block(course_assets),
         "pedagogical_json": json.dumps(pedagogical_json or {}, ensure_ascii=False),
         "source_block": source_txt,
     }
@@ -664,6 +735,8 @@ PLAN DE CONSTRUCTION VALIDÉ (suis-le STRICTEMENT — sections "question" / "ans
 CONTENU PÉDAGOGIQUE (source du détail) :
 {pedagogical_json}
 
+{course_assets_block}
+
 La question est composée de SLOTS : "question", "answer_1..N", "explanation_0..N". Chaque slot du plan a un "rendering" : "html" (bloc riche) ou "text" (texte simple).
 
 Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format :
@@ -690,6 +763,7 @@ Règles STRICTES :
 - "explanation_json".content : order 0 = explication générale + un order par réponse quand le plan le prévoit.
 - HTML des slots : un DOCUMENT HTML COMPLET ET AUTONOME (commence par <!DOCTYPE html>, avec les balises <html>, <head> incluant <meta charset> et <meta name="viewport"> pour le responsive, et <body>). Mets tout le CSS dans un <style> du <head>. Responsive, sans JavaScript. Chaque slot est une page HTML indépendante, servie et rendue seule.
 - Médias : n'inclus un média QUE si son URL "//media:" figure dans le PLAN DE CONSTRUCTION VALIDÉ ci-dessus. N'invente JAMAIS d'URL de média et ne réutilise JAMAIS une URL "//media:" venant du CONTENU PÉDAGOGIQUE (ses fichiers ne sont pas disponibles ici). Pour un média du plan : génère <img>/<video controls>/<audio controls>/<iframe> selon le type ; retire le préfixe "//media:" dans les attributs src ; n'affiche JAMAIS l'URL brute comme texte.
+- ASSETS DU COURS (section "ASSETS DU COURS À RÉUTILISER" ci-dessus) : si le bloc du plan porte "course_image", insère l'image correspondante via <img src="//media:<filename>">. Si le bloc porte "course_anchor" et qu'un FRAGMENT HTML est fourni pour cette ancre, transplante ce fragment dans le slot HTML. N'utilise QUE les assets listés ; ne réutilise pas une ancre sans fragment fourni.
 - Ne génère que du JSON, aucun texte autour."""
 
 
@@ -697,16 +771,27 @@ async def generate_quiz_question_html_from_plan(
     entity_plan_json: Dict[str, Any],
     llm: Any,
     pedagogical_json: Optional[Dict[str, Any]] = None,
+    course_assets: Optional[List[Dict[str, Any]]] = None,
     course_name: Optional[str] = None,
     topic_path: Optional[str] = None,
     additional_instructions: Optional[str] = None,
-) -> Tuple[Dict[str, Any], str]:
-    """Génère la question de quiz riche (JSON + HTML par slot) depuis son plan d'entité."""
+) -> Tuple[Dict[str, Any], str, List[str]]:
+    """
+    Génère la question de quiz riche (JSON + HTML par slot) depuis son plan
+    d'entité, en réutilisant les assets du cours fournis.
+
+    Returns:
+        (result, prompt, dropped_anchors) — dropped_anchors liste les ancres
+        référencées mais ignorées (fragment introuvable ou trop volumineux).
+    """
+    assets_block, dropped_anchors = _course_assets_generation_block(course_assets)
+
     prompt = ChatPromptTemplate.from_messages([("human", _QUESTION_HTML_PROMPT)])
     inputs = {
         "context_block": _context_block(course_name, topic_path, additional_instructions),
         "plan_json": json.dumps(entity_plan_json, ensure_ascii=False),
         "pedagogical_json": json.dumps(pedagogical_json or {}, ensure_ascii=False),
+        "course_assets_block": assets_block,
     }
     result = await _invoke_json(prompt, llm, inputs)
 
@@ -716,4 +801,4 @@ async def generate_quiz_question_html_from_plan(
         slot: html.replace("//media:", "") for slot, html in slots.items()
     }
 
-    return result, prompt.format(**inputs)
+    return result, prompt.format(**inputs), dropped_anchors

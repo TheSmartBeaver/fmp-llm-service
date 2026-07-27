@@ -183,12 +183,12 @@ async def generate_course_plan(
 
 _MODIFY_SYSTEM_PROMPT = """Tu es un expert en ingénierie pédagogique. Tu modifies un plan de cours existant par petites touches ciblées.
 
-Le plan est un JSON {{"sections": [{{"id", "title", "blocks": [{{"id", "pedagogical_format", "content", ...}}]}}]}}.
+Le plan est un JSON {{"sections": [{{"id", "title", "blocks": [{{"id", "pedagogical_format", "content", "generation_instructions", ...}}]}}]}}.
 
 Tu ne retournes JAMAIS le plan entier. Tu retournes UNIQUEMENT un JSON d'opérations de patch :
 
 {{ "operations": [
-  {{ "op": "replace", "target": "s2.b3", "block": {{ "pedagogical_format": "...", "content": "..." }} }},
+  {{ "op": "replace", "target": "s2.b3", "block": {{ "content": "...", "generation_instructions": "..." }} }},
   {{ "op": "insert_after", "target": "s2.b3", "blocks": [ {{ "pedagogical_format": "...", "content": "..." }} ] }},
   {{ "op": "insert_before", "target": "s2.b1", "blocks": [ ... ] }},
   {{ "op": "delete", "target": "s2.b4" }},
@@ -199,6 +199,8 @@ RÈGLES ABSOLUES :
 - Retourne uniquement le JSON d'opérations, rien d'autre.
 - "target" désigne toujours un ID existant du plan ("sX" pour rename_section, "sX.bY" pour les autres opérations).
 - N'inclus JAMAIS de champ "id" ni "validated" dans les blocs que tu écris : le serveur les gère.
+- Pour "replace", "block" est un PATCH PARTIEL : n'inclus que les champs à modifier. Tous les champs omis sont conservés par le serveur.
+- "generation_instructions" contient les consignes de génération et de rendu du bloc (taille, placement, style, fichier exact, etc.). Si l'instruction utilisateur porte sur le rendu plutôt que sur le fond pédagogique, modifie ce champ sans réécrire inutilement "content".
 - Modifie en priorité les BLOCS CIBLÉS listés ci-dessous. Tu peux insérer de nouveaux blocs autour d'eux si l'instruction le demande.
 - 🚫 Ne touche à AUCUN bloc verrouillé (liste fournie ci-dessous) : aucune opération replace/delete ne doit les cibler.
 - Ne génère aucune opération pour les blocs qui n'ont pas besoin de changer.
@@ -284,7 +286,11 @@ def apply_plan_operations(
             continue
 
         if op_type == "replace":
-            new_block = dict(op.get("block", {}))
+            # Un replace est un patch partiel. Préserver les champs spécialisés
+            # du plan détaillé (rendering, ordres, assets, instructions...) que
+            # le LLM n'a aucune raison de répéter à chaque modification.
+            new_block = dict(target_block)
+            new_block.update(dict(op.get("block", {})))
             # L'ID et le verrou sont gérés par le serveur, jamais par le LLM
             new_block["id"] = target
             new_block["validated"] = False

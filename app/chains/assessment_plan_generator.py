@@ -332,7 +332,8 @@ Utilise exactement cette structure JSON :
   "kind": "quiz_question_html",
   "sections": [
     {{ "title": "Énoncé", "slot_group": "question",
-       "blocks": [ {{ "pedagogical_format": "format", "content": "...", "rendering": "html" }} ] }},
+       "blocks": [ {{ "pedagogical_format": "format", "content": "...", "rendering": "html",
+                      "generation_instructions": "Consignes concrètes de rendu, si utiles" }} ] }},
     {{ "title": "Réponses", "slot_group": "answers",
        "blocks": [ {{ "pedagogical_format": "réponse", "content": "...", "answer_order": 1, "correct": true, "rendering": "text" }} ] }},
     {{ "title": "Explications", "slot_group": "explanations",
@@ -353,6 +354,9 @@ Contraintes :
 - 🚫 MÉDIAS — RÈGLE ABSOLUE : ne crée un bloc média (avec "url") QUE pour une URL listée EXPLICITEMENT dans la section MÉDIAS JOINTS ci-dessus. S'il n'y a AUCUN média joint, n'inclus AUCUN bloc média et n'invente JAMAIS d'URL "//media:". Les URLs "//media:" présentes dans le CONTENU DE COURS appartiennent au support de cours : leurs fichiers ne sont PAS disponibles pour cette question, ne les réutilise JAMAIS.
 - S'il y a des médias joints, intègre chacun dans le slot le plus pertinent (énoncé et/ou réponses), avec son URL exacte (préfixe //media: intact).
 - RÉUTILISATION DES ASSETS DU COURS : si une image ou une section du cours (listées dans ASSETS RÉUTILISABLES) sert le slot, ajoute au bloc concerné "course_image": "<filename>" et/ou "course_anchor": "<anchor>". N'utilise QUE des filenames/anchors listés, jamais inventés ; le slot correspondant sera alors "rendering": "html".
+- "generation_instructions" (chaîne facultative) décrit les consignes concrètes à appliquer PLUS TARD lors de la génération du bloc : dimensions ou taille maximale, placement, densité, couleurs, typographie, responsive, fichier/template exact à utiliser, etc. Renseigne-la dès qu'une précision de rendu est utile ; ne la confonds pas avec le contenu pédagogique.
+- Si "generation_instructions" porte sur une mise en forme visuelle ou un média, le bloc doit avoir "rendering": "html".
+- Si "generation_instructions" demande un média ou un asset, ajoute AUSSI sa référence structurée exacte au bloc ("url", "course_image" ou "course_anchor"). Ne cite jamais un fichier qui n'est pas listé dans les médias/assets disponibles.
 - "content" reste synthétique : il décrit ce que le slot contiendra, le HTML final sera généré plus tard.
 """
 
@@ -418,7 +422,8 @@ Utilise exactement cette structure JSON :
   "kind": "flashcard_full_html",
   "sections": [
     {{ "title": "Question (visible)", "role": "visible",
-       "blocks": [ {{ "pedagogical_format": "format", "content": "..." }} ] }},
+       "blocks": [ {{ "pedagogical_format": "format", "content": "...",
+                      "generation_instructions": "Consignes concrètes de rendu, si utiles" }} ] }},
     {{ "title": "Réponse (fmp-hidden)", "role": "hidden",
        "blocks": [ {{ "pedagogical_format": "format", "content": "..." }} ] }}
   ]
@@ -432,6 +437,8 @@ Contraintes :
 - 🚫 MÉDIAS — RÈGLE ABSOLUE : ne crée un bloc média (avec "url") QUE pour une URL listée EXPLICITEMENT dans la section MÉDIAS JOINTS ci-dessus. S'il n'y a AUCUN média joint, n'inclus AUCUN bloc média et n'invente JAMAIS d'URL "//media:". Les URLs "//media:" présentes dans le CONTENU DE COURS appartiennent au support de cours : leurs fichiers ne sont PAS disponibles pour cette carte, ne les réutilise JAMAIS.
 - S'il y a des médias joints, place chacun dans la section pertinente avec son URL exacte (préfixe //media: intact).
 - Pour utiliser un template fourni, crée un bloc {{"pedagogical_format": "template", "template_path": "<path>", "content": "consigne d'adaptation des champs"}}. Ne recopie JAMAIS de HTML de template : seule la référence par path compte, le HTML complet sera fourni à la génération finale.
+- "generation_instructions" (chaîne facultative) décrit les consignes concrètes à appliquer PLUS TARD lors de la génération du bloc : dimensions ou taille maximale, placement, densité, couleurs, typographie, responsive, fichier/template exact à utiliser, etc. Renseigne-la dès qu'une précision de rendu est utile ; ne la confonds pas avec le contenu pédagogique.
+- Si "generation_instructions" demande un média ou un template, ajoute AUSSI sa référence structurée exacte au bloc ("url" ou "template_path"). Ne cite jamais un fichier qui n'est pas listé dans les médias/templates disponibles.
 - "content" reste synthétique : il décrit ce que la carte contiendra, le HTML final sera généré plus tard.
 """
 
@@ -624,6 +631,7 @@ async def generate_quiz_from_plan(
 
 _CARD_HTML_BASE_RULES = """RÈGLES DE LA CARTE (STRICTES) :
 - Carte mentale responsive, SANS javascript, avec CSS inline, police moyenne.
+- Pour CHAQUE bloc, applique fidèlement sa chaîne "generation_instructions" à sa mise en page et à son rendu. Ces consignes sont opérationnelles (dimensions, placement, style, fichier/template exact) ; ne les affiche jamais comme du texte dans la carte. Elles ne permettent toutefois pas d'inventer un média absent du plan.
 - La carte prend l'espace en hauteur et n'utilise PAS de branches.
 - La réponse est COURTE pour une révision rapide, UNIQUE, et on ne peut pas répondre autre chose.
 - Rappelle le contexte dans la question sans trop donner d'indices.
@@ -812,6 +820,7 @@ Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format :
 }}
 
 Règles STRICTES :
+- Pour CHAQUE bloc, applique fidèlement sa chaîne "generation_instructions" au slot correspondant. Ces consignes sont opérationnelles (dimensions, placement, style, fichier/template exact) ; ne les affiche jamais comme du texte dans le slot. Elles ne permettent toutefois pas d'inventer un média ou un asset absent du plan et de la liste fournie.
 - Applique la règle "rendering" INDÉPENDAMMENT à CHAQUE slot : l'énoncé, CHAQUE réponse ("answer_N") et CHAQUE explication ("explanation_N") sont traités de la même façon. Un slot de réponse en "rendering": "html" produit un slot HTML au même titre que l'énoncé — ne réserve PAS le HTML au seul énoncé.
 - Slot en "rendering": "html" dans le plan → l'entrée JSON correspondante est {{"type": "html"}} (avec "order" pour réponses/explications) ET le HTML du slot est présent dans "slots" (clé "question", "answer_N" ou "explanation_N").
 - Slot en "rendering": "text" → texte simple dans le JSON ("content" pour la question, "text" pour réponses/explications), et RIEN dans "slots".

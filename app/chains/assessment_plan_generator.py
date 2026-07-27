@@ -59,6 +59,32 @@ async def _gather_limited(coros: List[Any]) -> List[Any]:
     return await asyncio.gather(*[_run(c) for c in coros])
 
 
+def _normalize_plan(raw: Any) -> Dict[str, Any]:
+    """
+    Ramène une sortie LLM hétérogène vers un plan {"sections": [...]}.
+
+    Le JsonOutputParser peut renvoyer None (JSON "null"/vide), une liste (le LLM
+    a renvoyé directement le tableau de sections), ou un dict sans "sections".
+    On tolère ces variantes plutôt que de planter sur `plan["kind"] = ...`.
+    """
+    if isinstance(raw, dict):
+        sections = raw.get("sections")
+        if not isinstance(sections, list):
+            # Certains LLM imbriquent le plan sous une autre clé : on récupère
+            # la première liste de sections trouvée, sinon on part de vide.
+            found = next(
+                (v for v in raw.values() if isinstance(v, list)), []
+            )
+            raw = dict(raw)
+            raw["sections"] = found
+        return raw
+    if isinstance(raw, list):
+        # Le LLM a renvoyé directement la liste des sections.
+        return {"sections": raw}
+    # None ou scalaire : plan vide (sera signalé comme 0 bloc en amont).
+    return {"sections": []}
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -280,7 +306,7 @@ async def generate_assessment_plan(
         "course_plan_block": course_plan_block,
     }
 
-    plan = await _invoke_json(prompt, plan_llm, inputs)
+    plan = _normalize_plan(await _invoke_json(prompt, plan_llm, inputs))
     plan["kind"] = kind
     plan = assign_plan_ids(plan)
     return plan, prompt.format(**inputs)
@@ -366,7 +392,7 @@ async def generate_quiz_question_plan(
         "source_block": source_txt,
     }
 
-    plan = await _invoke_json(prompt, plan_llm, inputs)
+    plan = _normalize_plan(await _invoke_json(prompt, plan_llm, inputs))
     plan["kind"] = "quiz_question_html"
     plan = assign_plan_ids(plan)
     return plan, prompt.format(**inputs)
@@ -446,7 +472,7 @@ async def generate_flashcard_plan(
         "source_block": source_txt,
     }
 
-    plan = await _invoke_json(prompt, plan_llm, inputs)
+    plan = _normalize_plan(await _invoke_json(prompt, plan_llm, inputs))
     plan["kind"] = "flashcard_full_html"
     if template_refs:
         plan["template_refs"] = template_refs

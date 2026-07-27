@@ -97,10 +97,14 @@ class EntityPlanRequestDto(BaseModel):
 
 
 class QuizFromPlanRequestDto(BaseModel):
-    """Génération directe de questions (mode texte) depuis les blocs ciblés du plan général."""
+    """Génération directe de questions (html ou texte) depuis les blocs ciblés du plan général."""
     plan_json: dict
     target_block_ids: List[str]
     pedagogical_json: dict
+    course_assets: Optional[List[CourseAssetDto]] = Field(
+        default=None,
+        description="Images (réutilisables via //media:) et ancres AVEC leur html_fragment déjà extrait"
+    )
     additional_instructions: Optional[str] = None
     courseName: Optional[str] = None
     topicPath: Optional[str] = None

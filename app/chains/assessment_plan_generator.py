@@ -484,54 +484,57 @@ async def generate_flashcard_plan(
 # Génération directe de questions depuis le plan général (mode texte classique)
 # ---------------------------------------------------------------------------
 
-_QUIZ_FROM_PLAN_PROMPT = """Tu es un expert en pédagogie. Génère des questions de quiz à partir du plan de quiz validé et du contenu pédagogique.
+_QUIZ_FROM_PLAN_PROMPT = """Tu es un expert en pédagogie et en création de contenu HTML pédagogique. Génère UNE question de quiz à partir du bloc de plan et du contenu pédagogique.
 
 {context_block}
 
-PLAN DE QUIZ VALIDÉ :
+BLOC DU PLAN À DÉVELOPPER :
 {plan_json}
-
-BLOCS À GÉNÉRER (ne génère RIEN d'autre) : {target_block_ids}
 
 CONTENU PÉDAGOGIQUE (source du détail) :
 {pedagogical_json}
 
-Pour CHAQUE bloc ciblé, génère UNE question fidèle à son esquisse (format, angle, réponse attendue).
-Chaque question doit avoir entre 2 et 4 réponses possibles. Les réponses incorrectes doivent être plausibles et difficiles à distinguer de la bonne réponse.
+{course_assets_block}
+
+Génère une question fidèle à l'esquisse du bloc (format, angle, réponse attendue). 2 à 4 réponses ; les mauvaises réponses doivent être plausibles.
+
+CHOIX DU RENDU (html vs texte) — décide INDÉPENDAMMENT pour l'énoncé, CHAQUE réponse et CHAQUE explication :
+- "text" (simple) suffit dans la grande majorité des cas : une phrase, un mot, une valeur courte.
+- "html" (riche) SEULEMENT quand le rendu visuel apporte une vraie valeur : tableau, extrait de code, formule/notation, comparaison visuelle, mise en forme structurée, ou média/asset du cours à afficher.
+{html_hint_block}
 
 Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format :
 {{
-  "quiz_items": [
-    {{
-      "planBlock": "ID_DU_BLOC_DU_PLAN",
-      "questionJson": {{"type": "simpleText", "version": 1, "content": "TEXTE_DE_LA_QUESTION"}},
-      "answersJson": {{
-        "type": "simpleText",
-        "version": 1,
-        "content": [
-          {{"order": 1, "text": "RÉPONSE_1"}},
-          {{"order": 2, "text": "RÉPONSE_2"}}
-        ]
-      }},
-      "explanationJson": {{
-        "type": "simpleText",
-        "version": 1,
-        "content": [
-          {{"order": 0, "text": "EXPLICATION_GÉNÉRALE"}},
-          {{"order": 1, "text": "EXPLICATION_RÉPONSE_1"}},
-          {{"order": 2, "text": "EXPLICATION_RÉPONSE_2"}}
-        ]
-      }},
-      "correctAnswerOrder": 1
-    }}
-  ]
+  "planBlock": "{block_id}",
+  "questionJson": {{"type": "html", "version": 1}} OU {{"type": "simpleText", "version": 1, "content": "TEXTE"}},
+  "answersJson": {{"type": "simpleText", "version": 1, "content": [
+      {{"order": 1, "type": "html"}} OU {{"order": 1, "text": "RÉPONSE"}}
+  ]}},
+  "explanationJson": {{"type": "simpleText", "version": 1, "content": [
+      {{"order": 0, "text": "EXPLICATION_GÉNÉRALE"}} OU {{"order": 0, "type": "html"}}
+  ]}},
+  "correctAnswerOrder": 1,
+  "slots": {{
+    "question": "<!DOCTYPE html><html><head><meta charset=\\"utf-8\\"><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1\\"><style>...</style></head><body>...</body></html>",
+    "answer_2": "<!DOCTYPE html><html>...</html>"
+  }}
 }}
 
-Règles :
-- "planBlock" reprend l'ID exact du bloc du plan dont la question découle
-- correctAnswerOrder correspond à l'order de la bonne réponse dans answersJson.content
-- explanationJson.content doit avoir order 0 (explication générale) + un order par réponse
-- Ne génère que du JSON, aucun texte autour"""
+Règles STRICTES :
+- Un slot en "html" → l'entrée JSON correspondante est {{"type": "html"}} (avec "order" pour réponses/explications) ET son HTML figure dans "slots" (clés "question", "answer_N", "explanation_N"). Un slot en texte → contenu textuel dans le JSON et RIEN dans "slots".
+- HTML d'un slot : DOCUMENT HTML COMPLET ET AUTONOME (<!DOCTYPE html>, <html>, <head> avec <meta charset> et <meta name="viewport">, <body>), CSS dans un <style> du <head>, responsive, sans JavaScript.
+- "correctAnswerOrder" = l'order de la bonne réponse ; "explanationJson".content a l'order 0 (générale) + un order par réponse.
+- ASSETS DU COURS : si le bloc du plan porte "course_image", insère <img src="//media:<filename>"> dans le slot HTML concerné. Si un FRAGMENT HTML d'ancre est fourni, transplante-le. N'utilise QUE les assets listés ; ne réutilise pas une ancre sans fragment fourni.
+- "planBlock" reprend l'ID exact du bloc. Ne génère que du JSON, aucun texte autour."""
+
+
+def _html_hint_block(hint: Optional[str]) -> str:
+    """Traduit l'indice html d'un bloc en consigne pour le prompt."""
+    if hint == "force_html":
+        return "INDICE DE L'AUTEUR : privilégie le HTML riche pour cette question (l'énoncé au minimum)."
+    if hint == "keep_simple":
+        return "INDICE DE L'AUTEUR : garde cette question en texte simple, n'utilise pas de HTML."
+    return "Aucun indice imposé : arbitre librement au cas par cas."
 
 
 async def _generate_one_quiz_item(
@@ -540,22 +543,41 @@ async def _generate_one_quiz_item(
     pedagogical_json: Dict[str, Any],
     llm: Any,
     context_block: str,
+    assets_block: str,
 ) -> Optional[Dict[str, Any]]:
-    """Génère UNE question de quiz pour un seul bloc du plan (un appel LLM)."""
+    """Génère UNE question de quiz (html/texte par slot) pour un seul bloc."""
+    single = _single_block_plan(plan_json, block_id)
+    # Indice html éventuel porté par le bloc du plan
+    hint = None
+    for s in single.get("sections", []):
+        for b in s.get("blocks", []):
+            hint = b.get("html_hint")
     prompt = ChatPromptTemplate.from_messages([("human", _QUIZ_FROM_PLAN_PROMPT)])
     inputs = {
         "context_block": context_block,
-        "plan_json": json.dumps(_single_block_plan(plan_json, block_id), ensure_ascii=False),
-        "target_block_ids": block_id,
+        "plan_json": json.dumps(single, ensure_ascii=False),
+        "block_id": block_id,
         "pedagogical_json": json.dumps(pedagogical_json, ensure_ascii=False),
+        "course_assets_block": assets_block,
+        "html_hint_block": _html_hint_block(hint),
     }
     result = await _invoke_json(prompt, llm, inputs)
-    items = result.get("quiz_items", []) if isinstance(result, dict) else []
-    if not items:
+    if not isinstance(result, dict) or not result.get("questionJson"):
         return None
-    item = items[0]
-    item["planBlock"] = block_id  # garantit la traçabilité même si le LLM l'omet
-    return item
+
+    # Nettoyage des slots + traçabilité
+    slots = result.get("slots") or {}
+    result["slots"] = {
+        slot: (html.replace("//media:", "") if isinstance(html, str) else html)
+        for slot, html in slots.items()
+    }
+    result["planBlock"] = block_id
+
+    # DEBUG : rendu décidé par le LLM pour cette question
+    q_type = (result.get("questionJson") or {}).get("type", "?")
+    ans_types = [a.get("type", "text") for a in (result.get("answersJson") or {}).get("content", [])]
+    print(f"🔎 quiz-from-plan {block_id}: question={q_type}, answers={ans_types}, slots={list(result['slots'].keys())}")
+    return result
 
 
 async def generate_quiz_from_plan(
@@ -563,29 +585,37 @@ async def generate_quiz_from_plan(
     target_block_ids: List[str],
     pedagogical_json: Dict[str, Any],
     llm: Any,
+    course_assets: Optional[List[Dict[str, Any]]] = None,
     course_name: Optional[str] = None,
     topic_path: Optional[str] = None,
     additional_instructions: Optional[str] = None,
-) -> Tuple[List[Dict[str, Any]], str]:
+) -> Tuple[List[Dict[str, Any]], str, List[str]]:
     """
-    Génère les questions (mode texte classique) des blocs ciblés du plan général.
+    Génère les questions des blocs ciblés du plan général. Chaque question peut
+    être en texte simple OU en HTML (décidé par le LLM, slot par slot ; un indice
+    "html_hint" du bloc peut l'influencer). Les assets du cours (images, ancres
+    avec fragment) sont réutilisables.
 
-    Un appel LLM INDÉPENDANT par bloc, lancés en parallèle (plafond
-    _MAX_CONCURRENCY) : plus rapide et plus robuste qu'une seule grosse sortie.
+    Un appel LLM INDÉPENDANT par bloc, en parallèle (plafond _MAX_CONCURRENCY).
+
+    Returns:
+        (items, debug_prompt, dropped_anchors) — items portent slots + planBlock.
     """
     context_block = _context_block(course_name, topic_path, additional_instructions)
+    assets_block, dropped_anchors = _course_assets_generation_block(course_assets)
+
     results = await _gather_limited([
         _generate_one_quiz_item(
-            plan_json, block_id, pedagogical_json, llm, context_block
+            plan_json, block_id, pedagogical_json, llm, context_block, assets_block
         )
         for block_id in target_block_ids
     ])
     items = [item for item in results if item is not None]
     debug_prompt = (
         f"{len(target_block_ids)} question(s) générée(s) en parallèle "
-        f"(1 appel LLM/bloc, concurrence max {_MAX_CONCURRENCY})"
+        f"(html/texte par slot, concurrence max {_MAX_CONCURRENCY})"
     )
-    return items, debug_prompt
+    return items, debug_prompt, dropped_anchors
 
 
 # ---------------------------------------------------------------------------

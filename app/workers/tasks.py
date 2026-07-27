@@ -1715,11 +1715,16 @@ def generate_quiz_from_plan_task(
         llm_config = request.llm_config or LLMConfigDto()
         llm = create_universal_llm(llm_config.get_quiz_model())
 
-        raw_items, gen_prompt = asyncio.run(generate_quiz_from_plan(
+        course_assets = (
+            [a.model_dump() for a in request.course_assets]
+            if request.course_assets else None
+        )
+        raw_items, gen_prompt, dropped_anchors = asyncio.run(generate_quiz_from_plan(
             plan_json=request.plan_json,
             target_block_ids=request.target_block_ids,
             pedagogical_json=request.pedagogical_json,
             llm=llm,
+            course_assets=course_assets,
             course_name=request.courseName,
             topic_path=request.topicPath,
             additional_instructions=request.additional_instructions,
@@ -1727,16 +1732,25 @@ def generate_quiz_from_plan_task(
 
         quiz_items = []
         for item in raw_items:
-            output = shuffle_quiz_item_answers(QuizOutputItemDto(
+            dto = QuizOutputItemDto(
                 questionJson=item["questionJson"],
                 answersJson=item["answersJson"],
                 explanationJson=item["explanationJson"],
                 correctAnswerOrder=item["correctAnswerOrder"],
                 planBlock=item.get("planBlock"),
-            ))
-            quiz_items.append(output.model_dump())
+                slots=item.get("slots") or None,
+            )
+            # Le shuffle réordonne les réponses (change les "order") : on l'évite
+            # quand des slots "answer_N" existent, sinon les clés de slots ne
+            # pointeraient plus vers la bonne réponse.
+            if not dto.slots:
+                dto = shuffle_quiz_item_answers(dto)
+            quiz_items.append(dto.model_dump())
 
         result = {"success": True, "quiz_items": quiz_items}
+        if dropped_anchors:
+            result["dropped_anchors"] = dropped_anchors
+            print(f"⚠️ Ancres ignorées (taille/introuvable) : {dropped_anchors}")
 
         print(f"📥 Quiz-from-plan completed for task {task_id} ({len(quiz_items)} question(s))")
         _notify_assessment(

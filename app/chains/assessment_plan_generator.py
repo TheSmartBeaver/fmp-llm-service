@@ -194,6 +194,40 @@ def _templates_full_block(templates: Optional[List[Dict[str, Any]]]) -> str:
     return "\n".join(parts)
 
 
+def _clean_slot_html(value: Any) -> Any:
+    """
+    Normalise le HTML d'un slot avant renvoi au client :
+    - retire le préfixe //media: ;
+    - dé-échappe une string doublement encodée (JSON dans JSON) : certains
+      modèles renvoient le HTML comme une string JSON quotée, laissant des \\"
+      littéraux qui cassent les attributs HTML côté rendu.
+
+    Idempotent et défensif : ne touche que ce qui en a besoin.
+    """
+    if not isinstance(value, str):
+        return value
+
+    html = value
+
+    # Cas double-encodage : la valeur EST une string JSON ('"...\\"..."').
+    # On tente json.loads ; s'il rend une string, c'est la vraie valeur HTML.
+    stripped = html.strip()
+    if len(stripped) >= 2 and stripped[0] == '"' and stripped[-1] == '"':
+        try:
+            decoded = json.loads(stripped)
+            if isinstance(decoded, str):
+                html = decoded
+        except (ValueError, json.JSONDecodeError):
+            pass
+
+    # Filet de sécurité : le HTML contient des \\" (guillemets échappés) mais
+    # aucun vrai " dans les attributs → échappement non résolu, on le convertit.
+    if '\\"' in html and '="' not in html:
+        html = html.replace('\\"', '"').replace("\\'", "'")
+
+    return html.replace("//media:", "")
+
+
 def validate_full_html_marker(full_html: str) -> Optional[str]:
     """
     Vérifie la convention full HTML : le marqueur ANSWER_HIDDEN présent
@@ -572,11 +606,10 @@ async def _generate_one_quiz_item(
     if not isinstance(result, dict) or not result.get("questionJson"):
         return None
 
-    # Nettoyage des slots + traçabilité
+    # Nettoyage des slots (//media:, double-échappement) + traçabilité
     slots = result.get("slots") or {}
     result["slots"] = {
-        slot: (html.replace("//media:", "") if isinstance(html, str) else html)
-        for slot, html in slots.items()
+        slot: _clean_slot_html(html) for slot, html in slots.items()
     }
     result["planBlock"] = block_id
 
@@ -860,10 +893,10 @@ async def generate_quiz_question_html_from_plan(
     }
     result = await _invoke_json(prompt, llm, inputs)
 
-    # Nettoyage : retirer le préfixe //media: résiduel dans les slots HTML
+    # Nettoyage des slots (//media:, double-échappement)
     slots = result.get("slots", {}) or {}
     result["slots"] = {
-        slot: html.replace("//media:", "") for slot, html in slots.items()
+        slot: _clean_slot_html(html) for slot, html in slots.items()
     }
 
     return result, prompt.format(**inputs), dropped_anchors

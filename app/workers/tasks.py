@@ -1004,7 +1004,7 @@ def generate_course_plan_task(
         user_entry = UserEntryDto(**user_entry_dict)
         llm_config = LLMConfigDto(**llm_config_dict) if llm_config_dict else LLMConfigDto()
 
-        plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+        plan_llm = create_universal_llm(llm_config.get_course_plan_model())
 
         plan_json, plan_prompt = asyncio.run(
             generate_course_plan(user_entry=user_entry, plan_llm=plan_llm)
@@ -1122,7 +1122,7 @@ def modify_course_plan_task(
         entry = CoursePlanModificationEntryDto(**modification_entry_dict)
         llm_config = entry.llm_config or LLMConfigDto()
 
-        plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+        plan_llm = create_universal_llm(llm_config.get_course_plan_model())
 
         modification_result = asyncio.run(
             modify_course_plan(
@@ -1552,7 +1552,7 @@ def generate_assessment_plan_task(
     try:
         request = AssessmentPlanRequestDto(**request_dict)
         llm_config = request.llm_config or LLMConfigDto()
-        plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+        plan_llm = create_universal_llm(llm_config.get_assessment_plan_model())
 
         course_assets = (
             [a.model_dump() for a in request.course_assets]
@@ -1626,7 +1626,7 @@ def generate_entity_plan_task(
     try:
         request = EntityPlanRequestDto(**request_dict)
         llm_config = request.llm_config or LLMConfigDto()
-        plan_llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+        plan_llm = create_universal_llm(llm_config.get_entity_plan_model())
 
         media = [m.model_dump() for m in request.media] if request.media else None
         course_assets = (
@@ -1796,7 +1796,7 @@ def generate_flashcards_from_plan_task(
     try:
         request = FlashcardsFromPlanRequestDto(**request_dict)
         llm_config = request.llm_config or LLMConfigDto()
-        llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+        llm = create_universal_llm(llm_config.get_flashcard_generation_model())
 
         templates = (
             [t.model_dump() for t in request.templates] if request.templates else None
@@ -1942,7 +1942,7 @@ def generate_flashcard_html_task(
     try:
         request = FlashcardHtmlRequestDto(**request_dict)
         llm_config = request.llm_config or LLMConfigDto()
-        llm = create_universal_llm(llm_config.get_pedagogical_json_model())
+        llm = create_universal_llm(llm_config.get_flashcard_generation_model())
 
         templates = (
             [t.model_dump() for t in request.templates] if request.templates else None

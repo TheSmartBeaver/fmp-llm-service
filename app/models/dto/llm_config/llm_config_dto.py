@@ -49,8 +49,39 @@ class LLMConfigDto(BaseModel):
 
     quiz_model: Optional[Union[AllLLMModels, LLMModel, str]] = Field(
         default=None,
-        description="Modèle LLM pour la génération de quiz. Accepte AllLLMModels, LLMModel enum ou string. Fallback sur pedagogical_json_model puis le modèle par défaut."
+        description="Modèle LLM pour la génération de quiz (quiz-from-plan + question HTML). Fallback sur pedagogical_json_model puis le modèle par défaut."
     )
+
+    # ── Modèles par ÉTAPE des plans quiz/flashcards (chantier plans) ──────────
+    # Chacun a un fallback sensé pour rester rétrocompatible.
+
+    course_plan_model: Optional[Union[AllLLMModels, LLMModel, str]] = Field(
+        default=None,
+        description="Modèle pour la génération et la modification du PLAN DE COURS. Fallback : pedagogical_json_model."
+    )
+
+    assessment_plan_model: Optional[Union[AllLLMModels, LLMModel, str]] = Field(
+        default=None,
+        description="Modèle pour le PLAN GÉNÉRAL de quiz/flashcards. Fallback : pedagogical_json_model."
+    )
+
+    entity_plan_model: Optional[Union[AllLLMModels, LLMModel, str]] = Field(
+        default=None,
+        description="Modèle pour le PLAN DÉTAILLÉ d'une entité (question/carte). Fallback : assessment_plan_model."
+    )
+
+    flashcard_generation_model: Optional[Union[AllLLMModels, LLMModel, str]] = Field(
+        default=None,
+        description="Modèle pour la GÉNÉRATION des flashcards/cartes HTML. Fallback : quiz_model."
+    )
+
+    def _resolve(self, value) -> Optional[str]:
+        """Normalise un champ modèle (AllLLMModels/str) en string, ou None."""
+        if not value:
+            return None
+        if isinstance(value, AllLLMModels):
+            return value.value
+        return value
 
     def get_pedagogical_json_model(self) -> Union[AllLLMModels, LLMModel, str]:
         """Retourne le modèle pour la génération du JSON pédagogique (avec fallback sur défaut)"""
@@ -78,12 +109,24 @@ class LLMConfigDto(BaseModel):
         return LLMModelFactory.get_default_model()
 
     def get_quiz_model(self) -> Union[AllLLMModels, LLMModel, str]:
-        """Retourne le modèle pour la génération de quiz (fallback sur pedagogical_json_model puis défaut)"""
-        if self.quiz_model:
-            if isinstance(self.quiz_model, AllLLMModels):
-                return self.quiz_model.value
-            return self.quiz_model
-        return self.get_pedagogical_json_model()
+        """Modèle génération quiz (fallback sur pedagogical_json_model puis défaut)."""
+        return self._resolve(self.quiz_model) or self.get_pedagogical_json_model()
+
+    def get_course_plan_model(self) -> Union[AllLLMModels, LLMModel, str]:
+        """Modèle du plan de cours (génération + modification). Fallback : pedagogical."""
+        return self._resolve(self.course_plan_model) or self.get_pedagogical_json_model()
+
+    def get_assessment_plan_model(self) -> Union[AllLLMModels, LLMModel, str]:
+        """Modèle du plan général quiz/flashcards. Fallback : pedagogical."""
+        return self._resolve(self.assessment_plan_model) or self.get_pedagogical_json_model()
+
+    def get_entity_plan_model(self) -> Union[AllLLMModels, LLMModel, str]:
+        """Modèle du plan détaillé d'entité. Fallback : plan général."""
+        return self._resolve(self.entity_plan_model) or self.get_assessment_plan_model()
+
+    def get_flashcard_generation_model(self) -> Union[AllLLMModels, LLMModel, str]:
+        """Modèle de génération des cartes HTML. Fallback : modèle quiz."""
+        return self._resolve(self.flashcard_generation_model) or self.get_quiz_model()
 
     class Config:
         json_schema_extra = {

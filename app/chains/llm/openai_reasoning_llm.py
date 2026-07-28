@@ -21,7 +21,7 @@ class OpenAIReasoningLLM:
     def __init__(self, model_name: str, timeout: int = 300):
         """
         Args:
-            model_name: Le nom du modèle O-series (ex: "o3-mini", "o1-mini")
+            model_name: Le nom du modèle O-series (ex: "o3-mini", "o1")
             timeout: Timeout en secondes (défaut: 300, car ces modèles sont plus lents)
         """
         load_dotenv(find_dotenv())

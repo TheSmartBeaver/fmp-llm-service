@@ -49,7 +49,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Load embedding model and LLM for mind map generation
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 embedding_model = SentenceTransformer(MODEL_NAME)
-openai_llm = create_universal_llm("gpt-5.1-codex-mini")
+openai_llm = create_universal_llm("gpt-5.6-terra")
 
 
 @celery.task(name="generate.flashcard")

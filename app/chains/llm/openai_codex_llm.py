@@ -18,7 +18,7 @@ class OpenAICodexLLM:
     def __init__(self, model_name: str, timeout: int = 120, temperature: float = 0.0):
         """
         Args:
-            model_name: Le nom du modèle Codex (ex: "gpt-5.1-codex-mini")
+            model_name: Le nom du modèle Codex (ex: "gpt-5.3-codex")
             timeout: Timeout en secondes (défaut: 120)
             temperature: Temperature pour la génération (défaut: 0.0 pour le code)
         """

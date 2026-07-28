@@ -332,15 +332,15 @@ class CodexMessage(BaseModel):
 
 
 class CodexRequest(BaseModel):
-    """Request model pour GPT-5.1-codex"""
+    """Request model pour les modèles OpenAI routés via /v1/responses."""
     messages: List[CodexMessage]
-    model: Optional[str] = "gpt-5.1-codex"
+    model: Optional[str] = "gpt-5.3-codex"
     temperature: Optional[float] = 0.0
     max_tokens: Optional[int] = 2048
 
 
 class CodexResponse(BaseModel):
-    """Response model pour GPT-5.1-codex"""
+    """Response model pour les modèles OpenAI routés via /v1/responses."""
     success: bool
     response: Optional[str] = None
     error: Optional[str] = None
@@ -350,7 +350,7 @@ class CodexResponse(BaseModel):
 @utils_router.post("/codex", response_model=CodexResponse)
 async def call_codex(request: CodexRequest):
     """
-    Appelle directement GPT-5.1-codex via l'API OpenAI /v1/responses.
+    Appelle directement un modèle OpenAI compatible /v1/responses.
 
     Cette route utilise l'endpoint /v1/responses qui est spécifique aux modèles Codex
     et aux modèles de raisonnement (O-series), car ils ne sont pas compatibles avec
@@ -369,7 +369,7 @@ async def call_codex(request: CodexRequest):
                     "content": "Write a function to calculate fibonacci numbers"
                 }
             ],
-            "model": "gpt-5.1-codex",
+            "model": "gpt-5.3-codex",
             "temperature": 0.0,
             "max_tokens": 2048
         }
@@ -543,4 +543,3 @@ async def calculate_text_distance(request: TextDistanceRequest):
             metric=request.metric,
             error=f"Error: {str(e)}"
         )
-

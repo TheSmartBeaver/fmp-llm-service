@@ -12,10 +12,8 @@ class LLMConfigDto(BaseModel):
     Permet de sélectionner un modèle spécifique (Anthropic, Google Gemini, OpenAI, Codex, O-series)
     pour chaque fonction clé du processus de génération de supports de cours.
 
-    ✨ Supporte TOUS les 44 modèles via UniversalLLM :
-    - 34 modèles LangChain standard
-    - 5 modèles Codex (gpt-5.1-codex, etc.)
-    - 5 modèles O-series (o3, o3-mini, o4-mini, etc.)
+    Supporte les modèles LangChain standard ainsi que les modèles OpenAI
+    qui nécessitent l'endpoint /v1/responses via UniversalLLM.
 
     Usage:
         Utilisez l'enum AllLLMModels pour avoir l'auto-complétion de tous les modèles.

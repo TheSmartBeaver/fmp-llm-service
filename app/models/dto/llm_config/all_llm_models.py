@@ -1,12 +1,8 @@
 """
-Enum complet de TOUS les modèles LLM supportés par l'application.
+Enum complet des modèles LLM supportés par l'application.
 
-Inclut:
-- 38 modèles LangChain standard (via LLMModelFactory)
-- 7 modèles Codex (via route /api/utils/codex)
-- 5 modèles O-series (via route /api/utils/codex)
-
-Total: 50 modèles disponibles avec une seule interface grâce à UniversalLLM.
+Regroupe les modèles standard routés via LangChain et les modèles OpenAI
+spécifiques qui passent par l'endpoint /v1/responses via UniversalLLM.
 """
 
 from enum import Enum
@@ -38,52 +34,44 @@ class AllLLMModels(str, Enum):
     GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite"
 
     # ============================================================================
-    # OpenAI - GPT-5 Series (11 modèles)
+    # OpenAI - GPT-5 Series
     # ============================================================================
+    GPT_5_6_SOL = "gpt-5.6-sol"
+    GPT_5_6_TERRA = "gpt-5.6-terra"
+    GPT_5_6_LUNA = "gpt-5.6-luna"
     GPT_5_5 = "gpt-5.5"
+    GPT_5_5_PRO = "gpt-5.5-pro"
     GPT_5_4 = "gpt-5.4"
-    GPT_5_3_CHAT_LATEST = "gpt-5.3-chat-latest"
+    GPT_5_4_MINI = "gpt-5.4-mini"
+    GPT_5_4_NANO = "gpt-5.4-nano"
+    GPT_5_4_PRO = "gpt-5.4-pro"
     GPT_5_2 = "gpt-5.2"
+    GPT_5_2_PRO = "gpt-5.2-pro"
     GPT_5_1 = "gpt-5.1"
     GPT_5 = "gpt-5"
+    GPT_5_PRO = "gpt-5-pro"
     GPT_5_MINI = "gpt-5-mini"
     GPT_5_NANO = "gpt-5-nano"
-    GPT_5_2_CHAT_LATEST = "gpt-5.2-chat-latest"
-    GPT_5_1_CHAT_LATEST = "gpt-5.1-chat-latest"
-    GPT_5_CHAT_LATEST = "gpt-5-chat-latest"
 
     # ============================================================================
-    # OpenAI - GPT-5 Codex (7 modèles) - Via UniversalLLM
+    # OpenAI - Codex via UniversalLLM (/v1/responses)
     # ============================================================================
     GPT_5_3_CODEX = "gpt-5.3-codex"
-    GPT_5_2_CODEX = "gpt-5.2-codex"
-    GPT_5_1_CODEX_MAX = "gpt-5.1-codex-max"
-    GPT_5_1_CODEX = "gpt-5.1-codex"
-    GPT_5_CODEX = "gpt-5-codex"
-    GPT_5_1_CODEX_MINI = "gpt-5.1-codex-mini"
-    CODEX_MINI_LATEST = "codex-mini-latest"
 
     # ============================================================================
-    # OpenAI - GPT-4 Series (6 modèles)
+    # OpenAI - GPT-4 Series
     # ============================================================================
     GPT_4_1 = "gpt-4.1"
     GPT_4_1_MINI = "gpt-4.1-mini"
-    GPT_4_1_NANO = "gpt-4.1-nano"
     GPT_4O = "gpt-4o"
-    GPT_4O_2024_05_13 = "gpt-4o-2024-05-13"
     GPT_4O_MINI = "gpt-4o-mini"
 
     # ============================================================================
-    # OpenAI - Realtime Models (2 modèles)
+    # OpenAI - O-Series / Reasoning Models via UniversalLLM
     # ============================================================================
-    GPT_REALTIME_MINI = "gpt-realtime-mini"
-    GPT_4O_MINI_REALTIME_PREVIEW = "gpt-4o-mini-realtime-preview"
-
-    # ============================================================================
-    # OpenAI - O-Series / Reasoning Models (6 modèles)
-    # ============================================================================
-    O1_MINI = "o1-mini"  # LangChain compatible
-    # Via UniversalLLM (route Codex):
+    O1 = "o1"
+    O1_PRO = "o1-pro"
+    O3_PRO = "o3-pro"
     O3 = "o3"
     O3_MINI = "o3-mini"
     O3_DEEP_RESEARCH = "o3-deep-research"
@@ -91,11 +79,9 @@ class AllLLMModels(str, Enum):
     O4_MINI_DEEP_RESEARCH = "o4-mini-deep-research"
 
     # ============================================================================
-    # OpenAI - Search Models (3 modèles)
+    # OpenAI - Search Models
     # ============================================================================
     GPT_5_SEARCH_API = "gpt-5-search-api"
-    GPT_4O_MINI_SEARCH_PREVIEW = "gpt-4o-mini-search-preview"
-    GPT_4O_SEARCH_PREVIEW = "gpt-4o-search-preview"
 
     # ============================================================================
     # Anthropic - Claude 3 Series (7 modèles)
@@ -122,13 +108,10 @@ class AllLLMModels(str, Enum):
 
 # Modèles qui nécessitent la route Codex (pour référence)
 CODEX_MODELS = {
+    AllLLMModels.O1,
+    AllLLMModels.O1_PRO,
+    AllLLMModels.O3_PRO,
     AllLLMModels.GPT_5_3_CODEX,
-    AllLLMModels.GPT_5_2_CODEX,
-    AllLLMModels.GPT_5_1_CODEX_MAX,
-    AllLLMModels.GPT_5_1_CODEX,
-    AllLLMModels.GPT_5_CODEX,
-    AllLLMModels.GPT_5_1_CODEX_MINI,
-    AllLLMModels.CODEX_MINI_LATEST,
     AllLLMModels.O3,
     AllLLMModels.O3_MINI,
     AllLLMModels.O3_DEEP_RESEARCH,

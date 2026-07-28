@@ -30,7 +30,7 @@ class UniversalLLM(BaseChatModel):
 
         # Avec un modèle Codex (via route dédiée)
         llm = UniversalLLM(
-            model_name="gpt-5.1-codex",
+            model_name="gpt-5.3-codex",
             use_codex_route=True,
             api_base_url="http://localhost:8000"
         )
@@ -41,13 +41,10 @@ class UniversalLLM(BaseChatModel):
 
     # Modèles qui nécessitent la route Codex
     CODEX_MODELS: ClassVar[set] = {
+        "o1",
+        "o1-pro",
+        "o3-pro",
         "gpt-5.3-codex",
-        "gpt-5.2-codex",
-        "gpt-5.1-codex-max",
-        "gpt-5.1-codex",
-        "gpt-5-codex",
-        "gpt-5.1-codex-mini",
-        "codex-mini-latest",
         "o3",
         "o3-mini",
         "o3-deep-research",
@@ -341,7 +338,7 @@ def create_universal_llm(
         llm = create_universal_llm(LLMModel.CLAUDE_HAIKU_4_5_20251001)
 
         # Avec string (auto-détection Codex)
-        llm = create_universal_llm("gpt-5.1-codex")
+        llm = create_universal_llm("gpt-5.3-codex")
 
         # Utilisation
         response = llm.invoke("Write a fibonacci function")

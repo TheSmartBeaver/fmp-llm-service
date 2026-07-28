@@ -26,11 +26,11 @@ class MindMapGenerator:
         """
         Args:
             db_session: Session SQLAlchemy pour accéder à la DB
-            llm: Modèle LangChain pour la génération de cartes (gpt-5.1-codex-mini)
+            llm: Modèle LangChain pour la génération de cartes
             embedding_model: Modèle sentence-transformers pour les embeddings
         """
         self.db = db_session
-        self.llm = llm  # Pour _build_single_card_prompt_and_chain (gpt-5.1-codex-mini)
+        self.llm = llm  # Pour _build_single_card_prompt_and_chain
         self.embedding_model = embedding_model
         # LLM séparé pour _generate_info_format_pairs (gpt-5-mini)
         self.info_format_llm = create_universal_llm("gpt-5-mini")

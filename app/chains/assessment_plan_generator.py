@@ -361,6 +361,11 @@ CONTEXTE :
 
 La question finale est composée de SLOTS : un énoncé, des réponses ordonnées, des explications. Chaque slot sera rendu soit en texte simple, soit en HTML riche.
 
+⚠️ SÉPARATION DES RÔLES — l'application possède SON PROPRE lecteur de quiz : elle affiche elle-même la liste des réponses, gère la sélection, la validation et l'affichage des explications. Les slots sont des CONTENUS PASSIFS injectés dans ce lecteur :
+- Le slot "question" contient UNIQUEMENT le stimulus (l'énoncé) : JAMAIS la liste des options, JAMAIS de boutons radio ou « Valider », JAMAIS la bonne réponse ni sa transcription/explication.
+- Chaque slot "answer_N" contient UNE seule option (son texte et/ou son média), sans lettre A/B/C/D, sans mécanique de sélection.
+- Toute interactivité (choisir, valider, révéler) est INTERDITE dans les slots : elle est fournie par l'application.
+
 Utilise exactement cette structure JSON :
 {{
   "kind": "quiz_question_html",
@@ -369,7 +374,9 @@ Utilise exactement cette structure JSON :
        "blocks": [ {{ "pedagogical_format": "format", "content": "...", "rendering": "html",
                       "generation_instructions": "Consignes concrètes de rendu, si utiles" }} ] }},
     {{ "title": "Réponses", "slot_group": "answers",
-       "blocks": [ {{ "pedagogical_format": "réponse", "content": "...", "answer_order": 1, "correct": true, "rendering": "text" }} ] }},
+       "blocks": [ {{ "pedagogical_format": "réponse", "content": "...", "answer_order": 1, "correct": true, "rendering": "text" }},
+                   {{ "pedagogical_format": "réponse", "content": "...", "answer_order": 2, "correct": false, "rendering": "html",
+                      "url": "//media:exemple_audio.wav" }} ] }},
     {{ "title": "Explications", "slot_group": "explanations",
        "blocks": [ {{ "pedagogical_format": "explication", "content": "...", "explanation_order": 0, "rendering": "text" }} ] }}
   ]
@@ -378,7 +385,7 @@ Utilise exactement cette structure JSON :
 Contraintes :
 - Retourne uniquement le JSON, aucune métadonnée. N'ajoute NI "id" NI "validated".
 - EXACTEMENT trois sections, avec ces "slot_group" : "question", "answers", "explanations".
-- Section "question" : un ou plusieurs blocs décrivant l'énoncé (texte, tableau, extrait de code...).
+- Section "question" : un ou plusieurs blocs décrivant l'énoncé (texte, tableau, extrait de code...) — le stimulus SEUL, cf. SÉPARATION DES RÔLES.
 - Section "answers" : 2 à 4 blocs, "answer_order" séquentiel à partir de 1, EXACTEMENT un bloc avec "correct": true. Les mauvaises réponses doivent être plausibles.
 - Section "explanations" : un bloc "explanation_order": 0 (explication générale) + idéalement un bloc par réponse ("explanation_order" = answer_order correspondant).
 - "rendering" — CHOISIS LIBREMENT au cas par cas, slot par slot, la représentation qui sert le MIEUX le contenu :
@@ -386,7 +393,8 @@ Contraintes :
     - "text" quand un texte simple suffit (une phrase, un mot, une valeur courte) — c'est le cas le plus fréquent, notamment pour des réponses brèves.
   N'impose ni l'un ni l'autre par principe : évalue chaque slot indépendamment. Un slot en "text" évite une génération HTML inutile.
 - 🚫 MÉDIAS — RÈGLE ABSOLUE : ne crée un bloc média (avec "url") QUE pour une URL listée EXPLICITEMENT dans la section MÉDIAS JOINTS ci-dessus. S'il n'y a AUCUN média joint, n'inclus AUCUN bloc média et n'invente JAMAIS d'URL "//media:". Les URLs "//media:" présentes dans le CONTENU DE COURS appartiennent au support de cours : leurs fichiers ne sont PAS disponibles pour cette question, ne les réutilise JAMAIS.
-- S'il y a des médias joints, intègre chacun dans le slot le plus pertinent (énoncé et/ou réponses), avec son URL exacte (préfixe //media: intact).
+- S'il y a des médias joints, intègre chacun dans le slot le plus pertinent (énoncé et/ou réponses), avec son URL exacte (préfixe //media: intact). Quand les médias correspondent aux OPTIONS DE RÉPONSE (ex. un audio par option), place CHAQUE URL dans le bloc "answers" de la réponse correspondante (avec "rendering": "html") — le nom du fichier et sa description indiquent à quelle réponse il appartient. Ne regroupe JAMAIS les médias des réponses dans l'énoncé.
+- Si les instructions demandent un média par réponse mais que les médias joints sont moins nombreux que les réponses, n'invente RIEN : affecte les médias disponibles à leurs réponses et signale le manque dans le "content" des blocs concernés (ex. "audio manquant, à lier manuellement").
 - RÉUTILISATION DES ASSETS DU COURS : si une image ou une section du cours (listées dans ASSETS RÉUTILISABLES) sert le slot, ajoute au bloc concerné "course_image": "<filename>" et/ou "course_anchor": "<anchor>". N'utilise QUE des filenames/anchors listés, jamais inventés ; le slot correspondant sera alors "rendering": "html".
 - "generation_instructions" (chaîne facultative) décrit les consignes concrètes à appliquer PLUS TARD lors de la génération du bloc : dimensions ou taille maximale, placement, densité, couleurs, typographie, responsive, fichier/template exact à utiliser, etc. Renseigne-la dès qu'une précision de rendu est utile ; ne la confonds pas avec le contenu pédagogique.
 - Si "generation_instructions" porte sur une mise en forme visuelle ou un média, le bloc doit avoir "rendering": "html".
@@ -853,6 +861,7 @@ Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format :
 }}
 
 Règles STRICTES :
+- ⚠️ SLOTS PASSIFS — l'application possède SON PROPRE lecteur de quiz (affichage des options, sélection, validation, explications). Les slots sont des contenus statiques injectés dans ce lecteur : AUCUN <input>, <button>, <form>, AUCUNE mécanique de sélection/validation/révélation. Le slot "question" contient UNIQUEMENT le stimulus : JAMAIS la liste des options de réponse, JAMAIS la bonne réponse ni sa transcription/explication. Chaque slot "answer_N" contient UNE seule option (sans lettre A/B/C/D). Si les "generation_instructions" d'un bloc décrivent des options, boutons ou révélation de réponse, IGNORE cette partie : ne garde que ce qui concerne le contenu propre du slot.
 - Pour CHAQUE bloc, applique fidèlement sa chaîne "generation_instructions" au slot correspondant. Ces consignes sont opérationnelles (dimensions, placement, style, fichier/template exact) ; ne les affiche jamais comme du texte dans le slot. Elles ne permettent toutefois pas d'inventer un média ou un asset absent du plan et de la liste fournie.
 - Applique la règle "rendering" INDÉPENDAMMENT à CHAQUE slot : l'énoncé, CHAQUE réponse ("answer_N") et CHAQUE explication ("explanation_N") sont traités de la même façon. Un slot de réponse en "rendering": "html" produit un slot HTML au même titre que l'énoncé — ne réserve PAS le HTML au seul énoncé.
 - Slot en "rendering": "html" dans le plan → l'entrée JSON correspondante est {{"type": "html"}} (avec "order" pour réponses/explications) ET le HTML du slot est présent dans "slots" (clé "question", "answer_N" ou "explanation_N").

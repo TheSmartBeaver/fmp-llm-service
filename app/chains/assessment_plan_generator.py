@@ -388,6 +388,7 @@ Contraintes :
 - Section "question" : un ou plusieurs blocs décrivant l'énoncé (texte, tableau, extrait de code...) — le stimulus SEUL, cf. SÉPARATION DES RÔLES.
 - Section "answers" : 2 à 4 blocs, "answer_order" séquentiel à partir de 1, EXACTEMENT un bloc avec "correct": true. Les mauvaises réponses doivent être plausibles.
 - Section "explanations" : un bloc "explanation_order": 0 (explication générale) + idéalement un bloc par réponse ("explanation_order" = answer_order correspondant).
+- L'explication générale (order 0) est affichée JUSTE APRÈS l'explication de la réponse choisie : elle doit la COMPLÉTER sans la répéter — règle ou concept général, mise en perspective, moyen mnémotechnique. Ne reformule JAMAIS le contenu des explications par réponse.
 - "rendering" — CHOISIS LIBREMENT au cas par cas, slot par slot, la représentation qui sert le MIEUX le contenu :
     - "html" quand le rendu riche apporte une vraie valeur.
     - "text" quand un texte simple suffit (une phrase, un mot, une valeur courte) — c'est le cas le plus fréquent, notamment pour des réponses brèves.
@@ -572,7 +573,7 @@ Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce format :
 Règles STRICTES :
 - Un slot en "html" → l'entrée JSON correspondante est {{"type": "html"}} (avec "order" pour réponses/explications) ET son HTML figure dans "slots" (clés "question", "answer_N", "explanation_N"). Un slot en texte → contenu textuel dans le JSON et RIEN dans "slots".
 - HTML d'un slot : DOCUMENT HTML COMPLET ET AUTONOME (<!DOCTYPE html>, <html>, <head> avec <meta charset> et <meta name="viewport">, <body>), CSS dans un <style> du <head>, responsive, sans JavaScript.
-- "correctAnswerOrder" = l'order de la bonne réponse ; "explanationJson".content a l'order 0 (générale) + un order par réponse.
+- "correctAnswerOrder" = l'order de la bonne réponse ; "explanationJson".content a l'order 0 (générale) + un order par réponse. L'explication générale est affichée JUSTE APRÈS celle de la réponse choisie : elle COMPLÈTE sans répéter (règle/concept général, mise en perspective, mnémotechnique) — jamais une reformulation des explications par réponse.
 - ASSETS DU COURS : si le bloc du plan porte "course_image", insère <img src="//media:<filename>"> dans le slot HTML concerné. Si un FRAGMENT HTML d'ancre est fourni, transplante-le. N'utilise QUE les assets listés ; ne réutilise pas une ancre sans fragment fourni.
 - "planBlock" reprend l'ID exact du bloc. Ne génère que du JSON, aucun texte autour."""
 
@@ -867,7 +868,7 @@ Règles STRICTES :
 - Slot en "rendering": "html" dans le plan → l'entrée JSON correspondante est {{"type": "html"}} (avec "order" pour réponses/explications) ET le HTML du slot est présent dans "slots" (clé "question", "answer_N" ou "explanation_N").
 - Slot en "rendering": "text" → texte simple dans le JSON ("content" pour la question, "text" pour réponses/explications), et RIEN dans "slots".
 - Les réponses reprennent les "answer_order" du plan, dans l'ordre ; "correct_answer_order" = l'answer_order du bloc "correct": true du plan.
-- "explanation_json".content : order 0 = explication générale + un order par réponse quand le plan le prévoit.
+- "explanation_json".content : order 0 = explication générale + un order par réponse quand le plan le prévoit. L'explication générale est affichée JUSTE APRÈS celle de la réponse choisie : elle COMPLÈTE sans répéter (règle/concept général, mise en perspective, mnémotechnique) — jamais une reformulation des explications par réponse.
 - HTML des slots : un DOCUMENT HTML COMPLET ET AUTONOME (commence par <!DOCTYPE html>, avec les balises <html>, <head> incluant <meta charset> et <meta name="viewport"> pour le responsive, et <body>). Mets tout le CSS dans un <style> du <head>. Responsive, sans JavaScript. Chaque slot est une page HTML indépendante, servie et rendue seule.
 - Médias : n'inclus un média QUE si son URL "//media:" figure dans le PLAN DE CONSTRUCTION VALIDÉ ci-dessus. N'invente JAMAIS d'URL de média et ne réutilise JAMAIS une URL "//media:" venant du CONTENU PÉDAGOGIQUE (ses fichiers ne sont pas disponibles ici). Pour un média du plan : génère <img>/<video controls>/<audio controls>/<iframe> selon le type ; retire le préfixe "//media:" dans les attributs src ; n'affiche JAMAIS l'URL brute comme texte.
 - ASSETS DU COURS (section "ASSETS DU COURS À RÉUTILISER" ci-dessus) : si le bloc du plan porte "course_image", insère l'image correspondante via <img src="//media:<filename>">. Si le bloc porte "course_anchor" et qu'un FRAGMENT HTML est fourni pour cette ancre, transplante ce fragment dans le slot HTML. N'utilise QUE les assets listés ; ne réutilise pas une ancre sans fragment fourni.

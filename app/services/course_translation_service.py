@@ -190,6 +190,15 @@ class CourseTranslationService:
         self.cloned: set[uuid.UUID] = set()
         # FileContents partagés (SKU réutilisés tels quels, pas dupliqués).
         self.shared_file_skus: set[uuid.UUID] = set()
+        # Insérer d'abord les lignes, puis rétablir leurs références circulaires
+        # et hiérarchiques une fois que toutes les cibles existent en base.
+        self._deferred_topic_links: List[
+            Tuple[Topics, Optional[uuid.UUID], Optional[uuid.UUID]]
+        ] = []
+        self._deferred_material_links: List[
+            Tuple[CourseMaterials, Optional[uuid.UUID]]
+        ] = []
+        self._deferred_file_links: List[Dict[str, uuid.UUID]] = []
         # Stats
         self.stats = {
             "topics_created": 0,
@@ -222,6 +231,28 @@ class CourseTranslationService:
         if file_sku is not None:
             self.shared_file_skus.add(file_sku)
         return file_sku
+
+    def _flush_cloned_graph(self) -> None:
+        """Persiste les copies avant leurs liens, sans valider la transaction."""
+        self.db.flush()
+
+        for topic, parent_sku, material_sku in self._deferred_topic_links:
+            topic.ParentSKU = self._map_existing(parent_sku)
+            topic.CourseMaterialSKU = self._map_existing(material_sku)
+        for material, topic_sku in self._deferred_material_links:
+            material.TopicSKU = self._map_existing(topic_sku)
+
+        # SQL Core s'exécute immédiatement, contrairement à db.add(). Les HTML
+        # doivent donc être insérés par le premier flush avant ces liaisons.
+        if self._deferred_file_links:
+            self.db.execute(
+                insert(t_FileContentHtmlContent), self._deferred_file_links
+            )
+
+        self.db.flush()
+        self._deferred_topic_links.clear()
+        self._deferred_material_links.clear()
+        self._deferred_file_links.clear()
 
     # ------------------------------------------------------------------ #
     # Chargement du graphe source
@@ -446,12 +477,10 @@ class CourseTranslationService:
             )
         ).all()
         for row in rows:
-            self.db.execute(
-                insert(t_FileContentHtmlContent).values(
-                    FileContentsSKU=self._share_file(row.FileContentsSKU),  # partagé
-                    HtmlContentSKU=self._new_sku(hc.SKU),
-                )
-            )
+            self._deferred_file_links.append({
+                "FileContentsSKU": self._share_file(row.FileContentsSKU),
+                "HtmlContentSKU": self._new_sku(hc.SKU),
+            })
         # Card associée (relation 1-1 via IX unique HtmlContentSKU)
         for card in hc.Cards:
             self.db.add(
@@ -550,6 +579,7 @@ class CourseTranslationService:
                 )
                 mode = "sync"
 
+            self._flush_cloned_graph()
             self.db.commit()
         except CourseTranslationError as e:
             # Erreur métier attendue : loggée en warning, gérée par le router (400).
@@ -636,8 +666,8 @@ class CourseTranslationService:
         # --- 3. Pré-réserver les SKU (Topics + CourseMaterials + leurs HtmlContents) ---
         # Topic et CourseMaterial se référencent mutuellement (Topics.CourseMaterialSKU,
         # unique, <-> CourseMaterials.TopicSKU). Il faut donc réserver tous les nouveaux
-        # SKU AVANT de cloner quoi que ce soit, pour que _map_existing renvoie le clone
-        # (et non le SKU source, ce qui violerait l'index unique IX_Topics_CourseMaterialSKU).
+        # SKU AVANT de cloner quoi que ce soit. Les références circulaires seront
+        # rétablies par _flush_cloned_graph après l'insertion des deux entités.
         for t in topics:
             self._new_sku(t.SKU)
         for m in materials:
@@ -674,25 +704,27 @@ class CourseTranslationService:
         if topic.EasterEggContents is not None:
             self._clone_easter_egg(topic.EasterEggContents)
 
-        self.db.add(
-            Topics(
-                SKU=self._new_sku(topic.SKU),
-                Title=translated_title,
-                AppUserSKU=topic.AppUserSKU,
-                LastUpdated=_now(),
-                IsPremium=topic.IsPremium,
-                IsUnpublished=topic.IsUnpublished,
-                Order=topic.Order,
-                Path=topic.Path,
-                ParentSKU=self._map_existing(topic.ParentSKU),
-                ParentCourseSKU=new_course_sku,
-                GroupSKU=self._map_existing(topic.GroupSKU),
-                FileSKU=self._share_file(topic.FileSKU),  # FileContents partagé
-                HtmlContentSKU=self._map_existing(topic.HtmlContentSKU),
-                CourseMaterialSKU=self._map_existing(topic.CourseMaterialSKU),
-                RedditUrl=topic.RedditUrl,
-                EasterEggContentSKU=self._map_existing(topic.EasterEggContentSKU),
-            )
+        new_topic = Topics(
+            SKU=self._new_sku(topic.SKU),
+            Title=translated_title,
+            AppUserSKU=topic.AppUserSKU,
+            LastUpdated=_now(),
+            IsPremium=topic.IsPremium,
+            IsUnpublished=topic.IsUnpublished,
+            Order=topic.Order,
+            Path=topic.Path,
+            ParentSKU=None,
+            ParentCourseSKU=new_course_sku,
+            GroupSKU=self._map_existing(topic.GroupSKU),
+            FileSKU=self._share_file(topic.FileSKU),  # FileContents partagé
+            HtmlContentSKU=self._map_existing(topic.HtmlContentSKU),
+            CourseMaterialSKU=None,
+            RedditUrl=topic.RedditUrl,
+            EasterEggContentSKU=self._map_existing(topic.EasterEggContentSKU),
+        )
+        self.db.add(new_topic)
+        self._deferred_topic_links.append(
+            (new_topic, topic.ParentSKU, topic.CourseMaterialSKU)
         )
 
     def _clone_course_material(
@@ -705,21 +737,21 @@ class CourseTranslationService:
         if material.CourseMaterialHtmlContents is not None:
             self._clone_html_content(material.CourseMaterialHtmlContents)
 
-        self.db.add(
-            CourseMaterials(
-                SKU=self._new_sku(material.SKU),
-                AppUserSKU=material.AppUserSKU,
-                LastUpdated=_now(),
-                TaskId=material.TaskId,
-                HtmlContentSKU=self._map_existing(material.HtmlContentSKU),
-                TopicSKU=self._map_existing(material.TopicSKU),
-                CourseSKU=new_course_sku,
-                TemplatesUsed=material.TemplatesUsed,
-                Prompt=material.Prompt,
-                DebugDataJson=material.DebugDataJson,
-                CreatedAt=material.CreatedAt,
-            )
+        new_material = CourseMaterials(
+            SKU=self._new_sku(material.SKU),
+            AppUserSKU=material.AppUserSKU,
+            LastUpdated=_now(),
+            TaskId=material.TaskId,
+            HtmlContentSKU=self._map_existing(material.HtmlContentSKU),
+            TopicSKU=None,
+            CourseSKU=new_course_sku,
+            TemplatesUsed=material.TemplatesUsed,
+            Prompt=material.Prompt,
+            DebugDataJson=material.DebugDataJson,
+            CreatedAt=material.CreatedAt,
         )
+        self.db.add(new_material)
+        self._deferred_material_links.append((new_material, material.TopicSKU))
         self.stats["course_materials_cloned"] += 1
 
         # Quiz liés. _clone_quiz_material est idempotent.
@@ -741,6 +773,7 @@ class CourseTranslationService:
         self, source_course: Courses, target_course: Courses, target_language: str
     ) -> Dict[str, Any]:
         source_language = source_course.LanguageCode
+        self.sku_map[source_course.SKU] = target_course.SKU
 
         source_topics = self._load_topics(source_course.SKU)
         target_topics = self._load_topics(target_course.SKU)
@@ -764,9 +797,13 @@ class CourseTranslationService:
             match = target_by_key.get((st.Order, st.Path))
             if match is None:
                 missing_source_topics.append(st)
-            elif st.LastUpdated > match.LastUpdated:
-                to_translate.append(st.Title)
-                translate_targets.append(("topic_title", match))
+            else:
+                # Les nouveaux enfants doivent pointer vers le parent cible,
+                # même lorsque le titre de ce parent n'a pas changé.
+                self.sku_map[st.SKU] = match.SKU
+                if st.LastUpdated > match.LastUpdated:
+                    to_translate.append(st.Title)
+                    translate_targets.append(("topic_title", match))
 
         # Les titres des topics manquants sont aussi à traduire.
         missing_start = len(to_translate)

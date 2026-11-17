@@ -1,4 +1,4 @@
-"""Local audit: actual service/models, fake LLM, no external database or network."""
+"""Local audit: remaining gaps and fixed regressions, no external database/network."""
 import asyncio
 import datetime as dt
 import importlib
@@ -27,9 +27,11 @@ class RecordingDB:
         self.executed = []
     def add(self, row):
         self.added.append(row)
-    def execute(self, statement):
+    def execute(self, statement, parameters=None):
         self.executed.append(statement)
         return NS(all=lambda: [])
+    def flush(self):
+        pass
 
 def service(db=None):
     return m.CourseTranslationService(db or RecordingDB())
@@ -57,9 +59,9 @@ def group(**kw):
     fields.update(kw)
     return NS(**fields)
 
-def check(name, condition):
+def check(name, condition, fixed=False):
     assert condition, name
-    print('CONFIRMED:', name)
+    print('FIXED:' if fixed else 'CONFIRMED:', name)
 
 def reproduce_groups():
     s = service()
@@ -113,6 +115,7 @@ async def sync_service(source_topics, target_topics):
         return texts
     s._translate_batch = translate
     await s._sync_course(source, target, 'en')
+    s._flush_cloned_graph()
     return s
 
 async def reproduce_sync():
@@ -125,8 +128,9 @@ async def reproduce_sync():
     child = topic(Order=1, Path='root/child', ParentSKU=source_parent.SKU)
     s = await sync_service([source_parent, child], [target_parent])
     copied = next(x for x in s.db.added if isinstance(x, m.Topics))
-    check('sync new child retains parent SKU from source course',
-          copied.ParentSKU == source_parent.SKU and copied.ParentSKU != target_parent.SKU)
+    check('sync new child uses existing target parent',
+          copied.ParentSKU == target_parent.SKU and copied.ParentSKU != source_parent.SKU,
+          fixed=True)
     s = await sync_service([topic(), topic()], [topic()])
     check('sync Order/Path collision masks missing topic', s.stats['topics_created'] == 0)
 
@@ -155,14 +159,14 @@ def reproduce_file_insert():
         conn.execute(insert(m.t_FileContentHtmlContent).values(FileContentsSKU=file_sku, HtmlContentSKU=hc.SKU))
     with Session(engine, autoflush=False) as db:
         s = service(db)
-        try:
-            s._clone_flashcard_html(hc)
-        except IntegrityError as exc:
-            check('file junction inserted before pending HTML row: foreign key failure',
-                  'FOREIGN KEY constraint failed' in str(exc))
-            db.rollback()
-        else:
-            raise AssertionError('Expected foreign key error')
+        s._clone_flashcard_html(hc)
+        s._flush_cloned_graph()
+        db.commit()
+        links = db.execute(m.t_FileContentHtmlContent.select().where(
+            m.t_FileContentHtmlContent.c.HtmlContentSKU == s.sku_map[hc.SKU],
+        )).all()
+        check('file junction inserted after its HTML row',
+              len(links) == 1 and links[0].FileContentsSKU == file_sku, fixed=True)
 
 def reproduce_topic_file_unique():
     index = next(i for i in m.Topics.__table__.indexes if i.name == 'IX_Topics_FileSKU')
@@ -211,15 +215,13 @@ async def reproduce_material_cycle():
             return texts
         s._translate_batch = translate
         await s._clone_course(source, 'en')
-        try:
-            db.flush()
-        except IntegrityError as exc:
-            check('mutual Topic/CourseMaterial scalar FKs fail at flush',
-                  'FOREIGN KEY constraint failed' in str(exc))
-            print('  failing table:', exc.statement.split('(')[0].strip())
-            db.rollback()
-        else:
-            print('NOT REPRODUCED: Topic/CourseMaterial insertion cycle')
+        s._flush_cloned_graph()
+        db.commit()
+        copied_topic = db.get(m.Topics, s.sku_map[t.SKU])
+        copied_material = db.get(m.CourseMaterials, s.sku_map[material.SKU])
+        check('mutual Topic/CourseMaterial references persisted in phases',
+              copied_topic.CourseMaterialSKU == copied_material.SKU
+              and copied_material.TopicSKU == copied_topic.SKU, fixed=True)
     with Session(engine, autoflush=False) as db:
         s = service(db)
         parent = topic(AppUserSKU=owner, Order=0)
@@ -228,14 +230,11 @@ async def reproduce_material_cycle():
         s._load_course_materials = lambda *_: []
         s._translate_batch = translate
         await s._clone_course(source, 'en')
-        try:
-            db.flush()
-        except IntegrityError as exc:
-            check('unordered topics with child first fail parent foreign key at flush',
-                  'FOREIGN KEY constraint failed' in str(exc))
-            db.rollback()
-        else:
-            print('NOT REPRODUCED: unordered topic insertion')
+        s._flush_cloned_graph()
+        db.commit()
+        copied_child = db.get(m.Topics, s.sku_map[child.SKU])
+        check('child-first loading preserves cloned parent reference',
+              copied_child.ParentSKU == s.sku_map[parent.SKU], fixed=True)
 
 reproduce_groups()
 reproduce_quiz()

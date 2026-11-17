@@ -6,6 +6,14 @@ Audit du code local de `fmp-llm-service`, comparé au modèle et aux télécharg
 
 Les numéros de ligne ci-dessous correspondent au code au moment de l'audit.
 
+**Mise à jour après correction de l'erreur FK (17 novembre 2026) :** les points 2.2, 4.1, 4.3 et 4.4 sont corrigés. `_flush_cloned_graph` insère d'abord les lignes sans les références topic/support et parent/enfant, puis rétablit ces liens et les liaisons fichiers HTML avant un commit unique. La sync enregistre aussi les correspondances entre parents sources et cibles existants. Les autres omissions décrites dans l'audit restent à traiter.
+
+Sept tests de régression dans `tests/test_course_translation_service.py` valident le clonage bidirectionnel topic/support, la hiérarchie chargée enfant avant parent, les trois chemins de rattachement des supports, les médias et quiz existants, la sync sous un parent cible et le rollback complet en cas d'échec. Ils s'exécutent avec les contraintes FK actives en SQLite, sans connexion distante :
+
+```sh
+.venv/bin/python -m unittest discover -s tests -p test_course_translation_service.py -v
+```
+
 ## 1. Contenus omis lors d'un premier clonage
 
 ### 1.1. Les flashcards des groupes ne sont pas parcourues — prioritaire
@@ -210,6 +218,6 @@ Commande depuis la racine de `fmp-llm-service` :
 .venv/bin/python docs/course_translation_audit_repro.py
 ```
 
-Treize constats confirmés : groupe sans ses cartes, question HTML sans ses slots/contenus, absence de deux champs `LastUpdated`, carte restant dans le groupe source, catégories d'assemblage ignorées, sync sans réparation, parent source conservé en sync, collision de clé de topic, FK du lien fichier avant insertion HTML, partage incompatible avec l'index unique du fichier de topic, cycle topic/support, enfant inséré avant parent.
+Au moment de l'audit initial, treize constats étaient confirmés : groupe sans ses cartes, question HTML sans ses slots/contenus, absence de deux champs `LastUpdated`, carte restant dans le groupe source, catégories d'assemblage ignorées, sync sans réparation, parent source conservé en sync, collision de clé de topic, FK du lien fichier avant insertion HTML, partage incompatible avec l'index unique du fichier de topic, cycle topic/support, enfant inséré avant parent. Le script affiche désormais `FIXED` pour les quatre défauts corrigés et `CONFIRMED` pour les neuf autres constats.
 
-Ce script vérifie l'existence des défauts actuels ; il sert de reproduction d'audit et devra évoluer avec la correction. Les fixtures SQLite retirent les défauts de colonnes spécifiques à PostgreSQL et remplacent le champ de recherche calculé pour les seuls essais d'insertion. Ces essais confirment les défauts de parcours et d'ordonnancement ; ils ne remplacent pas un test d'intégration PostgreSQL du schéma déployé. Les autres éléments de l'inventaire ont été vérifiés par lecture croisée des sources.
+Ce script vérifie les défauts restants et les relations corrigées ; il sert de reproduction d'audit et devra évoluer avec les corrections suivantes. Les fixtures SQLite retirent les valeurs par défaut spécifiques à PostgreSQL et remplacent le champ de recherche calculé pour les seuls essais d'insertion. Ces essais ne remplacent pas un test d'intégration PostgreSQL du schéma déployé. Les autres éléments de l'inventaire ont été vérifiés par lecture croisée des sources.

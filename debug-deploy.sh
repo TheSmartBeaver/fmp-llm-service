@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VPS_HOST="root@72.62.26.202"
+VPS_HOST="root@2.24.154.180"
 VPS_DIR="/opt/fmp-llm-service-debug"
 CONTAINER_NAME="fmp-llm-service-debug"
 
@@ -29,5 +29,5 @@ ssh "$VPS_HOST" "docker logs --tail 20 $CONTAINER_NAME 2>&1"
 
 echo ""
 echo "==> Debug ready. Open SSH tunnel in a terminal:"
-echo "    ssh -L 5678:localhost:5678 root@72.62.26.202 -N"
+echo "    ssh -L 5678:localhost:5678 root@2.24.154.180 -N"
 echo "Then launch 'Python: Remote Debug (VPS)' in VS Code."
